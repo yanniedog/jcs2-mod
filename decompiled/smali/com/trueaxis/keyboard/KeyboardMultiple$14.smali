@@ -1,0 +1,79 @@
+.class Lcom/trueaxis/keyboard/KeyboardMultiple$14;
+.super Ljava/lang/Object;
+.source "KeyboardMultiple.java"
+
+# interfaces
+.implements Ljava/lang/Runnable;
+
+
+# annotations
+.annotation system Ldalvik/annotation/EnclosingMethod;
+    value = Lcom/trueaxis/keyboard/KeyboardMultiple;->setTextBoxAlignTextLeft(I)V
+.end annotation
+
+.annotation system Ldalvik/annotation/InnerClass;
+    accessFlags = 0x0
+    name = null
+.end annotation
+
+
+# instance fields
+.field final synthetic this$0:Lcom/trueaxis/keyboard/KeyboardMultiple;
+
+.field final synthetic val$index:I
+
+
+# direct methods
+.method constructor <init>(Lcom/trueaxis/keyboard/KeyboardMultiple;I)V
+    .locals 0
+
+    .line 796
+    iput-object p1, p0, Lcom/trueaxis/keyboard/KeyboardMultiple$14;->this$0:Lcom/trueaxis/keyboard/KeyboardMultiple;
+
+    iput p2, p0, Lcom/trueaxis/keyboard/KeyboardMultiple$14;->val$index:I
+
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+
+    return-void
+.end method
+
+
+# virtual methods
+.method public run()V
+    .locals 2
+
+    .line 800
+    sget-object v0, Lcom/trueaxis/keyboard/KeyboardMultiple;->boxList:Ljava/util/ArrayList;
+
+    iget v1, p0, Lcom/trueaxis/keyboard/KeyboardMultiple$14;->val$index:I
+
+    invoke-virtual {v0, v1}, Ljava/util/ArrayList;->get(I)Ljava/lang/Object;
+
+    move-result-object v0
+
+    check-cast v0, Lcom/trueaxis/keyboard/KeyboardMultiple$MultipleInputBox;
+
+    if-eqz v0, :cond_0
+
+    .line 801
+    iget-object v1, v0, Lcom/trueaxis/keyboard/KeyboardMultiple$MultipleInputBox;->editBox:Landroid/widget/EditText;
+
+    if-eqz v1, :cond_0
+
+    const/16 v1, 0x33
+
+    .line 803
+    invoke-static {v1}, Lcom/trueaxis/keyboard/KeyboardMultiple;->access$1202(I)I
+
+    .line 804
+    iget-object v0, v0, Lcom/trueaxis/keyboard/KeyboardMultiple$MultipleInputBox;->editBox:Landroid/widget/EditText;
+
+    invoke-static {}, Lcom/trueaxis/keyboard/KeyboardMultiple;->access$1200()I
+
+    move-result v1
+
+    invoke-virtual {v0, v1}, Landroid/widget/EditText;->setGravity(I)V
+
+    :cond_0
+    return-void
+.end method
