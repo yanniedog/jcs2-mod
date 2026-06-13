@@ -424,33 +424,18 @@
 .end method
 
 .method public TaServer_VerifyIAP(Ljava/lang/String;[BJ)V
-    .locals 8
+    .locals 1
 
     # Stubbed: the trueaxis verify server is dead. Instead of POSTing the
     # receipt and failing (-> IAPCheckFail, which locks/blocks startup),
-    # report verified=1, error=0 straight back to native. platform/gameId
-    # are echoed from the outgoing request body so they match what native sent.
-    const-string v0, "platform"
+    # report verified=1, error=0 back to native. Done on a background thread
+    # (VerifyStub) to avoid re-entering native synchronously on the game
+    # thread, which caused an ANR ("MCS2 isn't responding").
+    new-instance v0, Lcom/trueaxis/server/VerifyStub;
 
-    invoke-static {p2, v0}, Lcom/trueaxis/server/Stub;->extractInt([BLjava/lang/String;)I
+    invoke-direct {v0, p2, p3, p4}, Lcom/trueaxis/server/VerifyStub;-><init>([BJ)V
 
-    move-result v1
-
-    const-string v0, "gameId"
-
-    invoke-static {p2, v0}, Lcom/trueaxis/server/Stub;->extractInt([BLjava/lang/String;)I
-
-    move-result v2
-
-    const/4 v3, 0x1
-
-    const/4 v4, 0x1
-
-    const/4 v5, 0x0
-
-    move-wide v6, p3
-
-    invoke-static/range {v1 .. v7}, Lcom/trueaxis/cLib/TrueaxisLib;->IAPCheckSuccess(IIIIIJ)V
+    invoke-virtual {v0}, Lcom/trueaxis/server/VerifyStub;->start()V
 
     return-void
 .end method

@@ -607,6 +607,15 @@
 .method protected onActivityResult(IILandroid/content/Intent;)V
     .locals 2
 
+    invoke-static {p0, p1, p2, p3}, Lcom/trueaxis/modmenu/ModMenu;->handleActivityResult(Landroid/app/Activity;IILandroid/content/Intent;)Z
+
+    move-result v0
+
+    if-eqz v0, :modmenu_result_unhandled
+
+    return-void
+
+    :modmenu_result_unhandled
     .line 190
     iget-object v0, p0, Lcom/trueaxis/jetcarstunts2/Jetcarstunts2Activity;->game:Lcom/trueaxis/game/Interface;
 
@@ -679,6 +688,8 @@
     sget-object v1, Lcom/trueaxis/util/Util;->mySurface:Landroid/view/SurfaceView;
 
     invoke-virtual {p0, v1}, Lcom/trueaxis/jetcarstunts2/Jetcarstunts2Activity;->setContentView(Landroid/view/View;)V
+
+    invoke-static {p0}, Lcom/trueaxis/modmenu/NativeMods;->applySaved(Landroid/content/Context;)V
 
     .line 74
     invoke-static {p0}, Lcom/trueaxis/game/Interface;->initialise(Landroid/content/Context;)V

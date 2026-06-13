@@ -1,0 +1,12 @@
+[target.aarch64-linux-android]
+linker = "rust-lld"
+rustflags = [
+  "-C", "link-arg=-shared",
+  "-C", "link-arg=-soname=libjcs2mod.so",
+  # Link against the local stub libdl.so/libc.so so the output records
+  # DT_NEEDED for them. Android's real libs satisfy the imports at runtime;
+  # without these the dynamic linker rejects the .so ("cannot locate dlopen").
+  "-L", "native=stublibs",
+  "-l", "dylib=dl",
+  "-l", "dylib=c",
+]

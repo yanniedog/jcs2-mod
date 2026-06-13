@@ -23,6 +23,10 @@ key.properties
 # --- apktool build intermediates ---
 decompiled/build/
 decompiled/dist/
+native_bridge/target/
+_apk_build_*/
+_modmenu_build_*/
+_ghidra_livery*/
 
 # --- Large static game media (~227 MB, unchanged from the original APK).
 #     Excluded to keep the repo small. They remain in your working copy,
