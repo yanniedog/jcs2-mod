@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Ljava/lang/Runnable;
+.implements Landroid/widget/AdapterView$OnItemSelectedListener;
 
 
 # annotations
@@ -22,11 +22,11 @@
 
 .field final synthetic val$cars:Landroid/widget/Spinner;
 
-.field final synthetic val$status:Landroid/widget/TextView;
+.field final synthetic val$refresh:Ljava/lang/Runnable;
 
 
 # direct methods
-.method constructor <init>(Landroid/widget/Spinner;Landroid/widget/TextView;Landroid/app/Activity;)V
+.method constructor <init>(Landroid/app/Activity;Landroid/widget/Spinner;Ljava/lang/Runnable;)V
     .registers 4
     .annotation system Ldalvik/annotation/Signature;
         value = {
@@ -34,12 +34,12 @@
         }
     .end annotation
 
-    .line 407
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$cars:Landroid/widget/Spinner;
+    .line 333
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$status:Landroid/widget/TextView;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$cars:Landroid/widget/Spinner;
 
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
+    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$refresh:Ljava/lang/Runnable;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -48,45 +48,45 @@
 
 
 # virtual methods
-.method public run()V
-    .registers 4
+.method public onItemSelected(Landroid/widget/AdapterView;Landroid/view/View;IJ)V
+    .registers 6
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "(",
+            "Landroid/widget/AdapterView<",
+            "*>;",
+            "Landroid/view/View;",
+            "IJ)V"
+        }
+    .end annotation
 
-    .line 409
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$cars:Landroid/widget/Spinner;
+    .line 336
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
-    invoke-virtual {v0}, Landroid/widget/Spinner;->getSelectedItemPosition()I
+    iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$cars:Landroid/widget/Spinner;
 
-    move-result v0
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
+    invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ModMenu;->access$000(Landroid/content/Context;Landroid/widget/Spinner;)V
 
-    .line 410
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$status:Landroid/widget/TextView;
+    .line 337
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$refresh:Ljava/lang/Runnable;
 
-    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
+    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
-    invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$300(Landroid/content/Context;I)Ljava/io/File;
+    .line 338
+    return-void
+.end method
 
-    move-result-object v0
+.method public onNothingSelected(Landroid/widget/AdapterView;)V
+    .registers 2
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "(",
+            "Landroid/widget/AdapterView<",
+            "*>;)V"
+        }
+    .end annotation
 
-    invoke-virtual {v0}, Ljava/io/File;->isFile()Z
-
-    move-result v0
-
-    if-eqz v0, :cond_17
-
-    .line 411
-    const-string v0, "Active livery: custom"
-
-    goto :goto_19
-
-    .line 412
-    :cond_17
-    const-string v0, "Active livery: bundled default"
-
-    .line 410
-    :goto_19
-    invoke-virtual {v1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
-
-    .line 413
+    .line 341
     return-void
 .end method

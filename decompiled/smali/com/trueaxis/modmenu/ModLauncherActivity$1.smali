@@ -47,9 +47,7 @@
     .registers 4
 
     .line 19
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModLauncherActivity$1;->this$0:Lcom/trueaxis/modmenu/ModLauncherActivity;
-
-    invoke-static {v0}, Lcom/trueaxis/modmenu/NativeMods;->applySaved(Landroid/content/Context;)V
+    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->apply()V
 
     .line 20
     new-instance v0, Landroid/content/Intent;

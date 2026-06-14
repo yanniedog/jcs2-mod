@@ -18,7 +18,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -33,20 +32,14 @@ import java.io.OutputStream;
 
 /**
  * Mod settings for the MCS2 (Jet Car Stunts 2) community build.
- * Options are shown on a dedicated pre-launch screen before the game starts.
- * Java and native runtime modifications are controlled from that screen.
- * The blue-flame watermark is forced and intentionally NOT toggleable.
+ * The launcher exposes only disclosure, game launch, and custom livery tools.
  */
 public class ModMenu {
     private static final String PREFS = "jcs_mod";
-    private static final String K_UNLOCK = "unlock_all";
-    private static final String K_NOADS = "disable_ads";
     private static final String K_CAR = "livery_car";
     private static final int REQUEST_IMPORT = 7301;
     private static final int REQUEST_EXPORT = 7302;
     private static final int TEXTURE_SIZE = 512;
-    /** Value written to the native checkpoint cap when "Unlimited editor checkpoints" is on. */
-    private static final String CHECKPOINTS_VALUE = "999";
 
     private static final String[] CAR_NAMES = {
             "Buggy", "Original jetcar", "Jet", "Mini", "Sports", "Stock", "Truck"
@@ -102,21 +95,6 @@ public class ModMenu {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
-    /** Adds a titled checkbox plus an indented one-line description and returns the checkbox. */
-    private static CheckBox addCheat(Context c, LinearLayout parent, String title,
-                                     String subtitle, boolean checked) {
-        CheckBox box = new CheckBox(c);
-        box.setText(title);
-        box.setTextColor(Color.WHITE);
-        box.setTextSize(13.0f);
-        box.setChecked(checked);
-        box.setPadding(box.getPaddingLeft(), dp(c, 4), 0, 0);
-        parent.addView(box);
-        TextView sub = label(c, subtitle, 10, Color.rgb(150, 158, 165));
-        sub.setPadding(dp(c, 38), 0, 0, dp(c, 2));
-        parent.addView(sub);
-        return box;
-    }
 
     private static File customTexture(Context c, int car) {
         return new File(c.getFilesDir(), CAR_TEXTURES[car]);
@@ -210,37 +188,24 @@ public class ModMenu {
         return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    /** Default ON so the game stays playable (dead server => content must be owned). */
-    public static boolean unlockAll(Context c) {
-        if (c == null) return true;
-        try { return prefs(c).getBoolean(K_UNLOCK, true); } catch (Throwable t) { return true; }
-    }
-
-    public static boolean adsDisabled(Context c) {
-        if (c == null) return true;
-        try { return prefs(c).getBoolean(K_NOADS, true); } catch (Throwable t) { return true; }
-    }
-
     /**
      * Full-screen pre-launch mod menu shown before the native game (and splash) starts.
      * All options are visible immediately; nothing overlays gameplay.
      */
     public static void showPreLaunchMenu(final Activity a, final Runnable onPlay) {
         try {
-            final SharedPreferences p = prefs(a);
-
             LinearLayout root = new LinearLayout(a);
             root.setOrientation(LinearLayout.VERTICAL);
             root.setBackgroundColor(Color.rgb(13, 17, 23));
             root.setPadding(dp(a, 20), dp(a, 16), dp(a, 20), dp(a, 16));
 
-            TextView title = label(a, "MCS2 — MODS & CHEATS", 23, Color.rgb(255, 128, 0));
+            TextView title = label(a, "MCS2 COMMUNITY MOD", 23, Color.rgb(255, 128, 0));
             title.setGravity(Gravity.CENTER);
             title.setPadding(0, 0, 0, dp(a, 2));
             root.addView(title);
 
             TextView subtitle = label(a,
-                    "Pick your cheats, then start. Choices are saved and re-applied every launch.",
+                    "This is the modified APK. Replays and leaderboard submissions originate from a modified client.",
                     11, Color.rgb(170, 178, 185));
             subtitle.setGravity(Gravity.CENTER);
             subtitle.setPadding(0, 0, 0, dp(a, 8));
@@ -253,36 +218,9 @@ public class ModMenu {
             card.setPadding(dp(a, 16), dp(a, 10), dp(a, 16), dp(a, 14));
             card.setBackgroundDrawable(background(Color.rgb(28, 32, 38), dp(a, 10)));
 
-            card.addView(sectionHeader(a, "Quick cheats"));
+            card.addView(sectionHeader(a, "Community features"));
 
-            final CheckBox unlock = addCheat(a, card, "Unlock everything",
-                    "All levels, cars and the level editor", p.getBoolean(K_UNLOCK, true));
-            final CheckBox noAds = addCheat(a, card, "Disable ads",
-                    "No banner or interstitial ads", p.getBoolean(K_NOADS, true));
-            final CheckBox checkpoints = addCheat(a, card, "Unlimited editor checkpoints",
-                    "Place as many checkpoint times as you like",
-                    NativeMods.isQuickNumberOn(a, NativeMods.INT, 19, CHECKPOINTS_VALUE));
-            final CheckBox ballistic = addCheat(a, card, "Hyper-ballistic physics",
-                    "Floaty, bouncy car handling",
-                    NativeMods.isQuickBoolOn(a, NativeMods.BOOL, 1));
-            final CheckBox smooth = addCheat(a, card, "Smooth 60 FPS",
-                    "Disable the 30 FPS fallback",
-                    NativeMods.isQuickBoolOn(a, NativeMods.BOOL, 12));
-            final CheckBox autopilot = addCheat(a, card, "Autopilot",
-                    "Let the AI drive your car",
-                    NativeMods.isQuickBoolOn(a, NativeMods.BOOL, 2));
-
-            card.addView(sectionHeader(a, "More"));
-
-            Button advanced = button(a, "All native options…");
-            advanced.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    NativeMods.show(a);
-                }
-            });
-            card.addView(advanced, fill());
-
-            Button liveries = button(a, "Custom liveries…");
+            Button liveries = button(a, "Custom livery editor");
             liveries.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     showLiveryManager(a);
@@ -291,7 +229,7 @@ public class ModMenu {
             card.addView(liveries, fill());
 
             TextView note = label(a,
-                    "Blue flame watermark is always on. Changes apply when the game starts.",
+                    "Always active: offline IAP ownership compatibility, 999 checkpoint-time capacity, and blue flame visual identification. No configurable gameplay, replay, score, or native-value modifications are included.",
                     10, Color.rgb(150, 158, 165));
             note.setPadding(0, dp(a, 10), 0, 0);
             card.addView(note);
@@ -312,9 +250,6 @@ public class ModMenu {
             playLp.topMargin = dp(a, 12);
             play.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
-                    saveQuickCheats(a, unlock.isChecked(), noAds.isChecked(),
-                            checkpoints.isChecked(), ballistic.isChecked(),
-                            smooth.isChecked(), autopilot.isChecked());
                     onPlay.run();
                 }
             });
@@ -325,23 +260,6 @@ public class ModMenu {
             Log.e("MCS2Mod", "Could not show pre-launch mod menu", t);
             onPlay.run();
         }
-    }
-
-    /** Persists every boot-screen cheat, including the native pieces that back them. */
-    private static void saveQuickCheats(Context c, boolean unlock, boolean noAds,
-                                        boolean checkpoints, boolean ballistic,
-                                        boolean smooth, boolean autopilot) {
-        prefs(c).edit().putBoolean(K_UNLOCK, unlock).putBoolean(K_NOADS, noAds).apply();
-        NativeMods.setNativeUnlock(c, unlock);
-        NativeMods.quickNumber(c, NativeMods.INT, 19, CHECKPOINTS_VALUE, checkpoints);
-        NativeMods.quickBool(c, NativeMods.BOOL, 1, ballistic);
-        NativeMods.quickBool(c, NativeMods.BOOL, 12, smooth);
-        NativeMods.quickBool(c, NativeMods.BOOL, 2, autopilot);
-    }
-
-    /** Legacy hook from game activity: apply saved native mods only, no on-screen overlay. */
-    public static void install(Activity a) {
-        NativeMods.applySaved(a);
     }
 
     public static void showLiveryManager(final Activity a) {
@@ -609,7 +527,4 @@ public class ModMenu {
         }
     }
 
-    public static void resetBaseMods(Context c) {
-        prefs(c).edit().putBoolean(K_UNLOCK, false).putBoolean(K_NOADS, false).apply();
-    }
 }

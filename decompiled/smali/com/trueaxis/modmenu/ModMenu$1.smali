@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 278
+    .line 224
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,11 +43,11 @@
 .method public onClick(Landroid/view/View;)V
     .registers 2
 
-    .line 280
+    .line 226
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
 
-    invoke-static {p1}, Lcom/trueaxis/modmenu/NativeMods;->show(Landroid/app/Activity;)V
+    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
 
-    .line 281
+    .line 227
     return-void
 .end method

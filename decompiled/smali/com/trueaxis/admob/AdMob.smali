@@ -106,20 +106,6 @@
 .method public showAd()V
     .locals 2
 
-    # honor the in-game "Disable ads" toggle
-    invoke-static {}, Lcom/trueaxis/game/Interface;->getContext()Landroid/content/Context;
-
-    move-result-object v0
-
-    invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->adsDisabled(Landroid/content/Context;)Z
-
-    move-result v0
-
-    if-eqz v0, :ads_ok
-
-    return-void
-
-    :ads_ok
     .line 114
     invoke-static {}, Lcom/trueaxis/game/Interface;->getContext()Landroid/content/Context;
 

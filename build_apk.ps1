@@ -3,7 +3,16 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $Root
 
+Write-Host "Applying tracked mod asset overlays..."
+Copy-Item (Join-Path $Root "mod_assets\shaders\afterburner.vert") `
+    (Join-Path $Root "decompiled\assets\shaders\afterburner.vert") -Force
+Copy-Item (Join-Path $Root "mod_assets\shaders\afterburner_fix.vert") `
+    (Join-Path $Root "decompiled\assets\shaders\afterburner_fix.vert") -Force
+
 & (Join-Path $Root "build_modmenu.ps1")
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+& python (Join-Path $Root "scripts\audit_mod_surface.py")
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $JdkHome = (Get-Content "tools\jdk21_home.txt" -Raw).Trim()
@@ -60,6 +69,9 @@ if (-not $StorePass) {
 
 Write-Host "Signing..."
 & $Apksigner sign --ks $Keystore --ks-pass "pass:$StorePass" --key-pass "pass:$StorePass" --out $Output $Aligned
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+& python (Join-Path $Root "scripts\audit_mod_surface.py") --apk $Output
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "Built $Output"

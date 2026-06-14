@@ -18,11 +18,11 @@
 
 
 # instance fields
-.field final synthetic val$a:Landroid/app/Activity;
+.field final synthetic val$onPlay:Ljava/lang/Runnable;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;)V
+.method constructor <init>(Ljava/lang/Runnable;)V
     .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
@@ -30,8 +30,8 @@
         }
     .end annotation
 
-    .line 286
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$2;->val$a:Landroid/app/Activity;
+    .line 251
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$2;->val$onPlay:Ljava/lang/Runnable;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -43,11 +43,11 @@
 .method public onClick(Landroid/view/View;)V
     .registers 2
 
-    .line 288
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$2;->val$a:Landroid/app/Activity;
+    .line 253
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$2;->val$onPlay:Ljava/lang/Runnable;
 
-    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
 
-    .line 289
+    .line 254
     return-void
 .end method

@@ -105,20 +105,6 @@
 .method public static ownAll()V
     .locals 5
 
-    # honor the in-game "Unlock everything" toggle (default on)
-    invoke-static {}, Lcom/trueaxis/game/Interface;->getContext()Landroid/content/Context;
-
-    move-result-object v0
-
-    invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->unlockAll(Landroid/content/Context;)Z
-
-    move-result v0
-
-    if-nez v0, :unlock_ok
-
-    return-void
-
-    :unlock_ok
     const/4 v4, 0x0
 
     :try_start_0

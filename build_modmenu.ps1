@@ -20,7 +20,7 @@ if (-not (Test-Path $R8Jar)) {
     Invoke-WebRequest -Uri "https://storage.googleapis.com/r8-releases/raw/8.7.18/r8.jar" -OutFile $R8Jar
 }
 
-$BuildDir = Join-Path $Root "_modmenu_build"
+$BuildDir = Join-Path $Root "_modmenu_build_tmp"
 $ClassesDir = Join-Path $BuildDir "classes"
 $DexDir = Join-Path $BuildDir "dex"
 $SmaliOut = Join-Path $BuildDir "smali"
@@ -61,6 +61,7 @@ Write-Host "Disassembling to smali..."
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $Dest = Join-Path $Root "decompiled\smali\com\trueaxis\modmenu"
+Remove-Item $Dest -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $Dest -Force | Out-Null
 Copy-Item (Join-Path $SmaliOut "com\trueaxis\modmenu\*") $Dest -Force
 Write-Host "Copied smali to $Dest"
