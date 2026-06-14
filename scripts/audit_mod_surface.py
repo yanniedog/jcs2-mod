@@ -92,8 +92,30 @@ def elf64_symbol_bytes(path, wanted, length):
     raise ValueError(f"symbol {wanted.decode('ascii')} not found in {path}")
 
 
-def check_sources():
+def check_marker_invariants():
     ok = True
+    marker_frames = 6
+    non_flap_flags = 0x0D
+    flap_flag = 0x02
+    extreme_flaps = 0xF0
+
+    for original in range(256):
+        marked = []
+        for index in range(marker_frames * 4):
+            pulse_on = (index // marker_frames) & 1 == 0
+            marker = extreme_flaps | flap_flag if pulse_on else 0
+            result = (original & non_flap_flags) | marker
+            marked.append(result)
+            if result & non_flap_flags != original & non_flap_flags:
+                ok = fail(f"marker changed non-flap flags for original byte {original:#04x}") and ok
+        for boundary in range(marker_frames, len(marked), marker_frames):
+            if ((marked[boundary - 1] ^ marked[boundary]) & 0x0F) == 0:
+                ok = fail(f"marker transition at frame {boundary} would not force a compressor keyframe") and ok
+    return ok
+
+
+def check_sources():
+    ok = check_marker_invariants()
     for target in SOURCE_TARGETS:
         path = ROOT / target
         if not path.exists():
@@ -118,14 +140,22 @@ def check_sources():
         ok = fail("checkpoint-only JNI entry point is missing") and ok
     if "RequiredPatches_installReplayVisualMarker" not in bridge:
         ok = fail("narrow replay visual marker JNI entry point is missing") and ok
-    if "original_flags & 0x0f" not in bridge:
-        ok = fail("replay marker does not preserve all non-visual replay flag bits") and ok
+    if "original_flags & NON_FLAP_FLAGS" not in bridge or "NON_FLAP_FLAGS: u8 = 0x0d" not in bridge:
+        ok = fail("replay marker does not preserve rocket, brake, and respawn replay flags") and ok
     if bridge.count("ptr::write_volatile(") != 2:
         ok = fail("native bridge must have exactly two value writes: checkpoints and replay visual flags") and ok
     if "REPLAY_NODE_SIZE: usize = 0x14" not in bridge or "VISUAL_FLAGS_OFFSET: usize = 1" not in bridge:
         ok = fail("replay marker node size or visual-only field offset changed") and ok
     if "MARKER_EXTREME_FLAPS: u8 = 0xf0" not in bridge:
         ok = fail("replay marker no longer uses the reserved stock flap value") and ok
+    if "MARKER_FLAP_FLAG: u8 = 0x02" not in bridge:
+        ok = fail("replay marker no longer forces compression-preserved flap transitions") and ok
+
+    required_patches = (ROOT / "modmenu_src/com/trueaxis/modmenu/RequiredPatches.java").read_text(
+        encoding="utf-8"
+    )
+    if 'throw new IllegalStateException("Replay visual marker unavailable")' not in required_patches:
+        ok = fail("gameplay does not fail closed when replay marker installation fails") and ok
     try:
         actual_prologue = elf64_symbol_bytes(ROOT / TRUEAXIS_PATH, ADD_NODE_SYMBOL, len(ADD_NODE_PROLOGUE))
         if actual_prologue != ADD_NODE_PROLOGUE:

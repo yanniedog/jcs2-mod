@@ -19,6 +19,8 @@ const REPLAY_NODE_SIZE: usize = 0x14;
 const VISUAL_FLAGS_OFFSET: usize = 1;
 const MARKER_FRAMES: c_int = 6;
 const MARKER_EXTREME_FLAPS: u8 = 0xf0;
+const MARKER_FLAP_FLAG: u8 = 0x02;
+const NON_FLAP_FLAGS: u8 = 0x0d;
 
 const ADD_NODE_PROLOGUE: [u32; 4] = [0xd10243ff, 0xf90033f5, 0xa9074ff4, 0xa9087bfd];
 const ABSOLUTE_JUMP_LDR_X16: u32 = 0x58000050;
@@ -126,8 +128,12 @@ unsafe extern "C" fn marked_add_node(replay: *mut c_void, car: *mut c_void) {
     let flags = nodes.add(node_index as usize * REPLAY_NODE_SIZE + VISUAL_FLAGS_OFFSET);
     let original_flags = ptr::read_volatile(flags);
     let pulse_on = (node_index / MARKER_FRAMES) & 1 == 0;
-    let marker = if pulse_on { MARKER_EXTREME_FLAPS } else { 0 };
-    ptr::write_volatile(flags, (original_flags & 0x0f) | marker);
+    let marker = if pulse_on {
+        MARKER_EXTREME_FLAPS | MARKER_FLAP_FLAG
+    } else {
+        0
+    };
+    ptr::write_volatile(flags, (original_flags & NON_FLAP_FLAGS) | marker);
 }
 
 unsafe fn install_replay_marker() -> bool {
@@ -150,7 +156,7 @@ unsafe fn install_replay_marker() -> bool {
     let trampoline = mmap(
         ptr::null_mut(),
         32,
-        PROT_READ | PROT_WRITE | PROT_EXEC,
+        PROT_READ | PROT_WRITE,
         MAP_PRIVATE | MAP_ANONYMOUS,
         -1,
         0,
@@ -161,6 +167,9 @@ unsafe fn install_replay_marker() -> bool {
     ptr::copy_nonoverlapping(add_node, trampoline, 16);
     write_absolute_jump(trampoline.add(16), add_node.add(16) as *const c_void);
     clear_instruction_cache(trampoline as *mut c_void, 32);
+    if !page_protect(trampoline as *mut c_void, 32, PROT_READ | PROT_EXEC) {
+        return false;
+    }
     ORIGINAL_ADD_NODE = Some(core::mem::transmute::<*mut u8, AddNode>(trampoline));
 
     if !page_protect(

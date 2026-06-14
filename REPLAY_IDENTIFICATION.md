@@ -20,21 +20,28 @@ APK only by encoding an unmistakable cadence in stock-supported replay fields,
 such as a repeated rocket/flap pulse. It cannot be identified by a new color or
 new graphic in an unmodified original APK.
 
-## Mod 9 implementation
+## Mod 10 implementation
 
 The modified recorder hooks `Replay::AddNode` with a version-checked,
 single-purpose native hook. It calls the stock recorder first and then changes
-only the high nibble of byte `+1` in the just-recorded 20-byte replay node.
-That nibble is consumed by `Car::UpdateFlaps` during replay playback.
+only the two flap fields in byte `+1` of the just-recorded 20-byte replay node.
+Those fields are consumed by `Car::UpdateFlaps` during replay playback.
 
 The marker alternates six frames of reserved value `15` with six frames of
-value `0`. Stock recording quantizes this field from a value multiplied by
-`7`, so value `15` is outside the normal recorded range and creates an
-unmistakable repeated extreme-flap pulse in both the original and modified APK.
+value `0`, while pulsing the accompanying flap flag at the same boundaries.
+Stock recording quantizes the high-nibble field from a value multiplied by `7`,
+so value `15` is outside the normal recorded range and creates an unmistakable
+repeated extreme-flap pulse in both the original and modified APK. The flap
+flag transition forces the stock replay compressor to preserve every pulse
+boundary instead of smoothing the high-nibble cadence away. Static
+reverse-engineering confirmed `Replay::ReplayCompress` splits segments when
+the lower nibble changes and carries the high nibble into compressed nodes;
+`Replay::ReplayDecompress` restores and interpolates that high-nibble field.
 
-The hook preserves the lower nibble containing rocket, brake, respawn, and
-other recorded flags. It does not write score, timing, transforms, velocity,
-checkpoints, physics, or live car controls.
+The hook preserves the rocket, brake, and respawn flags. It does not write
+score, timing, transforms, velocity, checkpoints, physics, or live car controls.
+Startup refuses to enter gameplay if the version-checked marker hook cannot be
+installed, preventing this APK from silently producing an unmarked replay.
 
 Changing recorded control fields is not acceptable for release until testing
 proves all of the following:

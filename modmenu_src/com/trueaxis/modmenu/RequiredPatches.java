@@ -13,7 +13,9 @@ public final class RequiredPatches {
 
     public static void apply() {
         applyUnlimitedCheckpoints();
-        installReplayVisualMarker();
+        if (!installReplayVisualMarker()) {
+            throw new IllegalStateException("Replay visual marker unavailable");
+        }
     }
 
     private static native boolean applyUnlimitedCheckpoints();

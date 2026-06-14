@@ -27,7 +27,7 @@
 .end method
 
 .method public static apply()V
-    .registers 0
+    .registers 2
 
     .line 15
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->applyUnlimitedCheckpoints()Z
@@ -35,8 +35,22 @@
     .line 16
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->installReplayVisualMarker()Z
 
-    .line 17
+    move-result v0
+
+    if-eqz v0, :cond_a
+
+    .line 19
     return-void
+
+    .line 17
+    :cond_a
+    new-instance v0, Ljava/lang/IllegalStateException;
+
+    const-string v1, "Replay visual marker unavailable"
+
+    invoke-direct {v0, v1}, Ljava/lang/IllegalStateException;-><init>(Ljava/lang/String;)V
+
+    throw v0
 .end method
 
 .method private static native applyUnlimitedCheckpoints()Z
