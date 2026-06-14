@@ -2,6 +2,7 @@
 import argparse
 import base64
 import hashlib
+import struct
 import sys
 import zipfile
 from pathlib import Path
@@ -11,6 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_LIVERY_SHA1 = "718XOktjbUHjlNXZXRC0xgDF0+U="
 LIVERY_PATH = Path("decompiled/assets/cars/original/rocketcar1.png")
 APK_LIVERY_PATH = "assets/cars/original/rocketcar1.png"
+TRUEAXIS_PATH = Path("decompiled/lib/arm64-v8a/libtrueaxis.so")
+ADD_NODE_SYMBOL = b"_ZN6Replay7AddNodeEP3Car"
+ADD_NODE_PROLOGUE = bytes.fromhex("ff4302d1f53300f9f44f07a9fd7b08a9")
 
 FORBIDDEN = (
     b"NativeMods",
@@ -24,12 +28,10 @@ FORBIDDEN = (
     b"g_bUnLockAll",
     b"g_bHyperBallistic",
     b"g_bAiOnPlayerCar",
-    b"g_nReplaySize",
     b"g_nGhostSize",
     b"g_nFreeStyleBestTrickScore",
     b"g_nInAirStuntCounter",
     b"g_bIAPCrack",
-    b"mprotect",
     b"Java_com_trueaxis_modmenu_NativeMods_",
 )
 
@@ -60,6 +62,36 @@ def check_blob(name, data):
     return ok
 
 
+def elf64_symbol_bytes(path, wanted, length):
+    data = path.read_bytes()
+    if data[:6] != b"\x7fELF\x02\x01":
+        raise ValueError(f"{path} is not a little-endian ELF64 file")
+    section_offset = struct.unpack_from("<Q", data, 0x28)[0]
+    section_size = struct.unpack_from("<H", data, 0x3A)[0]
+    section_count = struct.unpack_from("<H", data, 0x3C)[0]
+    sections = [
+        struct.unpack_from("<IIQQQQIIQQ", data, section_offset + index * section_size)
+        for index in range(section_count)
+    ]
+    for section in sections:
+        _, section_type, _, _, sym_offset, sym_size, string_index, _, _, entry_size = section
+        if section_type != 11 or entry_size == 0:
+            continue
+        strings = sections[string_index]
+        string_offset = strings[4]
+        for offset in range(sym_offset, sym_offset + sym_size, entry_size):
+            name_offset, _, _, _, value, _ = struct.unpack_from("<IBBHQQ", data, offset)
+            end = data.find(b"\0", string_offset + name_offset)
+            if data[string_offset + name_offset : end] != wanted:
+                continue
+            for target in sections:
+                target_address, target_offset, target_size = target[3], target[4], target[5]
+                if target_address <= value < target_address + target_size:
+                    file_offset = target_offset + value - target_address
+                    return data[file_offset : file_offset + length]
+    raise ValueError(f"symbol {wanted.decode('ascii')} not found in {path}")
+
+
 def check_sources():
     ok = True
     for target in SOURCE_TARGETS:
@@ -73,10 +105,35 @@ def check_sources():
                 ok = check_blob(str(file_path.relative_to(ROOT)), file_path.read_bytes()) and ok
 
     bridge = (ROOT / "native_bridge/src/lib.rs").read_text(encoding="utf-8")
-    if bridge.count("g_nMaxNumCheckPointTimes") != 2:
-        ok = fail("native bridge must reference only the checkpoint symbol, exactly twice") and ok
+    allowed_native_symbols = (
+        "g_nMaxNumCheckPointTimes",
+        "g_nReplaySize",
+        "g_pReplay",
+        "_ZN6Replay7AddNodeEP3Car",
+    )
+    for line in bridge.splitlines():
+        if 'resolve(b"' in line and not any(symbol in line for symbol in allowed_native_symbols):
+            ok = fail(f"native bridge resolves an unapproved symbol: {line.strip()}") and ok
     if "RequiredPatches_applyUnlimitedCheckpoints" not in bridge:
         ok = fail("checkpoint-only JNI entry point is missing") and ok
+    if "RequiredPatches_installReplayVisualMarker" not in bridge:
+        ok = fail("narrow replay visual marker JNI entry point is missing") and ok
+    if "original_flags & 0x0f" not in bridge:
+        ok = fail("replay marker does not preserve all non-visual replay flag bits") and ok
+    if bridge.count("ptr::write_volatile(") != 2:
+        ok = fail("native bridge must have exactly two value writes: checkpoints and replay visual flags") and ok
+    if "REPLAY_NODE_SIZE: usize = 0x14" not in bridge or "VISUAL_FLAGS_OFFSET: usize = 1" not in bridge:
+        ok = fail("replay marker node size or visual-only field offset changed") and ok
+    if "MARKER_EXTREME_FLAPS: u8 = 0xf0" not in bridge:
+        ok = fail("replay marker no longer uses the reserved stock flap value") and ok
+    try:
+        actual_prologue = elf64_symbol_bytes(ROOT / TRUEAXIS_PATH, ADD_NODE_SYMBOL, len(ADD_NODE_PROLOGUE))
+        if actual_prologue != ADD_NODE_PROLOGUE:
+            ok = fail(
+                f"Replay::AddNode prologue changed: {actual_prologue.hex()} expected {ADD_NODE_PROLOGUE.hex()}"
+            ) and ok
+    except ValueError as error:
+        ok = fail(str(error)) and ok
 
     activity = (ROOT / "decompiled/smali/com/trueaxis/jetcarstunts2/Jetcarstunts2Activity.smali").read_text(
         encoding="utf-8"

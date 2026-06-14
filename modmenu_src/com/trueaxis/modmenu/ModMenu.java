@@ -229,7 +229,7 @@ public class ModMenu {
             card.addView(liveries, fill());
 
             TextView note = label(a,
-                    "Always active: offline IAP ownership compatibility, 999 checkpoint-time capacity, and blue flame visual identification. No configurable gameplay, replay, score, or native-value modifications are included.",
+                    "Always active: offline IAP ownership compatibility, 999 checkpoint-time capacity, blue flame visual identification, and a repeated flap-pulse marker recorded into mod-origin replays. No configurable gameplay, score, or native-value modifications are included.",
                     10, Color.rgb(150, 158, 165));
             note.setPadding(0, dp(a, 10), 0, 0);
             card.addView(note);

@@ -1964,7 +1964,7 @@
     invoke-virtual {v4, v1, v10}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
     .line 231
-    const-string v1, "Always active: offline IAP ownership compatibility, 999 checkpoint-time capacity, and blue flame visual identification. No configurable gameplay, replay, score, or native-value modifications are included."
+    const-string v1, "Always active: offline IAP ownership compatibility, 999 checkpoint-time capacity, blue flame visual identification, and a repeated flap-pulse marker recorded into mod-origin replays. No configurable gameplay, score, or native-value modifications are included."
 
     .line 233
     const/16 v10, 0x96

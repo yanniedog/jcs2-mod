@@ -33,8 +33,14 @@
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->applyUnlimitedCheckpoints()Z
 
     .line 16
+    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->installReplayVisualMarker()Z
+
+    .line 17
     return-void
 .end method
 
 .method private static native applyUnlimitedCheckpoints()Z
+.end method
+
+.method private static native installReplayVisualMarker()Z
 .end method

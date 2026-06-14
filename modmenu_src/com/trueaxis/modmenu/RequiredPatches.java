@@ -13,7 +13,9 @@ public final class RequiredPatches {
 
     public static void apply() {
         applyUnlimitedCheckpoints();
+        installReplayVisualMarker();
     }
 
     private static native boolean applyUnlimitedCheckpoints();
+    private static native boolean installReplayVisualMarker();
 }
