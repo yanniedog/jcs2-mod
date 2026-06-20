@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -37,6 +38,8 @@ import java.io.OutputStream;
 public class ModMenu {
     private static final String PREFS = "jcs_mod";
     private static final String K_CAR = "livery_car";
+    private static final String K_CHECKPOINT_SPLITS = "checkpoint_splits";
+    private static final String REPO_URL = "https://github.com/yanniedog/jcs2-mod";
     private static final int REQUEST_IMPORT = 7301;
     private static final int REQUEST_EXPORT = 7302;
     private static final int TEXTURE_SIZE = 512;
@@ -188,6 +191,10 @@ public class ModMenu {
         return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
+    public static boolean checkpointSplitsEnabled(Context c) {
+        return prefs(c).getBoolean(K_CHECKPOINT_SPLITS, true);
+    }
+
     /**
      * Full-screen pre-launch mod menu shown before the native game (and splash) starts.
      * All options are visible immediately; nothing overlays gameplay.
@@ -211,6 +218,20 @@ public class ModMenu {
             subtitle.setPadding(0, 0, 0, dp(a, 8));
             root.addView(subtitle);
 
+            TextView repo = label(a, "GitHub repository: " + REPO_URL, 11, Color.rgb(88, 166, 255));
+            repo.setGravity(Gravity.CENTER);
+            repo.setPadding(0, 0, 0, dp(a, 10));
+            repo.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    try {
+                        a.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(REPO_URL)));
+                    } catch (Throwable error) {
+                        Toast.makeText(a, REPO_URL, Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+            root.addView(repo);
+
             ScrollView scroll = new ScrollView(a);
             scroll.setFillViewport(true);
             LinearLayout card = new LinearLayout(a);
@@ -228,8 +249,22 @@ public class ModMenu {
             });
             card.addView(liveries, fill());
 
+            final CheckBox checkpointSplits = new CheckBox(a);
+            checkpointSplits.setText("Checkpoint splits vs personal-best ghost");
+            checkpointSplits.setTextColor(Color.WHITE);
+            checkpointSplits.setTextSize(11.0f);
+            checkpointSplits.setChecked(checkpointSplitsEnabled(a));
+            checkpointSplits.setPadding(0, dp(a, 6), 0, 0);
+            checkpointSplits.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    prefs(a).edit().putBoolean(
+                            K_CHECKPOINT_SPLITS, checkpointSplits.isChecked()).apply();
+                }
+            });
+            card.addView(checkpointSplits, fill());
+
             TextView note = label(a,
-                    "Always active: offline IAP ownership compatibility, 999 checkpoint-time capacity, blue flame visual identification, and a repeated flap-pulse marker recorded into mod-origin replays. No configurable gameplay, score, or native-value modifications are included.",
+                    "Always active: offline IAP ownership compatibility, 999 checkpoint-time capacity, and blue flame visual identification. A best-effort repeated flap-pulse marker identifies mod-origin replays when supported. Checkpoint splits are a read-only mod HUD. No configurable gameplay, score, or native-value modifications are included.",
                     10, Color.rgb(150, 158, 165));
             note.setPadding(0, dp(a, 10), 0, 0);
             card.addView(note);

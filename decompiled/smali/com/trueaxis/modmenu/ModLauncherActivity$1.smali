@@ -47,9 +47,6 @@
     .registers 4
 
     .line 19
-    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->apply()V
-
-    .line 20
     new-instance v0, Landroid/content/Intent;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModLauncherActivity$1;->this$0:Lcom/trueaxis/modmenu/ModLauncherActivity;
@@ -58,16 +55,16 @@
 
     invoke-direct {v0, v1, v2}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
 
-    .line 21
+    .line 20
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModLauncherActivity$1;->this$0:Lcom/trueaxis/modmenu/ModLauncherActivity;
 
     invoke-virtual {v1, v0}, Lcom/trueaxis/modmenu/ModLauncherActivity;->startActivity(Landroid/content/Intent;)V
 
-    .line 22
+    .line 21
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModLauncherActivity$1;->this$0:Lcom/trueaxis/modmenu/ModLauncherActivity;
 
     invoke-virtual {v0}, Lcom/trueaxis/modmenu/ModLauncherActivity;->finish()V
 
-    .line 23
+    .line 22
     return-void
 .end method

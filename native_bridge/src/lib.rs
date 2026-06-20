@@ -1,53 +1,52 @@
 #![no_std]
 
-use core::arch::asm;
-use core::ffi::{c_char, c_int, c_void};
+use core::ffi::{c_char, c_int, c_uint, c_void};
 use core::panic::PanicInfo;
 use core::ptr;
+use core::sync::atomic::{AtomicBool, Ordering};
 
 const RTLD_DEFAULT: *mut c_void = 0usize as *mut c_void;
 const RTLD_NOW: c_int = 2;
 const CHECKPOINT_LIMIT: c_int = 999;
-const PROT_READ: c_int = 1;
-const PROT_WRITE: c_int = 2;
-const PROT_EXEC: c_int = 4;
-const MAP_PRIVATE: c_int = 2;
-const MAP_ANONYMOUS: c_int = 0x20;
-const MAP_FAILED: *mut c_void = usize::MAX as *mut c_void;
+const DLC_ITEM_COUNT: usize = 0x200;
+const DLC_ITEM_SIZE: usize = 0x870;
+const DLC_PURCHASED_OFFSET: usize = 0x5c;
 
 const REPLAY_NODE_SIZE: usize = 0x14;
 const VISUAL_FLAGS_OFFSET: usize = 1;
 const MARKER_FRAMES: c_int = 6;
-const MARKER_EXTREME_FLAPS: u8 = 0xf0;
-const MARKER_FLAP_FLAG: u8 = 0x02;
-const NON_FLAP_FLAGS: u8 = 0x0d;
+const MAX_RECORDING_GROWTH: c_int = 16;
+const MARKER_POLL_MICROSECONDS: c_uint = 1000;
+const FLAPS_FULL_UP: u8 = 0xf0;
+const FLAPS_FULL_DOWN: u8 = 0x00;
+const PRESERVED_REPLAY_FLAGS: u8 = 0x0c;
+const REMARK_RECENT_NODES: c_int = 120;
 
-const ADD_NODE_PROLOGUE: [u32; 4] = [0xd10243ff, 0xf90033f5, 0xa9074ff4, 0xa9087bfd];
-const ABSOLUTE_JUMP_LDR_X16: u32 = 0x58000050;
-const ABSOLUTE_JUMP_BR_X16: u32 = 0xd61f0200;
-
-type AddNode = unsafe extern "C" fn(*mut c_void, *mut c_void);
+type ThreadStart = unsafe extern "C" fn(*mut c_void) -> *mut c_void;
 
 extern "C" {
     fn dlopen(filename: *const c_char, flags: c_int) -> *mut c_void;
     fn dlsym(handle: *mut c_void, symbol: *const c_char) -> *mut c_void;
-    fn mmap(
-        address: *mut c_void,
-        length: usize,
-        prot: c_int,
-        flags: c_int,
-        fd: c_int,
-        offset: isize,
-    ) -> *mut c_void;
-    fn mprotect(address: *mut c_void, length: usize, prot: c_int) -> c_int;
-    fn sysconf(name: c_int) -> isize;
+    fn pthread_create(
+        thread: *mut usize,
+        attributes: *const c_void,
+        start: ThreadStart,
+        argument: *mut c_void,
+    ) -> c_int;
+    fn pthread_detach(thread: usize) -> c_int;
+    fn usleep(microseconds: c_uint) -> c_int;
 }
 
 static mut TRUEAXIS_HANDLE: *mut c_void = ptr::null_mut();
-static mut ORIGINAL_ADD_NODE: Option<AddNode> = None;
+static mut CHECKPOINT_LIMIT_ADDRESS: *mut c_int = ptr::null_mut();
+static mut DLC_CONNECTIONS: *mut u8 = ptr::null_mut();
 static mut REPLAY_NODES: *mut *mut u8 = ptr::null_mut();
 static mut REPLAY_SIZE: *mut c_int = ptr::null_mut();
-static mut MARKER_INSTALLED: bool = false;
+static mut CHECKPOINT_TIMES: *mut *mut f32 = ptr::null_mut();
+static mut GHOST_CHECKPOINT_TIMES: *mut *mut f32 = ptr::null_mut();
+static mut CHECKPOINT_COUNT: *mut c_int = ptr::null_mut();
+static mut GHOST_CHECKPOINT_COUNT: *mut c_int = ptr::null_mut();
+static MARKER_WORKER_STARTED: AtomicBool = AtomicBool::new(false);
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -74,118 +73,124 @@ unsafe fn resolve(name: &'static [u8]) -> *mut c_void {
     address
 }
 
-unsafe fn page_protect(address: *mut c_void, length: usize, prot: c_int) -> bool {
-    let page_size = sysconf(30);
-    if page_size <= 0 {
-        return false;
-    }
-    let page_size = page_size as usize;
-    let start = address as usize & !(page_size - 1);
-    let end = (address as usize + length + page_size - 1) & !(page_size - 1);
-    mprotect(start as *mut c_void, end - start, prot) == 0
-}
-
-unsafe fn clear_instruction_cache(address: *mut c_void, length: usize) {
-    let mut cursor = address as usize & !63usize;
-    let end = address as usize + length;
-    while cursor < end {
-        asm!("dc cvau, {0}", in(reg) cursor, options(nostack));
-        cursor += 64;
-    }
-    asm!("dsb ish", options(nostack));
-    cursor = address as usize & !63usize;
-    while cursor < end {
-        asm!("ic ivau, {0}", in(reg) cursor, options(nostack));
-        cursor += 64;
-    }
-    asm!("dsb ish", options(nostack));
-    asm!("isb", options(nostack));
-}
-
-unsafe fn write_absolute_jump(destination: *mut u8, target: *const c_void) {
-    ptr::write_unaligned(destination as *mut u32, ABSOLUTE_JUMP_LDR_X16);
-    ptr::write_unaligned(destination.add(4) as *mut u32, ABSOLUTE_JUMP_BR_X16);
-    ptr::write_unaligned(destination.add(8) as *mut usize, target as usize);
-}
-
-unsafe extern "C" fn marked_add_node(replay: *mut c_void, car: *mut c_void) {
-    if let Some(original) = ORIGINAL_ADD_NODE {
-        original(replay, car);
-    } else {
-        return;
-    }
-
-    if REPLAY_SIZE.is_null() || REPLAY_NODES.is_null() {
-        return;
-    }
-    let size = ptr::read_volatile(REPLAY_SIZE);
-    let nodes = ptr::read_volatile(REPLAY_NODES);
-    if size < 1 || nodes.is_null() {
-        return;
-    }
-
-    let node_index = size - 1;
+unsafe fn mark_node(nodes: *mut u8, node_index: c_int) {
     let flags = nodes.add(node_index as usize * REPLAY_NODE_SIZE + VISUAL_FLAGS_OFFSET);
     let original_flags = ptr::read_volatile(flags);
-    let pulse_on = (node_index / MARKER_FRAMES) & 1 == 0;
-    let marker = if pulse_on {
-        MARKER_EXTREME_FLAPS | MARKER_FLAP_FLAG
+    let flaps = if (node_index / MARKER_FRAMES) & 1 == 0 {
+        FLAPS_FULL_UP
     } else {
-        0
+        FLAPS_FULL_DOWN
     };
-    ptr::write_volatile(flags, (original_flags & NON_FLAP_FLAGS) | marker);
+    ptr::write_volatile(flags, (original_flags & PRESERVED_REPLAY_FLAGS) | flaps);
+}
+
+unsafe fn mark_recent_nodes(nodes: *mut u8, size: c_int) {
+    let start = (size - REMARK_RECENT_NODES).max(0);
+    let mut index = start;
+    while index < size {
+        mark_node(nodes, index);
+        index += 1;
+    }
+}
+
+unsafe fn force_checkpoint_limit() -> bool {
+    if CHECKPOINT_LIMIT_ADDRESS.is_null() {
+        CHECKPOINT_LIMIT_ADDRESS = resolve(b"g_nMaxNumCheckPointTimes\0") as *mut c_int;
+    }
+    if CHECKPOINT_LIMIT_ADDRESS.is_null() {
+        return false;
+    }
+    ptr::write_volatile(CHECKPOINT_LIMIT_ADDRESS, CHECKPOINT_LIMIT);
+    true
+}
+
+unsafe fn force_iap_ownership() -> bool {
+    if DLC_CONNECTIONS.is_null() {
+        DLC_CONNECTIONS = resolve(b"g_dlcConnections\0") as *mut u8;
+    }
+    if DLC_CONNECTIONS.is_null() {
+        return false;
+    }
+    for index in 0..DLC_ITEM_COUNT {
+        ptr::write_volatile(
+            DLC_CONNECTIONS.add(index * DLC_ITEM_SIZE + DLC_PURCHASED_OFFSET),
+            1u8,
+        );
+    }
+    true
+}
+
+unsafe extern "C" fn replay_marker_worker(_argument: *mut c_void) -> *mut c_void {
+    let mut observed_size = ptr::read_volatile(REPLAY_SIZE).max(0);
+    let mut observed_nodes = ptr::read_volatile(REPLAY_NODES);
+    let mut recording_active = false;
+    let mut slow_patch_tick = 0u8;
+    loop {
+        usleep(MARKER_POLL_MICROSECONDS);
+        force_checkpoint_limit();
+        slow_patch_tick = slow_patch_tick.wrapping_add(1);
+        if slow_patch_tick == 0 {
+            force_iap_ownership();
+        }
+        let size = ptr::read_volatile(REPLAY_SIZE).max(0);
+        let nodes = ptr::read_volatile(REPLAY_NODES);
+        if nodes.is_null() {
+            observed_nodes = nodes;
+            observed_size = size;
+            recording_active = false;
+            continue;
+        }
+        if nodes != observed_nodes || size < observed_size {
+            observed_nodes = nodes;
+            observed_size = size;
+            recording_active = false;
+            continue;
+        }
+        if size == observed_size {
+            if recording_active {
+                mark_recent_nodes(nodes, size);
+            }
+            observed_size = size;
+            continue;
+        }
+
+        let growth = size - observed_size;
+        if growth <= MAX_RECORDING_GROWTH {
+            recording_active = true;
+            mark_recent_nodes(nodes, size);
+        } else {
+            // Replay loading/decompression occurs as a large jump. Never mark viewed replays.
+            recording_active = false;
+        }
+        observed_size = size;
+    }
 }
 
 unsafe fn install_replay_marker() -> bool {
-    if MARKER_INSTALLED {
+    if MARKER_WORKER_STARTED.load(Ordering::Acquire) {
         return true;
     }
-
-    let add_node = resolve(b"_ZN6Replay7AddNodeEP3Car\0") as *mut u8;
     REPLAY_NODES = resolve(b"g_pReplay\0") as *mut *mut u8;
     REPLAY_SIZE = resolve(b"g_nReplaySize\0") as *mut c_int;
-    if add_node.is_null() || REPLAY_NODES.is_null() || REPLAY_SIZE.is_null() {
+    if REPLAY_NODES.is_null() || REPLAY_SIZE.is_null() {
         return false;
     }
-    for (index, expected) in ADD_NODE_PROLOGUE.iter().enumerate() {
-        if ptr::read_unaligned(add_node.add(index * 4) as *const u32) != *expected {
-            return false;
-        }
-    }
 
-    let trampoline = mmap(
+    if MARKER_WORKER_STARTED.swap(true, Ordering::AcqRel) {
+        return true;
+    }
+    let mut thread = 0usize;
+    if pthread_create(
+        &mut thread,
+        ptr::null(),
+        replay_marker_worker,
         ptr::null_mut(),
-        32,
-        PROT_READ | PROT_WRITE,
-        MAP_PRIVATE | MAP_ANONYMOUS,
-        -1,
-        0,
-    ) as *mut u8;
-    if trampoline as *mut c_void == MAP_FAILED || trampoline.is_null() {
+    ) != 0
+    {
+        MARKER_WORKER_STARTED.store(false, Ordering::Release);
         return false;
     }
-    ptr::copy_nonoverlapping(add_node, trampoline, 16);
-    write_absolute_jump(trampoline.add(16), add_node.add(16) as *const c_void);
-    clear_instruction_cache(trampoline as *mut c_void, 32);
-    if !page_protect(trampoline as *mut c_void, 32, PROT_READ | PROT_EXEC) {
-        return false;
-    }
-    ORIGINAL_ADD_NODE = Some(core::mem::transmute::<*mut u8, AddNode>(trampoline));
-
-    if !page_protect(
-        add_node as *mut c_void,
-        16,
-        PROT_READ | PROT_WRITE | PROT_EXEC,
-    ) {
-        ORIGINAL_ADD_NODE = None;
-        return false;
-    }
-    write_absolute_jump(add_node, marked_add_node as *const c_void);
-    clear_instruction_cache(add_node as *mut c_void, 16);
-    if !page_protect(add_node as *mut c_void, 16, PROT_READ | PROT_EXEC) {
-        return false;
-    }
-    MARKER_INSTALLED = true;
+    pthread_detach(thread);
     true
 }
 
@@ -194,12 +199,9 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_applyUnlimite
     _env: *mut c_void,
     _class: *mut c_void,
 ) -> u8 {
-    let address = resolve(b"g_nMaxNumCheckPointTimes\0") as *mut c_int;
-    if address.is_null() {
-        return 0;
-    }
-    ptr::write_volatile(address, CHECKPOINT_LIMIT);
-    1
+    let checkpoints = force_checkpoint_limit();
+    let iap = force_iap_ownership();
+    (checkpoints && iap) as u8
 }
 
 #[no_mangle]
@@ -208,4 +210,37 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_installReplay
     _class: *mut c_void,
 ) -> u8 {
     install_replay_marker() as u8
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLatestCheckpointSplit(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> i64 {
+    if CHECKPOINT_TIMES.is_null() {
+        CHECKPOINT_TIMES = resolve(b"g_pfCheckPointTimes\0") as *mut *mut f32;
+        GHOST_CHECKPOINT_TIMES = resolve(b"g_pfGhostCheckPointTimes\0") as *mut *mut f32;
+        CHECKPOINT_COUNT = resolve(b"g_nNumCheckPointTimes\0") as *mut c_int;
+        GHOST_CHECKPOINT_COUNT = resolve(b"g_nNumGhostCheckPointTimes\0") as *mut c_int;
+    }
+    if CHECKPOINT_TIMES.is_null()
+        || GHOST_CHECKPOINT_TIMES.is_null()
+        || CHECKPOINT_COUNT.is_null()
+        || GHOST_CHECKPOINT_COUNT.is_null()
+    {
+        return 0;
+    }
+
+    let count = ptr::read_volatile(CHECKPOINT_COUNT).max(0);
+    let ghost_count = ptr::read_volatile(GHOST_CHECKPOINT_COUNT).max(0);
+    let current = ptr::read_volatile(CHECKPOINT_TIMES);
+    let ghost = ptr::read_volatile(GHOST_CHECKPOINT_TIMES);
+    if ghost_count < 1 || count < 1 || count > ghost_count || current.is_null() || ghost.is_null() {
+        return 0;
+    }
+
+    let index = (count - 1) as usize;
+    let difference = ptr::read_volatile(current.add(index)) - ptr::read_volatile(ghost.add(index));
+    let milliseconds = (difference * 1000.0) as i32;
+    ((count as i64) << 32) | (milliseconds as u32 as i64)
 }

@@ -18,17 +18,17 @@
 .method protected onActivityResult(IILandroid/content/Intent;)V
     .registers 5
 
-    .line 29
+    .line 28
     invoke-static {p0, p1, p2, p3}, Lcom/trueaxis/modmenu/ModMenu;->handleActivityResult(Landroid/app/Activity;IILandroid/content/Intent;)Z
 
     move-result v0
 
     if-nez v0, :cond_9
 
-    .line 30
+    .line 29
     invoke-super {p0, p1, p2, p3}, Landroid/app/Activity;->onActivityResult(IILandroid/content/Intent;)V
 
-    .line 32
+    .line 31
     :cond_9
     return-void
 .end method
@@ -46,6 +46,6 @@
 
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
 
-    .line 25
+    .line 24
     return-void
 .end method

@@ -22,24 +22,20 @@
 
 .field final synthetic val$cars:Landroid/widget/Spinner;
 
-.field final synthetic val$refresh:Ljava/lang/Runnable;
-
 
 # direct methods
-.method constructor <init>(Landroid/widget/Spinner;Landroid/app/Activity;Ljava/lang/Runnable;)V
-    .registers 4
+.method constructor <init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
+    .registers 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 379
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$cars:Landroid/widget/Spinner;
+    .line 380
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
-
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$refresh:Ljava/lang/Runnable;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$cars:Landroid/widget/Spinner;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -49,56 +45,72 @@
 
 # virtual methods
 .method public onClick(Landroid/view/View;)V
-    .registers 5
-
-    .line 381
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$cars:Landroid/widget/Spinner;
-
-    invoke-virtual {p1}, Landroid/widget/Spinner;->getSelectedItemPosition()I
-
-    move-result p1
+    .registers 4
 
     .line 382
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
 
-    invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModMenu;->deleteCustomLivery(Landroid/content/Context;I)V
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$cars:Landroid/widget/Spinner;
 
-    .line 383
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$refresh:Ljava/lang/Runnable;
-
-    invoke-interface {v0}, Ljava/lang/Runnable;->run()V
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$000(Landroid/content/Context;Landroid/widget/Spinner;)V
 
     .line 384
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
+    :try_start_7
+    new-instance p1, Landroid/content/Intent;
 
-    new-instance v1, Ljava/lang/StringBuilder;
+    sget v0, Landroid/os/Build$VERSION;->SDK_INT:I
 
-    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+    const/16 v1, 0x13
 
-    # getter for: Lcom/trueaxis/modmenu/ModMenu;->CAR_NAMES:[Ljava/lang/String;
-    invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->access$400()[Ljava/lang/String;
-
-    move-result-object v2
-
-    aget-object p1, v2, p1
-
-    invoke-virtual {v1, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p1
-
-    const-string v1, " restored. Restart the game to apply."
-
-    invoke-virtual {p1, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p1
-
-    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p1
-
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Ljava/lang/String;)V
+    if-lt v0, v1, :cond_12
 
     .line 385
+    const-string v0, "android.intent.action.OPEN_DOCUMENT"
+
+    goto :goto_14
+
+    :cond_12
+    const-string v0, "android.intent.action.GET_CONTENT"
+
+    :goto_14
+    invoke-direct {p1, v0}, Landroid/content/Intent;-><init>(Ljava/lang/String;)V
+
+    .line 386
+    const-string v0, "android.intent.category.OPENABLE"
+
+    invoke-virtual {p1, v0}, Landroid/content/Intent;->addCategory(Ljava/lang/String;)Landroid/content/Intent;
+
+    .line 387
+    const-string v0, "image/*"
+
+    invoke-virtual {p1, v0}, Landroid/content/Intent;->setType(Ljava/lang/String;)Landroid/content/Intent;
+
+    .line 388
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
+
+    const/16 v1, 0x1c85
+
+    invoke-virtual {v0, p1, v1}, Landroid/app/Activity;->startActivityForResult(Landroid/content/Intent;I)V
+    :try_end_28
+    .catchall {:try_start_7 .. :try_end_28} :catchall_29
+
+    .line 391
+    goto :goto_31
+
+    .line 389
+    :catchall_29
+    move-exception p1
+
+    .line 390
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
+
+    const-string v0, "No file picker available on this device."
+
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Ljava/lang/String;)V
+
+    .line 392
+    :goto_31
     return-void
 .end method

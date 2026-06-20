@@ -41,13 +41,47 @@
 
 # virtual methods
 .method public onClick(Landroid/view/View;)V
-    .registers 2
-
-    .line 226
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
-
-    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+    .registers 6
 
     .line 227
+    const-string p1, "https://github.com/yanniedog/jcs2-mod"
+
+    :try_start_2
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
+
+    new-instance v1, Landroid/content/Intent;
+
+    const-string v2, "android.intent.action.VIEW"
+
+    invoke-static {p1}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
+
+    move-result-object v3
+
+    invoke-direct {v1, v2, v3}, Landroid/content/Intent;-><init>(Ljava/lang/String;Landroid/net/Uri;)V
+
+    invoke-virtual {v0, v1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
+    :try_end_12
+    .catchall {:try_start_2 .. :try_end_12} :catchall_13
+
+    .line 230
+    goto :goto_1e
+
+    .line 228
+    :catchall_13
+    move-exception v0
+
+    .line 229
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
+
+    const/4 v1, 0x1
+
+    invoke-static {v0, p1, v1}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
+
+    move-result-object p1
+
+    invoke-virtual {p1}, Landroid/widget/Toast;->show()V
+
+    .line 231
+    :goto_1e
     return-void
 .end method

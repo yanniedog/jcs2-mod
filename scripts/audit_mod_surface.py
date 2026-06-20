@@ -13,9 +13,6 @@ EXPECTED_LIVERY_SHA1 = "718XOktjbUHjlNXZXRC0xgDF0+U="
 LIVERY_PATH = Path("decompiled/assets/cars/original/rocketcar1.png")
 APK_LIVERY_PATH = "assets/cars/original/rocketcar1.png"
 TRUEAXIS_PATH = Path("decompiled/lib/arm64-v8a/libtrueaxis.so")
-ADD_NODE_SYMBOL = b"_ZN6Replay7AddNodeEP3Car"
-ADD_NODE_PROLOGUE = bytes.fromhex("ff4302d1f53300f9f44f07a9fd7b08a9")
-
 FORBIDDEN = (
     b"NativeMods",
     b"MODS & CHEATS",
@@ -95,22 +92,25 @@ def elf64_symbol_bytes(path, wanted, length):
 def check_marker_invariants():
     ok = True
     marker_frames = 6
-    non_flap_flags = 0x0D
-    flap_flag = 0x02
-    extreme_flaps = 0xF0
+    preserved_replay_flags = 0x0C
+    flaps_full_up = 0xF0
+    flaps_full_down = 0x00
 
     for original in range(256):
         marked = []
         for index in range(marker_frames * 4):
-            pulse_on = (index // marker_frames) & 1 == 0
-            marker = extreme_flaps | flap_flag if pulse_on else 0
-            result = (original & non_flap_flags) | marker
+            flaps = flaps_full_up if (index // marker_frames) & 1 == 0 else flaps_full_down
+            result = (original & preserved_replay_flags) | flaps
             marked.append(result)
-            if result & non_flap_flags != original & non_flap_flags:
-                ok = fail(f"marker changed non-flap flags for original byte {original:#04x}") and ok
-        for boundary in range(marker_frames, len(marked), marker_frames):
-            if ((marked[boundary - 1] ^ marked[boundary]) & 0x0F) == 0:
-                ok = fail(f"marker transition at frame {boundary} would not force a compressor keyframe") and ok
+            if result & preserved_replay_flags != original & preserved_replay_flags:
+                ok = fail(
+                    f"marker changed preserved brake/respawn flags for original byte {original:#04x}"
+                ) and ok
+            if result & 0x03 != 0:
+                ok = fail(f"marker did not neutralize flap-driver bits for original byte {original:#04x}") and ok
+            expected_flaps = flaps_full_up if (index // marker_frames) & 1 == 0 else flaps_full_down
+            if result & 0xF0 != expected_flaps:
+                ok = fail(f"marker did not set synchronized flap extreme at frame {index}") and ok
     return ok
 
 
@@ -131,49 +131,75 @@ def check_sources():
         "g_nMaxNumCheckPointTimes",
         "g_nReplaySize",
         "g_pReplay",
-        "_ZN6Replay7AddNodeEP3Car",
+        "g_dlcConnections",
+        "g_pfCheckPointTimes",
+        "g_pfGhostCheckPointTimes",
+        "g_nNumCheckPointTimes",
+        "g_nNumGhostCheckPointTimes",
     )
     for line in bridge.splitlines():
         if 'resolve(b"' in line and not any(symbol in line for symbol in allowed_native_symbols):
             ok = fail(f"native bridge resolves an unapproved symbol: {line.strip()}") and ok
     if "RequiredPatches_applyUnlimitedCheckpoints" not in bridge:
         ok = fail("checkpoint-only JNI entry point is missing") and ok
+    if "force_checkpoint_limit();" not in bridge or "CHECKPOINT_LIMIT_ADDRESS" not in bridge:
+        ok = fail("unlimited checkpoint capacity is not continuously hardwired") and ok
     if "RequiredPatches_installReplayVisualMarker" not in bridge:
         ok = fail("narrow replay visual marker JNI entry point is missing") and ok
-    if "original_flags & NON_FLAP_FLAGS" not in bridge or "NON_FLAP_FLAGS: u8 = 0x0d" not in bridge:
-        ok = fail("replay marker does not preserve rocket, brake, and respawn replay flags") and ok
-    if bridge.count("ptr::write_volatile(") != 2:
-        ok = fail("native bridge must have exactly two value writes: checkpoints and replay visual flags") and ok
+    if "RequiredPatches_readLatestCheckpointSplit" not in bridge:
+        ok = fail("read-only checkpoint split JNI entry point is missing") and ok
+    if "checkpointCount > lastCheckpointCount + 1" not in (
+        ROOT / "modmenu_src/com/trueaxis/modmenu/SplitTimeHud.java"
+    ).read_text(encoding="utf-8"):
+        ok = fail("checkpoint split HUD no longer suppresses replay-load checkpoint jumps") and ok
+    if (
+        "original_flags & PRESERVED_REPLAY_FLAGS" not in bridge
+        or "PRESERVED_REPLAY_FLAGS: u8 = 0x0c" not in bridge
+    ):
+        ok = fail("replay marker does not preserve brake/resting and respawn replay flags") and ok
+    if "REMARK_RECENT_NODES: c_int = 120" not in bridge or "mark_recent_nodes(nodes, size)" not in bridge:
+        ok = fail("replay marker no longer re-marks recent nodes after live capture completes") and ok
+    if bridge.count("ptr::write_volatile(") != 3:
+        ok = fail("native bridge must have exactly three value writes: IAP ownership, checkpoints, and replay visual flags") and ok
+    if "DLC_PURCHASED_OFFSET: usize = 0x5c" not in bridge or "DLC_ITEM_COUNT: usize = 0x200" not in bridge:
+        ok = fail("retained IAP ownership patch no longer targets stock DLC purchase flags") and ok
     if "REPLAY_NODE_SIZE: usize = 0x14" not in bridge or "VISUAL_FLAGS_OFFSET: usize = 1" not in bridge:
         ok = fail("replay marker node size or visual-only field offset changed") and ok
-    if "MARKER_EXTREME_FLAPS: u8 = 0xf0" not in bridge:
-        ok = fail("replay marker no longer uses the reserved stock flap value") and ok
-    if "MARKER_FLAP_FLAG: u8 = 0x02" not in bridge:
-        ok = fail("replay marker no longer forces compression-preserved flap transitions") and ok
+    if "FLAPS_FULL_UP: u8 = 0xf0" not in bridge or "FLAPS_FULL_DOWN: u8 = 0x00" not in bridge:
+        ok = fail("replay marker no longer oscillates the synchronized stock flap field") and ok
+    if "growth <= MAX_RECORDING_GROWTH" not in bridge or "Never mark viewed replays" not in bridge:
+        ok = fail("replay marker no longer skips replay loading/decompression") and ok
+    if "pthread_create(" not in bridge or "replay_marker_worker" not in bridge:
+        ok = fail("replay marker worker is missing") and ok
 
     required_patches = (ROOT / "modmenu_src/com/trueaxis/modmenu/RequiredPatches.java").read_text(
         encoding="utf-8"
     )
-    if 'throw new IllegalStateException("Replay visual marker unavailable")' not in required_patches:
-        ok = fail("gameplay does not fail closed when replay marker installation fails") and ok
-    try:
-        actual_prologue = elf64_symbol_bytes(ROOT / TRUEAXIS_PATH, ADD_NODE_SYMBOL, len(ADD_NODE_PROLOGUE))
-        if actual_prologue != ADD_NODE_PROLOGUE:
-            ok = fail(
-                f"Replay::AddNode prologue changed: {actual_prologue.hex()} expected {ADD_NODE_PROLOGUE.hex()}"
-            ) and ok
-    except ValueError as error:
-        ok = fail(str(error)) and ok
+    if "installReplayVisualMarker();" not in required_patches:
+        ok = fail("gameplay does not attempt to install the replay visual marker") and ok
+    if 'throw new IllegalStateException("Replay visual marker unavailable")' in required_patches:
+        ok = fail("optional replay marker failure must not crash game startup") and ok
+    if "catch (Throwable error)" not in required_patches or "NATIVE_AVAILABLE" not in required_patches:
+        ok = fail("native patch failures are not isolated from game startup") and ok
 
+    launcher = (ROOT / "modmenu_src/com/trueaxis/modmenu/ModLauncherActivity.java").read_text(
+        encoding="utf-8"
+    )
+    if "RequiredPatches.apply()" in launcher:
+        ok = fail("launcher applies native patches before the game activity is ready") and ok
     activity = (ROOT / "decompiled/smali/com/trueaxis/jetcarstunts2/Jetcarstunts2Activity.smali").read_text(
         encoding="utf-8"
     )
-    if "RequiredPatches;->apply()V" not in activity:
+    if "RequiredPatches;->apply(Landroid/app/Activity;)V" not in activity:
         ok = fail("game activity does not apply the retained checkpoint patch") and ok
 
     stub = (ROOT / "decompiled/smali/com/trueaxis/server/Stub.smali").read_text(encoding="utf-8")
     if ".method public static ownAll()V" not in stub:
         ok = fail("retained IAP ownership compatibility stub is missing") and ok
+    interface = (ROOT / "decompiled/smali/com/trueaxis/game/Interface.smali").read_text(encoding="utf-8")
+    add_sku = interface.split(".method public static addSkuToList", 1)[-1].split(".end method", 1)[0]
+    if "TrueaxisLib;->purchaseSuccess" not in add_sku:
+        ok = fail("SKU registration no longer hardwires retained IAP ownership compatibility") and ok
 
     livery = (ROOT / LIVERY_PATH).read_bytes()
     actual_livery_sha1 = sha1_base64(livery)

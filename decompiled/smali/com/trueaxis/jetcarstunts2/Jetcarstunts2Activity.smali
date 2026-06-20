@@ -689,7 +689,7 @@
 
     invoke-virtual {p0, v1}, Lcom/trueaxis/jetcarstunts2/Jetcarstunts2Activity;->setContentView(Landroid/view/View;)V
 
-    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->apply()V
+    invoke-static {p0}, Lcom/trueaxis/modmenu/RequiredPatches;->apply(Landroid/app/Activity;)V
 
     .line 74
     invoke-static {p0}, Lcom/trueaxis/game/Interface;->initialise(Landroid/content/Context;)V

@@ -15,3 +15,15 @@ pub extern "C" fn mprotect() {}
 pub extern "C" fn sysconf() {}
 #[no_mangle]
 pub extern "C" fn mmap() {}
+#[no_mangle]
+pub extern "C" fn pthread_create() {}
+#[no_mangle]
+pub extern "C" fn pthread_detach() {}
+#[no_mangle]
+pub extern "C" fn usleep() {}
+#[no_mangle]
+pub extern "C" fn open() {}
+#[no_mangle]
+pub extern "C" fn write() {}
+#[no_mangle]
+pub extern "C" fn close() {}

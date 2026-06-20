@@ -1,12 +1,11 @@
-# ============================================================
-#  Jet Car Stunts 2 (community mod) — repo ignore rules
-#  Tracked: the editable decompiled source (smali, res,
-#  manifest, native lib). Everything below is excluded
-#  because it is secret, regenerable, or too large for git.
-# ============================================================
+# Jet Car Stunts 2 community mod ignore rules
+#
+# Tracked files are the editable decompiled source, mod menu source,
+# native bridge source/stubs, and small deterministic overlays.
+# Ignored files are secrets, build products, local test harnesses, or
+# regenerated tool output.
 
-# --- Secrets: NEVER commit the signing key (contains the private key) ---
-# Keep jcs2.keystore backed up somewhere safe & offline instead.
+# Signing secrets
 *.keystore
 *.jks
 *.p12
@@ -14,38 +13,34 @@
 keystore.properties
 key.properties
 
-# --- Build outputs (regenerate with: apktool b -> zipalign -> apksigner) ---
+# Android package outputs
 *.apk
 *.aab
 *.idsig
 *.apk.idsig
 
-# --- apktool build intermediates ---
+# Build and test intermediates
 decompiled/build/
 decompiled/dist/
 native_bridge/target/
-_apk_build_*/
+_apk_build/
+_modmenu_build/
 _modmenu_build_*/
-_ghidra_livery*/
-
-# --- Large static game media (~227 MB, unchanged from the original APK).
-#     Excluded to keep the repo small. They remain in your working copy,
-#     so local `apktool b` still works. To rebuild from a FRESH clone,
-#     copy decompiled/assets/ back in from the original APK first. ---
-decompiled/assets/
-
-# --- Downloaded tooling (apktool.jar, jadx; large & re-downloadable) ---
-tools/
-
-# --- jadx readable-Java output (regenerate from classes.dex; reference only) ---
-jadx-out/
-
-# --- Loose decompiled dex / verification scratch ---
-*.dex
+_stock_debug/
 _verify*/
 _manifest/
+_ghidra*/
 
-# --- OS / editor cruft ---
+# Large static game media copied from the original APK.
+# Keep these locally for apktool rebuilds; restore from the stock APK in a fresh clone.
+decompiled/assets/
+
+# Downloaded/recreated tools and reference output
+tools/
+jadx-out/
+*.dex
+
+# OS/editor files
 .DS_Store
 Thumbs.db
 desktop.ini

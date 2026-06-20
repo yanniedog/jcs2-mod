@@ -46,7 +46,7 @@
 .end method
 
 .method public static addSkuToList(Ljava/lang/String;)V
-    .locals 2
+    .locals 3
 
     .line 35
     sget-object v0, Lcom/trueaxis/game/Interface;->moreSkus:Ljava/util/ArrayList;
@@ -82,6 +82,14 @@
     sget-object v0, Lcom/trueaxis/game/Interface;->moreSkus:Ljava/util/ArrayList;
 
     invoke-virtual {v0, p0}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+
+    const-string v0, "{}"
+
+    const-string v1, ""
+
+    const/4 v2, 0x0
+
+    invoke-static {p0, v0, v1, v2}, Lcom/trueaxis/cLib/TrueaxisLib;->purchaseSuccess(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
 
     return-void
 .end method

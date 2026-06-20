@@ -8,7 +8,7 @@
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+    value = Lcom/trueaxis/modmenu/ModMenu;->showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -20,11 +20,11 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$cars:Landroid/widget/Spinner;
+.field final synthetic val$checkpointSplits:Landroid/widget/CheckBox;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
+.method constructor <init>(Landroid/app/Activity;Landroid/widget/CheckBox;)V
     .registers 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
@@ -32,10 +32,10 @@
         }
     .end annotation
 
-    .line 295
+    .line 258
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$cars:Landroid/widget/Spinner;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$checkpointSplits:Landroid/widget/CheckBox;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -47,58 +47,34 @@
 .method public onClick(Landroid/view/View;)V
     .registers 4
 
-    .line 297
+    .line 260
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
 
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$cars:Landroid/widget/Spinner;
+    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$000(Landroid/content/Context;Landroid/widget/Spinner;)V
+    move-result-object p1
 
-    .line 299
-    :try_start_7
-    new-instance p1, Landroid/content/Intent;
+    invoke-interface {p1}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
 
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
+    move-result-object p1
 
-    const-class v1, Lcom/trueaxis/modmenu/LiveryDesignerActivity;
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$checkpointSplits:Landroid/widget/CheckBox;
 
-    invoke-direct {p1, v0, v1}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
+    .line 261
+    invoke-virtual {v0}, Landroid/widget/CheckBox;->isChecked()Z
 
-    .line 300
-    const-string v0, "car"
+    move-result v0
 
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$cars:Landroid/widget/Spinner;
+    .line 260
+    const-string v1, "checkpoint_splits"
 
-    invoke-virtual {v1}, Landroid/widget/Spinner;->getSelectedItemPosition()I
+    invoke-interface {p1, v1, v0}, Landroid/content/SharedPreferences$Editor;->putBoolean(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;
 
-    move-result v1
+    move-result-object p1
 
-    invoke-virtual {p1, v0, v1}, Landroid/content/Intent;->putExtra(Ljava/lang/String;I)Landroid/content/Intent;
+    .line 261
+    invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 301
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
-
-    invoke-virtual {v0, p1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
-    :try_end_20
-    .catchall {:try_start_7 .. :try_end_20} :catchall_21
-
-    .line 304
-    goto :goto_29
-
-    .line 302
-    :catchall_21
-    move-exception p1
-
-    .line 303
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
-
-    const-string v0, "Could not open the designer."
-
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Ljava/lang/String;)V
-
-    .line 305
-    :goto_29
+    .line 262
     return-void
 .end method

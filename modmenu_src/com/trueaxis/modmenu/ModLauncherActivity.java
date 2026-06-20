@@ -16,7 +16,6 @@ public class ModLauncherActivity extends Activity {
         super.onCreate(savedInstanceState);
         ModMenu.showPreLaunchMenu(this, new Runnable() {
             public void run() {
-                RequiredPatches.apply();
                 Intent game = new Intent(ModLauncherActivity.this, Jetcarstunts2Activity.class);
                 startActivity(game);
                 finish();
