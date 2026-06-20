@@ -114,7 +114,7 @@ def check_marker_invariants():
     return ok
 
 
-def check_sources():
+def check_sources(skip_local_assets=False):
     ok = check_marker_invariants()
     for target in SOURCE_TARGETS:
         path = ROOT / target
@@ -201,12 +201,13 @@ def check_sources():
     if "TrueaxisLib;->purchaseSuccess" not in add_sku:
         ok = fail("SKU registration no longer hardwires retained IAP ownership compatibility") and ok
 
-    livery = (ROOT / LIVERY_PATH).read_bytes()
-    actual_livery_sha1 = sha1_base64(livery)
-    if actual_livery_sha1 != EXPECTED_LIVERY_SHA1:
-        ok = fail(
-            f"stock bundled livery SHA-1 is {actual_livery_sha1}, expected {EXPECTED_LIVERY_SHA1}"
-        ) and ok
+    if not skip_local_assets:
+        livery = (ROOT / LIVERY_PATH).read_bytes()
+        actual_livery_sha1 = sha1_base64(livery)
+        if actual_livery_sha1 != EXPECTED_LIVERY_SHA1:
+            ok = fail(
+                f"stock bundled livery SHA-1 is {actual_livery_sha1}, expected {EXPECTED_LIVERY_SHA1}"
+            ) and ok
     return ok
 
 
@@ -245,9 +246,14 @@ def check_apk(apk_path):
 def main():
     parser = argparse.ArgumentParser(description="Audit the retained JCS2 mod surface.")
     parser.add_argument("--apk", type=Path, help="also inspect a built signed APK")
+    parser.add_argument(
+        "--skip-local-assets",
+        action="store_true",
+        help="skip checks that require the ignored decompiled/assets tree",
+    )
     args = parser.parse_args()
 
-    ok = check_sources()
+    ok = check_sources(skip_local_assets=args.skip_local_assets)
     if args.apk:
         ok = check_apk(args.apk.resolve()) and ok
     if not ok:

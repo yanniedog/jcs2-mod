@@ -1,0 +1,69 @@
+name: pr-ci
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: pr-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  mod-surface:
+    name: mod surface audit and generated-code check
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Android SDK build tools
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        shell: pwsh
+        run: sdkmanager "platforms;android-28" "build-tools;36.1.0"
+
+      - name: Install CI tools
+        shell: pwsh
+        run: .\scripts\ci_install_tools.ps1
+
+      - name: Install Rust Android target
+        shell: pwsh
+        run: rustup target add aarch64-linux-android
+
+      - name: Rust format check
+        shell: pwsh
+        run: cargo fmt --manifest-path native_bridge\Cargo.toml -- --check
+
+      - name: Build native bridge
+        shell: pwsh
+        run: .\build_native.ps1
+
+      - name: Build mod launcher smali
+        shell: pwsh
+        run: .\build_modmenu.ps1
+
+      - name: Verify generated outputs are committed
+        shell: pwsh
+        run: |
+          git diff --exit-code -- `
+            decompiled/lib/arm64-v8a/libjcs2mod.so `
+            decompiled/smali/com/trueaxis/modmenu
+
+      - name: Anti-cheat source audit
+        shell: pwsh
+        run: python scripts\audit_mod_surface.py --skip-local-assets
