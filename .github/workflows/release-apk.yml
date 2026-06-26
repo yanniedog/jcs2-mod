@@ -115,7 +115,7 @@ jobs:
           $apkName = "${{ steps.version.outputs.apk_name }}"
           $tagName = "${{ steps.version.outputs.tag_name }}"
           $manifest = Join-Path "apks" "jcs2-update.json"
-          [ordered]@{
+          $manifestJson = [ordered]@{
             schema = 1
             package_name = "modded.ycs2"
             version_name = "${{ steps.version.outputs.version_name }}"
@@ -129,7 +129,12 @@ jobs:
             release_url = "https://github.com/$repo/releases/tag/$tagName"
             manifest_url = "https://github.com/$repo/releases/latest/download/jcs2-update.json"
             published_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-          } | ConvertTo-Json | Set-Content -LiteralPath $manifest -Encoding UTF8
+          } | ConvertTo-Json
+          [System.IO.File]::WriteAllText(
+            [System.IO.Path]::GetFullPath($manifest),
+            $manifestJson + [Environment]::NewLine,
+            [System.Text.UTF8Encoding]::new($false)
+          )
           "apk_path=$apk" >> $env:GITHUB_OUTPUT
           "manifest_path=$manifest" >> $env:GITHUB_OUTPUT
           "sha256=$hash" >> $env:GITHUB_OUTPUT
