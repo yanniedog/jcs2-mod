@@ -110,7 +110,7 @@
 .method private static dp(Landroid/app/Activity;I)I
     .registers 2
 
-    .line 339
+    .line 331
     int-to-float p1, p1
 
     invoke-virtual {p0}, Landroid/app/Activity;->getResources()Landroid/content/res/Resources;
@@ -284,6 +284,6 @@
 
     invoke-virtual {v0, v2}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
 
-    .line 336
+    .line 328
     return-void
 .end method

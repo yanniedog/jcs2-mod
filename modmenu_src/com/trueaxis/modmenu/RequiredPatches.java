@@ -59,17 +59,6 @@ public final class RequiredPatches {
         } else {
             ModDebugLog.log("checkpoint split HUD disabled");
         }
-        if (ModMenu.ghostRouteEnabled(activity)) {
-            ModDebugLog.log("ghost route overlay enabled");
-            try {
-                GhostRouteOverlay.install(activity);
-            } catch (Throwable error) {
-                Log.e(TAG, "Could not install ghost route overlay", error);
-                ModDebugLog.log("Could not install ghost route overlay", error);
-            }
-        } else {
-            ModDebugLog.log("ghost route overlay disabled");
-        }
         ModDebugLog.logRuntime("after RequiredPatches.apply");
     }
 
@@ -106,7 +95,4 @@ public final class RequiredPatches {
     static native int readSplitGhostRetrySkipCount();
     static native int readSplitGhostSize();
     static native int readSplitShowReplayFlag();
-    static native int readGhostRoutePointCount();
-    static native int readGhostRoute(float[] out);
-    static native int readGhostViewMatrices(float[] out);
 }

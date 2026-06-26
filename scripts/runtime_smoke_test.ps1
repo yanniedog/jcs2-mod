@@ -1,5 +1,5 @@
 param(
-    [string]$ApkPath = "jcs_modded.apk",
+    [string]$ApkPath = "jcs2-mod.apk",
     [string]$Package = "modded.ycs2",
     [string]$LauncherActivity = "com.trueaxis.modmenu.ModLauncherActivity",
     [int]$Cycles = 5,
@@ -206,7 +206,7 @@ function Assert-NoCrashEvidence {
     if ($publicDebugLog -notmatch "permission WRITE_EXTERNAL_STORAGE=" -or $publicDebugLog -notmatch "process exit history") {
         throw "Debug log is missing detailed storage/exit-history diagnostics. See $CycleDir"
     }
-    if ($debugLog -match "UNCAUGHT|Could not install checkpoint split HUD|split HUD poll failed|START GAME failed") {
+    if ($debugLog -match "UNCAUGHT|Could not install checkpoint split HUD|split HUD poll failed|Start game failed") {
         throw "App debug log contains failure evidence. See $CycleDir"
     }
     if ($nativeLog -match "native fatal signal") {
@@ -247,16 +247,16 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
 
     Invoke-Adb @("shell", "am", "start", "-n", "${Package}/${LauncherActivity}") | Out-Null
     Accept-PermissionDialogIfPresent 8 | Out-Null
-    Wait-ForWindowText "START GAME" 25 | Set-Content -LiteralPath (Join-Path $CycleDir "launcher.xml") -Encoding UTF8
+    Wait-ForWindowText "Start game" 25 | Set-Content -LiteralPath (Join-Path $CycleDir "launcher.xml") -Encoding UTF8
     $appPid = Assert-ProcessAlive
 
     # Open and close the livery manager using current UI bounds.
     Tap-WindowText "Custom livery editor" 15
     Wait-ForWindowText "Custom liveries - all cars" 15 | Set-Content -LiteralPath (Join-Path $CycleDir "livery-manager.xml") -Encoding UTF8
     Tap-WindowText "Close" 15
-    Wait-ForWindowText "START GAME" 15 | Out-Null
+    Wait-ForWindowText "Start game" 15 | Out-Null
 
-    Tap-WindowText "START GAME" 15
+    Tap-WindowText "Start game" 15
     Wait-ForFocus "Jetcarstunts2Activity" 30 | Set-Content -LiteralPath (Join-Path $CycleDir "game-focus.txt") -Encoding UTF8
     if ($MonkeyEvents -gt 0) {
         $monkeyArgs = @("shell", "monkey", "-p", $Package, "--pct-syskeys", "0")

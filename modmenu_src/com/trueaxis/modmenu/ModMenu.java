@@ -34,35 +34,28 @@ import java.io.OutputStream;
 import java.util.Properties;
 
 /**
- * Mod settings for the YCS2 (JCS2 mod) community build.
- * The launcher exposes only disclosure, game launch, and custom livery tools.
+ * Mod settings for the JCS2 community mod.
+ * The launcher exposes game launch, custom livery tools, updates, and replay split tools.
  */
 public class ModMenu {
     private static final String PREFS = "jcs_mod";
+    private static final String K_MENU_DEFAULTS_VERSION = "menu_defaults_version";
     private static final String K_CAR = "livery_car";
     private static final String K_CHECKPOINT_SPLITS = "checkpoint_splits";
     private static final String K_SPLIT_LIST = "split_list";
-    private static final String K_SPLIT_REALTIME = "split_realtime";
     private static final String K_SPLIT_SECTOR_DELTA = "split_sector_delta";
     private static final String K_SPLIT_ALPHA = "split_alpha";
     private static final String K_SPLIT_X = "split_x";
     private static final String K_SPLIT_Y = "split_y";
-    private static final String K_GHOST_ROUTE = "ghost_route";
-    private static final String K_GHOST_ROUTE_ALPHA = "ghost_route_alpha";
-    private static final String K_GHOST_ROUTE_THICKNESS = "ghost_route_thickness";
-    private static final String K_YCS2_PREFIX = "ycs2_prefix";
-    private static final String K_EXPERIMENTAL_VISIBLE = "experimental_visible";
-    private static final String K_EXPERIMENTAL_ACK = "experimental_ack";
     private static final String REPO_URL = "https://github.com/yanniedog/jcs2-mod";
-    private static final String DISPLAY_NAME = "YCS2 (JCS2 mod)";
+    private static final String DISPLAY_NAME = "JCS2 Community Mod";
     private static final int REQUEST_IMPORT = 7301;
     private static final int REQUEST_EXPORT = 7302;
     private static final int TEXTURE_SIZE = 512;
+    private static final int MENU_DEFAULTS_VERSION = 3;
     private static final int DEFAULT_SPLIT_ALPHA = 90;
     private static final int DEFAULT_SPLIT_X = 88;
     private static final int DEFAULT_SPLIT_Y = 39;
-    private static final int DEFAULT_GHOST_ROUTE_ALPHA = 85;
-    private static final int DEFAULT_GHOST_ROUTE_THICKNESS = 7;
 
     private static final String[] CAR_NAMES = {
             "Buggy", "Original jetcar", "Jet", "Mini", "Sports", "Stock", "Truck"
@@ -225,53 +218,67 @@ public class ModMenu {
         return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
+    private static void applyMenuDefaults(Context c) {
+        SharedPreferences preferences = prefs(c);
+        if (preferences.getInt(K_MENU_DEFAULTS_VERSION, 0) >= MENU_DEFAULTS_VERSION) {
+            return;
+        }
+        SharedPreferences.Editor editor = preferences.edit()
+                .putBoolean(K_CHECKPOINT_SPLITS, true)
+                .putBoolean(K_SPLIT_LIST, true)
+                .putBoolean(K_SPLIT_SECTOR_DELTA, false)
+                .remove("split_realtime")
+                .remove("ghost_route")
+                .remove("ghost_route_alpha")
+                .remove("ghost_route_thickness")
+                .remove("ycs2_prefix")
+                .remove("experimental_visible")
+                .remove("experimental_ack")
+                .putInt(K_MENU_DEFAULTS_VERSION, MENU_DEFAULTS_VERSION);
+        if (!preferences.contains(K_SPLIT_ALPHA)) {
+            editor.putInt(K_SPLIT_ALPHA, DEFAULT_SPLIT_ALPHA);
+        }
+        if (!preferences.contains(K_SPLIT_X)) {
+            editor.putInt(K_SPLIT_X, DEFAULT_SPLIT_X);
+        }
+        if (!preferences.contains(K_SPLIT_Y)) {
+            editor.putInt(K_SPLIT_Y, DEFAULT_SPLIT_Y);
+        }
+        editor.apply();
+    }
+
     public static boolean checkpointSplitsEnabled(Context c) {
-        return experimentalFeaturesEnabled(c) && prefs(c).getBoolean(K_CHECKPOINT_SPLITS, false);
+        applyMenuDefaults(c);
+        return prefs(c).getBoolean(K_CHECKPOINT_SPLITS, true);
     }
 
     public static boolean splitListEnabled(Context c) {
-        return experimentalFeaturesEnabled(c) && prefs(c).getBoolean(K_SPLIT_LIST, false);
-    }
-
-    public static boolean realtimeSplitsEnabled(Context c) {
-        return experimentalFeaturesEnabled(c) && prefs(c).getBoolean(K_SPLIT_REALTIME, false);
+        applyMenuDefaults(c);
+        return prefs(c).getBoolean(K_SPLIT_LIST, true);
     }
 
     public static boolean sectorSplitsEnabled(Context c) {
+        applyMenuDefaults(c);
         return checkpointSplitsEnabled(c) && prefs(c).getBoolean(K_SPLIT_SECTOR_DELTA, false);
     }
 
     public static int splitAlphaPercent(Context c) {
+        applyMenuDefaults(c);
         return clamp(prefs(c).getInt(K_SPLIT_ALPHA, DEFAULT_SPLIT_ALPHA), 10, 100);
     }
 
     public static int splitXdp(Context c) {
+        applyMenuDefaults(c);
         return clamp(prefs(c).getInt(K_SPLIT_X, DEFAULT_SPLIT_X), 0, 360);
     }
 
     public static int splitYdp(Context c) {
+        applyMenuDefaults(c);
         return clamp(prefs(c).getInt(K_SPLIT_Y, DEFAULT_SPLIT_Y), 0, 180);
     }
 
-    public static boolean ghostRouteEnabled(Context c) {
-        return experimentalFeaturesEnabled(c) && prefs(c).getBoolean(K_GHOST_ROUTE, false);
-    }
-
-    public static int ghostRouteAlphaPercent(Context c) {
-        return clamp(prefs(c).getInt(K_GHOST_ROUTE_ALPHA, DEFAULT_GHOST_ROUTE_ALPHA), 5, 100);
-    }
-
-    public static int ghostRouteThicknessDp(Context c) {
-        return clamp(prefs(c).getInt(K_GHOST_ROUTE_THICKNESS, DEFAULT_GHOST_ROUTE_THICKNESS), 1, 16);
-    }
-
     public static boolean ycs2PrefixEnabled(Context c) {
-        return experimentalFeaturesEnabled(c) && prefs(c).getBoolean(K_YCS2_PREFIX, false);
-    }
-
-    private static boolean experimentalFeaturesEnabled(Context c) {
-        return prefs(c).getBoolean(K_EXPERIMENTAL_VISIBLE, false)
-                && prefs(c).getBoolean(K_EXPERIMENTAL_ACK, false);
+        return false;
     }
 
     private static int clamp(int value, int min, int max) {
@@ -332,10 +339,11 @@ public class ModMenu {
 
     /**
      * Full-screen pre-launch mod menu shown before the native game (and splash) starts.
-     * Experimental HUD/disclosure controls are hidden until explicitly acknowledged.
+     * Replay HUD controls are configured before launch so gameplay is not obscured by menus.
      */
     public static void showPreLaunchMenu(final Activity a, final Runnable onPlay) {
         ModDebugLog.install(a);
+        applyMenuDefaults(a);
         ModDebugLog.module("launcher", "show pre-launch menu checkpointSplits="
                 + checkpointSplitsEnabled(a));
         ModIdentity.configure(a);
@@ -356,13 +364,13 @@ public class ModMenu {
             root.addView(version);
 
             TextView subtitle = label(a,
-                    "This is the YCS2 modified APK. Replays and leaderboard submissions originate from a modified client.",
+                    "A community mod for Jet Car Stunts 2 with updates, custom liveries, and replay split tools before launch.",
                     11, Color.rgb(170, 178, 185));
             subtitle.setGravity(Gravity.CENTER);
             subtitle.setPadding(0, 0, 0, dp(a, 8));
             root.addView(subtitle);
 
-            TextView repo = label(a, "GitHub repository: " + REPO_URL, 11, Color.rgb(88, 166, 255));
+            TextView repo = label(a, "GitHub releases: " + REPO_URL, 11, Color.rgb(88, 166, 255));
             repo.setGravity(Gravity.CENTER);
             repo.setPadding(0, 0, 0, dp(a, 10));
             repo.setOnClickListener(new View.OnClickListener() {
@@ -385,9 +393,9 @@ public class ModMenu {
             card.setPadding(dp(a, 16), dp(a, 10), dp(a, 16), dp(a, 14));
             card.setBackgroundDrawable(background(Color.rgb(28, 32, 38), dp(a, 10)));
 
-            card.addView(sectionHeader(a, "Community features"));
+            card.addView(sectionHeader(a, "Mod tools"));
 
-            Button liveries = button(a, "Custom livery editor");
+            Button liveries = button(a, "Custom liveries");
             liveries.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     ModDebugLog.module("launcher", "custom livery editor clicked");
@@ -405,97 +413,50 @@ public class ModMenu {
             });
             card.addView(updates, fill());
 
-            final LinearLayout experimental = new LinearLayout(a);
-            experimental.setOrientation(LinearLayout.VERTICAL);
+            TextView coreNote = label(a,
+                    "Always on: purchase compatibility, expanded checkpoint capacity, and blue flame identification. Replay files are not rewritten.",
+                    10, Color.rgb(150, 158, 165));
+            coreNote.setPadding(0, dp(a, 9), 0, dp(a, 2));
+            card.addView(coreNote);
 
-            final CheckBox showExperimental = new CheckBox(a);
-            showExperimental.setText("Show buggy experimental features");
-            showExperimental.setTextColor(Color.WHITE);
-            showExperimental.setTextSize(11.0f);
-            showExperimental.setChecked(prefs(a).getBoolean(K_EXPERIMENTAL_VISIBLE, false));
-            showExperimental.setPadding(0, dp(a, 8), 0, 0);
-            card.addView(showExperimental, fill());
+            card.addView(sectionHeader(a, "Replay split HUD"));
+            TextView splitHelp = label(a,
+                    "Compares your run with the saved replay ghost when checkpoint timing is available.",
+                    10, Color.rgb(170, 178, 185));
+            splitHelp.setPadding(0, 0, 0, dp(a, 2));
+            card.addView(splitHelp);
 
-            final CheckBox acknowledgeExperimental = new CheckBox(a);
-            acknowledgeExperimental.setText("I understand: buggy, unstable, not ready.");
-            acknowledgeExperimental.setTextColor(Color.rgb(255, 200, 120));
-            acknowledgeExperimental.setTextSize(11.0f);
-            acknowledgeExperimental.setChecked(prefs(a).getBoolean(K_EXPERIMENTAL_ACK, false));
-            acknowledgeExperimental.setPadding(0, dp(a, 2), 0, 0);
-            card.addView(acknowledgeExperimental, fill());
+            final LinearLayout splitOptions = new LinearLayout(a);
+            splitOptions.setOrientation(LinearLayout.VERTICAL);
+            splitOptions.setPadding(dp(a, 12), 0, 0, 0);
 
-            showExperimental.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    prefs(a).edit().putBoolean(
-                            K_EXPERIMENTAL_VISIBLE, showExperimental.isChecked()).apply();
-                    ModIdentity.configure(a);
-                    updateExperimentalVisibility(a, experimental);
-                    ModDebugLog.module("launcher", "experimental section visible="
-                            + showExperimental.isChecked());
-                }
-            });
+            addCheckBox(a, card,
+                    "Enable checkpoint/sector deltas vs saved replay ghost",
+                    K_CHECKPOINT_SPLITS, true, new Runnable() {
+                        public void run() {
+                            updateSplitOptionsVisibility(a, splitOptions);
+                        }
+                    });
 
-            acknowledgeExperimental.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    prefs(a).edit().putBoolean(
-                            K_EXPERIMENTAL_ACK, acknowledgeExperimental.isChecked()).apply();
-                    ModIdentity.configure(a);
-                    updateExperimentalVisibility(a, experimental);
-                    ModDebugLog.module("launcher", "experimental section acknowledged="
-                            + acknowledgeExperimental.isChecked());
-                }
-            });
-
-            experimental.addView(sectionHeader(a, "Buggy experimental features"));
-            TextView experimentalNote = label(a,
-                    "These are unstable and unfinished.",
-                    10, Color.rgb(255, 200, 120));
-            experimentalNote.setPadding(0, 0, 0, dp(a, 4));
-            experimental.addView(experimentalNote);
-
-            addCheckBox(a, experimental, "Checkpoint/sector deltas vs raced replay ghost",
-                    K_CHECKPOINT_SPLITS, false);
-
-            experimental.addView(sectionHeader(a, "Split HUD options"));
-            addCheckBox(a, experimental, "Sector delta mode (off: checkpoint delta)",
+            addCheckBox(a, splitOptions,
+                    "Show consecutive splits as an on-screen list",
+                    K_SPLIT_LIST, true);
+            addCheckBox(a, splitOptions,
+                    "Use sector deltas instead of checkpoint deltas",
                     K_SPLIT_SECTOR_DELTA, false);
-            addCheckBox(a, experimental, "Show consecutive splits as an on-screen list",
-                    K_SPLIT_LIST, false);
-            addCheckBox(a, experimental, "Continuously refresh the split readout while racing a ghost",
-                    K_SPLIT_REALTIME, false);
-            addSeek(a, experimental, "Split text transparency", K_SPLIT_ALPHA,
+
+            TextView displayLabel = label(a, "Display", 11, Color.rgb(210, 216, 222));
+            displayLabel.setPadding(0, dp(a, 6), 0, 0);
+            splitOptions.addView(displayLabel, fill());
+            addSeek(a, splitOptions, "Text transparency", K_SPLIT_ALPHA,
                     DEFAULT_SPLIT_ALPHA, 10, 100, "%");
-            addSeek(a, experimental, "Split text horizontal position", K_SPLIT_X,
+            addSeek(a, splitOptions, "Horizontal position", K_SPLIT_X,
                     DEFAULT_SPLIT_X, 0, 360, " dp");
-            addSeek(a, experimental, "Split text vertical position", K_SPLIT_Y,
+            addSeek(a, splitOptions, "Vertical position", K_SPLIT_Y,
                     DEFAULT_SPLIT_Y, 0, 180, " dp");
 
-            experimental.addView(sectionHeader(a, "Ghost track line"));
-            addCheckBox(a, experimental,
-                    "Draw ghost track line (buggy/unstable)",
-                    K_GHOST_ROUTE, false);
-            addSeek(a, experimental, "Ghost track line transparency", K_GHOST_ROUTE_ALPHA,
-                    DEFAULT_GHOST_ROUTE_ALPHA, 5, 100, "%");
-            addSeek(a, experimental, "Ghost track line thickness", K_GHOST_ROUTE_THICKNESS,
-                    DEFAULT_GHOST_ROUTE_THICKNESS, 1, 16, " dp");
-            TextView routeNote = label(a,
-                    "Read-only overlay; it should not alter replay, timing, score, physics, or controls.",
-                    10, Color.rgb(150, 158, 165));
-            routeNote.setPadding(0, dp(a, 4), 0, 0);
-            experimental.addView(routeNote);
-
-            experimental.addView(sectionHeader(a, "Disclosure"));
-            addCheckBox(a, experimental,
-                    "Prefix submitted names with (YCS2) where Java-side name fields are visible",
-                    K_YCS2_PREFIX, false);
-            updateExperimentalVisibility(a, experimental);
-            card.addView(experimental, fill());
-
-            TextView note = label(a,
-                    "Always active: offline IAP ownership compatibility, 999 checkpoint-time capacity, and blue flame visual identification. Replay data is not modified.",
-                    10, Color.rgb(150, 158, 165));
-            note.setPadding(0, dp(a, 10), 0, 0);
-            card.addView(note);
+            updateSplitOptionsVisibility(a, splitOptions);
+            card.addView(splitOptions, fill());
 
             scroll.addView(card, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -503,7 +464,7 @@ public class ModMenu {
             root.addView(scroll, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
 
-            Button play = button(a, "START GAME");
+            Button play = button(a, "Start game");
             play.setTextSize(14.0f);
             play.setTextColor(Color.BLACK);
             play.setBackgroundDrawable(background(Color.rgb(255, 128, 0), dp(a, 8)));
@@ -556,8 +517,14 @@ public class ModMenu {
         }
     }
 
-    private static void addCheckBox(final Context c, LinearLayout card, String text,
-                                    final String key, boolean defaultValue) {
+    private static CheckBox addCheckBox(final Context c, LinearLayout card, String text,
+                                        final String key, boolean defaultValue) {
+        return addCheckBox(c, card, text, key, defaultValue, null);
+    }
+
+    private static CheckBox addCheckBox(final Context c, LinearLayout card, String text,
+                                        final String key, boolean defaultValue,
+                                        final Runnable afterChange) {
         final CheckBox checkBox = new CheckBox(c);
         checkBox.setText(text);
         checkBox.setTextColor(Color.WHITE);
@@ -567,21 +534,28 @@ public class ModMenu {
         checkBox.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 prefs(c).edit().putBoolean(key, checkBox.isChecked()).apply();
-                ModIdentity.configure(c);
+                if (afterChange != null) {
+                    afterChange.run();
+                }
                 ModDebugLog.module("launcher", "option toggled key=" + key
                         + " value=" + checkBox.isChecked());
             }
         });
         card.addView(checkBox, fill());
+        return checkBox;
     }
 
-    private static void updateExperimentalVisibility(Context c, View content) {
-        content.setVisibility(experimentalFeaturesEnabled(c) ? View.VISIBLE : View.GONE);
+    private static void updateSplitOptionsVisibility(Context c, View content) {
+        applyMenuDefaults(c);
+        content.setVisibility(prefs(c).getBoolean(K_CHECKPOINT_SPLITS, true)
+                ? View.VISIBLE : View.GONE);
     }
 
-    private static void addSeek(final Context c, LinearLayout card, String label,
-                                final String key, int defaultValue, final int min,
-                                int max, final String suffix) {
+    private static LinearLayout addSeek(final Context c, LinearLayout card, String label,
+                                        final String key, int defaultValue, final int min,
+                                        int max, final String suffix) {
+        LinearLayout row = new LinearLayout(c);
+        row.setOrientation(LinearLayout.VERTICAL);
         final TextView value = label(c, "", 10, Color.rgb(210, 216, 222));
         final SeekBar seekBar = new SeekBar(c);
         seekBar.setMax(max - min);
@@ -602,8 +576,10 @@ public class ModMenu {
             }
         });
         value.setPadding(0, dp(c, 4), 0, 0);
-        card.addView(value, fill());
-        card.addView(seekBar, fill());
+        row.addView(value, fill());
+        row.addView(seekBar, fill());
+        card.addView(row, fill());
+        return row;
     }
 
     private static void updateSeekLabel(TextView view, String label, int value, String suffix) {

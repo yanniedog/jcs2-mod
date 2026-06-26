@@ -25,14 +25,14 @@ public class ModLauncherActivity extends Activity {
         ModMenu.showPreLaunchMenu(this, new Runnable() {
             public void run() {
                 try {
-                    ModDebugLog.module("launcher", "START GAME clicked; launching Jetcarstunts2Activity");
+                    ModDebugLog.module("launcher", "Start game clicked; launching Jetcarstunts2Activity");
                     ModMenu.validateCustomLiveriesForGame(ModLauncherActivity.this);
                     Intent game = new Intent(ModLauncherActivity.this, Jetcarstunts2Activity.class);
                     startActivity(game);
                     ModDebugLog.module("launcher", "Jetcarstunts2Activity startActivity returned");
                     finish();
                 } catch (Throwable error) {
-                    ModDebugLog.module("launcher", "START GAME failed", error);
+                    ModDebugLog.module("launcher", "Start game failed", error);
                     throw new RuntimeException("Could not launch game activity", error);
                 }
             }

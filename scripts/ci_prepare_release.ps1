@@ -43,7 +43,7 @@ if ($numbers.Count -gt 0) {
 $versionName = "1.0.24-mod$nextMod"
 $versionCode = 28 + $nextMod
 $tagName = "jcs-mod-v0.0.$nextMod"
-$apkName = "jcs_modded_$versionName.apk"
+$apkName = "jcs2-mod.apk"
 $releaseTitle = "JCS2 Community Mod v0.0.$nextMod"
 
 $versionText = $versionText -replace '(?m)^(\s*)versionCode:\s*\d+', "`${1}versionCode: $versionCode"

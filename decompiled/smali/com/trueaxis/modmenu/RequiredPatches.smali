@@ -248,74 +248,31 @@
 
     .line 55
     :catchall_96
-    move-exception v1
+    move-exception p0
 
     .line 56
-    const-string v2, "Could not install checkpoint split HUD"
+    const-string v1, "Could not install checkpoint split HUD"
 
-    invoke-static {v0, v2, v1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+    invoke-static {v0, v1, p0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
     .line 57
-    invoke-static {v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
+    invoke-static {v1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
     goto :goto_95
 
     .line 60
     :cond_a0
-    const-string v1, "checkpoint split HUD disabled"
-
-    invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
-
-    .line 62
-    :goto_a5
-    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->ghostRouteEnabled(Landroid/content/Context;)Z
-
-    move-result v1
-
-    if-eqz v1, :cond_be
-
-    .line 63
-    const-string v1, "ghost route overlay enabled"
-
-    invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
-
-    .line 65
-    :try_start_b0
-    invoke-static {p0}, Lcom/trueaxis/modmenu/GhostRouteOverlay;->install(Landroid/app/Activity;)V
-    :try_end_b3
-    .catchall {:try_start_b0 .. :try_end_b3} :catchall_b4
-
-    .line 69
-    :goto_b3
-    goto :goto_c3
-
-    .line 66
-    :catchall_b4
-    move-exception p0
-
-    .line 67
-    const-string v1, "Could not install ghost route overlay"
-
-    invoke-static {v0, v1, p0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
-
-    .line 68
-    invoke-static {v1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
-
-    goto :goto_b3
-
-    .line 71
-    :cond_be
-    const-string p0, "ghost route overlay disabled"
+    const-string p0, "checkpoint split HUD disabled"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 73
-    :goto_c3
+    .line 62
+    :goto_a5
     const-string p0, "after RequiredPatches.apply"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->logRuntime(Ljava/lang/String;)V
 
-    .line 74
+    .line 63
     return-void
 .end method
 
@@ -326,15 +283,6 @@
 .end method
 
 .method static native readGhostCheckpointMillis(I)I
-.end method
-
-.method static native readGhostRoute([F)I
-.end method
-
-.method static native readGhostRoutePointCount()I
-.end method
-
-.method static native readGhostViewMatrices([F)I
 .end method
 
 .method static native readLatestCheckpointCurrentMillis()I

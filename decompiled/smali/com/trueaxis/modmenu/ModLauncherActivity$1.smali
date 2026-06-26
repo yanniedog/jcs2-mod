@@ -50,7 +50,7 @@
     const-string v0, "launcher"
 
     :try_start_2
-    const-string v1, "START GAME clicked; launching Jetcarstunts2Activity"
+    const-string v1, "Start game clicked; launching Jetcarstunts2Activity"
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
@@ -96,7 +96,7 @@
     move-exception v1
 
     .line 35
-    const-string v2, "START GAME failed"
+    const-string v2, "Start game failed"
 
     invoke-static {v0, v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 

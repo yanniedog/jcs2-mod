@@ -142,35 +142,28 @@ final class SplitTimeHud {
                         ModDebugLog.log("split checkpoint jump accepted from="
                                 + lastCheckpointCount + " to=" + checkpointCount);
                         lastCheckpointCount = checkpointCount;
-                        showSplit(split, checkpointCount, splitMillis, false);
+                        showSplit(split, checkpointCount, splitMillis);
                     }
                 } else if (checkpointCount > lastCheckpointCount) {
                     lastCheckpointCount = checkpointCount;
                     if (checkpointCount > 0) {
-                        showSplit(split, checkpointCount, splitMillis, false);
+                        showSplit(split, checkpointCount, splitMillis);
                     }
-                } else if (ModMenu.realtimeSplitsEnabled(activity)
-                        && checkpointCount > 0
-                        && split.getVisibility() == TextView.VISIBLE) {
-                    showSplit(split, checkpointCount, splitMillis, true);
                 } else if (checkpointCount == 0 && split.getVisibility() == TextView.VISIBLE) {
                     logArmedDiagnostics("waiting");
                 }
                 handler.postDelayed(this, POLL_MS);
             }
 
-            private void showSplit(TextView split, int checkpointCount, int splitMillis,
-                                   boolean realtimeRefresh) {
+            private void showSplit(TextView split, int checkpointCount, int splitMillis) {
                 boolean sectorMode = ModMenu.sectorSplitsEnabled(activity);
                 int displayMillis = sectorMode
                         ? sectorSplitMillis(checkpointCount, splitMillis)
                         : splitMillis;
                 String line = splitLine(checkpointCount, displayMillis, sectorMode);
                 int color = splitColor(displayMillis);
-                if (!realtimeRefresh) {
-                    splitHistory.add(new SplitEntry(line, color, checkpointCount, splitMillis));
-                    while (splitHistory.size() > 8) splitHistory.remove(0);
-                }
+                splitHistory.add(new SplitEntry(line, color, checkpointCount, splitMillis));
+                while (splitHistory.size() > 8) splitHistory.remove(0);
                 split.setText(displayText(line));
                 split.setTextColor(ModMenu.splitListEnabled(activity) ? SPLIT_READY : color);
                 split.bringToFront();
@@ -183,7 +176,7 @@ final class SplitTimeHud {
                 int effectiveGhostCount = RequiredPatches.readSplitGhostCheckpointCount();
                 int officialGhostCount = RequiredPatches.readSplitOfficialGhostCheckpointCount();
                 ModDebugLog.log(String.format(Locale.US,
-                        "split checkpoint=%d current_ms=%d ghost_ms=%d delta_ms=%d cumulative_delta_ms=%d mode=%s last_checkpoint_ms=%d scanned_checkpoint=%d decoded_engine_checkpoint=%d engine_checkpoint=%d selected_checkpoint=%d live_count=%d effective_ghost_count=%d official_ghost_count=%d live_cp_ms=%d live_appended_ms=%d official_ghost_cp_ms=%d replay_header_size=%d replay_header_checkpoints=%d replay_header_finish_ms=%d ghost_pos=%d last_ghost_pos=%d last_replay_size=%d replay_visual_ms=%d ghost_visual_ms=%d visual_delta_ms=%d ghost_checkpoint_dist_sq1000=%d ghost_retry_index=%d last_ghost_retry_index=%d ghost_retry_pause=%d last_ghost_retry_pause=%d ghost_retry_count=%d live_array=%s official_ghost_array=%s color=%s realtime=%s list=%s",
+                        "split checkpoint=%d current_ms=%d ghost_ms=%d delta_ms=%d cumulative_delta_ms=%d mode=%s last_checkpoint_ms=%d scanned_checkpoint=%d decoded_engine_checkpoint=%d engine_checkpoint=%d selected_checkpoint=%d live_count=%d effective_ghost_count=%d official_ghost_count=%d live_cp_ms=%d live_appended_ms=%d official_ghost_cp_ms=%d replay_header_size=%d replay_header_checkpoints=%d replay_header_finish_ms=%d ghost_pos=%d last_ghost_pos=%d last_replay_size=%d replay_visual_ms=%d ghost_visual_ms=%d visual_delta_ms=%d ghost_checkpoint_dist_sq1000=%d ghost_retry_index=%d last_ghost_retry_index=%d ghost_retry_pause=%d last_ghost_retry_pause=%d ghost_retry_count=%d live_array=%s official_ghost_array=%s color=%s list=%s",
                         checkpointCount, currentMillis, ghostMillis, displayMillis, splitMillis,
                         sectorMode ? "sector" : "checkpoint",
                         lastCheckpointMillis, RequiredPatches.readSplitScannedCheckpointIndex(),
@@ -210,8 +203,7 @@ final class SplitTimeHud {
                         RequiredPatches.readSplitLastGhostRetryPauseTime(),
                         RequiredPatches.readSplitGhostRetrySkipCount(),
                         liveArrayTrace(liveCount), officialGhostArrayTrace(officialGhostCount),
-                        splitColorName(displayMillis),
-                        realtimeRefresh, ModMenu.splitListEnabled(activity)));
+                        splitColorName(displayMillis), ModMenu.splitListEnabled(activity)));
             }
 
             private int sectorSplitMillis(int checkpointCount, int cumulativeSplitMillis) {

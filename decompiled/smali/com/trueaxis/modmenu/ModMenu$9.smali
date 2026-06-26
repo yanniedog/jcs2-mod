@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Landroid/view/View$OnClickListener;
+.implements Ljava/lang/Runnable;
 
 
 # annotations
@@ -22,20 +22,24 @@
 
 .field final synthetic val$cars:Landroid/widget/Spinner;
 
+.field final synthetic val$status:Landroid/widget/TextView;
+
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
-    .registers 3
+.method constructor <init>(Landroid/widget/Spinner;Landroid/widget/TextView;Landroid/app/Activity;)V
+    .registers 4
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 645
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
+    .line 651
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$cars:Landroid/widget/Spinner;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$cars:Landroid/widget/Spinner;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$status:Landroid/widget/TextView;
+
+    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -44,61 +48,45 @@
 
 
 # virtual methods
-.method public onClick(Landroid/view/View;)V
+.method public run()V
     .registers 4
 
-    .line 647
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
-
+    .line 653
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$cars:Landroid/widget/Spinner;
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$200(Landroid/content/Context;Landroid/widget/Spinner;)V
+    invoke-virtual {v0}, Landroid/widget/Spinner;->getSelectedItemPosition()I
 
-    .line 649
-    :try_start_7
-    new-instance p1, Landroid/content/Intent;
-
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
-
-    const-class v1, Lcom/trueaxis/modmenu/LiveryDesignerActivity;
-
-    invoke-direct {p1, v0, v1}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
-
-    .line 650
-    const-string v0, "car"
-
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$cars:Landroid/widget/Spinner;
-
-    invoke-virtual {v1}, Landroid/widget/Spinner;->getSelectedItemPosition()I
-
-    move-result v1
-
-    invoke-virtual {p1, v0, v1}, Landroid/content/Intent;->putExtra(Ljava/lang/String;I)Landroid/content/Intent;
-
-    .line 651
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
-
-    invoke-virtual {v0, p1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
-    :try_end_20
-    .catchall {:try_start_7 .. :try_end_20} :catchall_21
+    move-result v0
 
     .line 654
-    goto :goto_29
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$status:Landroid/widget/TextView;
 
-    .line 652
-    :catchall_21
-    move-exception p1
+    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
 
-    .line 653
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
+    invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$400(Landroid/content/Context;I)Ljava/io/File;
 
-    const-string v0, "Could not open the designer."
+    move-result-object v0
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$300(Landroid/content/Context;Ljava/lang/String;)V
+    invoke-virtual {v0}, Ljava/io/File;->isFile()Z
+
+    move-result v0
+
+    if-eqz v0, :cond_17
 
     .line 655
-    :goto_29
+    const-string v0, "Active livery: custom"
+
+    goto :goto_19
+
+    .line 656
+    :cond_17
+    const-string v0, "Active livery: bundled default"
+
+    .line 654
+    :goto_19
+    invoke-virtual {v1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+
+    .line 657
     return-void
 .end method

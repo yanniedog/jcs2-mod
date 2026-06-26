@@ -214,16 +214,17 @@ def check_sources(skip_local_assets=False):
         ok = fail("checkpoint split reader no longer reads g_nLastCheckPoint for diagnostics/fallback") and ok
     if "RequiredPatches_readSplitScannedCheckpointIndex" not in bridge or "RequiredPatches_readSplitDecodedEngineCheckpointIndex" not in bridge:
         ok = fail("checkpoint split diagnostics no longer expose scanned/decoded checkpoint indexes") and ok
-    if (
-        "RequiredPatches_readGhostRoute" not in bridge
-        or "RequiredPatches_readGhostViewMatrices" not in bridge
-        or "RequiredPatches_readGhostRoutePointCount" not in bridge
+    if any(
+        marker in bridge
+        for marker in (
+            "RequiredPatches_readGhostRoute",
+            "readGhostViewMatrices",
+            "readGhostRoutePointCount",
+            "reconstruct_ghost_route",
+            "Read-only ghost route line support",
+        )
     ):
-        ok = fail("read-only ghost route JNI entry points are missing") and ok
-    if "fn reconstruct_ghost_route()" not in bridge or 'resolve(b"g_pGhost\\0")' not in bridge:
-        ok = fail("ghost route reconstruction no longer reads the decompressed ghost replay buffer") and ok
-    if "GHOST_FLAG_DELTA" not in bridge or "GHOST_NODE_SIZE" not in bridge:
-        ok = fail("ghost route reconstruction no longer replays the stock per-node integration") and ok
+        ok = fail("ghost route line feature must stay removed") and ok
     split_hud = (ROOT / "modmenu_src/com/trueaxis/modmenu/SplitTimeHud.java").read_text(
         encoding="utf-8"
     )
@@ -261,12 +262,20 @@ def check_sources(skip_local_assets=False):
         ok = fail("checkpoint split HUD no longer keeps per-line split colours persistent") and ok
     if "split.bringToFront()" not in split_hud or "split.setTranslationZ(1000.0f)" not in split_hud:
         ok = fail("checkpoint split HUD is not forced above the native SurfaceView") and ok
-    if "K_EXPERIMENTAL_VISIBLE" not in mod_menu or "K_EXPERIMENTAL_ACK" not in mod_menu:
-        ok = fail("experimental ghost/split features are not hidden behind an acknowledgement gate") and ok
-    if 'prefs(c).getBoolean(K_CHECKPOINT_SPLITS, false)' not in mod_menu:
-        ok = fail("checkpoint split HUD is no longer disabled by default") and ok
+    if "K_EXPERIMENTAL_ACK" in mod_menu or "Show buggy experimental features" in mod_menu:
+        ok = fail("mod menu still contains the old noisy experimental acknowledgement flow") and ok
+    if 'prefs(c).getBoolean(K_CHECKPOINT_SPLITS, true)' not in mod_menu:
+        ok = fail("checkpoint split HUD is no longer enabled by default") and ok
+    if 'prefs(c).getBoolean(K_SPLIT_LIST, true)' not in mod_menu:
+        ok = fail("split list is no longer enabled by default") and ok
+    if "K_SPLIT_REALTIME" in mod_menu or "realtimeSplitsEnabled" in mod_menu:
+        ok = fail("continuous split refresh feature must stay removed") and ok
+    if "K_GHOST_ROUTE" in mod_menu or "Draw ghost track line" in mod_menu:
+        ok = fail("ghost route line controls must stay removed from the mod menu") and ok
+    if "Enable checkpoint/sector deltas vs saved replay ghost" not in mod_menu:
+        ok = fail("mod menu no longer exposes the requested split HUD label") and ok
     if "K_SPLIT_SECTOR_DELTA" not in mod_menu or "sectorSplitsEnabled" not in mod_menu:
-        ok = fail("sector delta mode is missing from the experimental split HUD options") and ok
+        ok = fail("sector delta mode is missing from the split HUD options") and ok
     if 'prefs(c).getBoolean(K_SPLIT_SECTOR_DELTA, false)' not in mod_menu:
         ok = fail("sector delta mode is no longer disabled by default") and ok
     if any(marker in mod_menu for marker in ('"a) ', '"b) ', '"c) ', '"e) ', '"f) ')):
@@ -310,15 +319,10 @@ def check_sources(skip_local_assets=False):
         ok = fail("required patches do not initialise the local debug log") and ok
     if "installNativeCrashLogger()" not in required_patches:
         ok = fail("required patches do not install the native fatal-signal logger") and ok
-    if "GhostRouteOverlay.install(activity)" not in required_patches or "ghostRouteEnabled(activity)" not in required_patches:
-        ok = fail("ghost route overlay is no longer gated behind its disabled-by-default toggle") and ok
-    ghost_overlay = (ROOT / "modmenu_src/com/trueaxis/modmenu/GhostRouteOverlay.java").read_text(
-        encoding="utf-8"
-    )
-    if "readGhostRoute" not in ghost_overlay or "readGhostViewMatrices" not in ghost_overlay:
-        ok = fail("ghost route overlay no longer renders the reconstructed read-only path") and ok
-    if "ghost route overlay failed; disabling" not in ghost_overlay:
-        ok = fail("ghost route overlay Java failures are not isolated and logged") and ok
+    if "GhostRouteOverlay" in required_patches or "ghostRouteEnabled" in required_patches:
+        ok = fail("required patches still reference removed ghost route overlay") and ok
+    if (ROOT / "modmenu_src/com/trueaxis/modmenu/GhostRouteOverlay.java").exists():
+        ok = fail("removed ghost route overlay source file still exists") and ok
     if "installReplayVisualMarker" in required_patches or "replay visual marker disabled; replay data is not modified" not in required_patches:
         ok = fail("required patches must explicitly avoid replay-data mutation") and ok
     if "catch (Throwable error)" not in required_patches or "NATIVE_AVAILABLE" not in required_patches:

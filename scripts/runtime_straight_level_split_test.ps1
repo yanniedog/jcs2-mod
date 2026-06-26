@@ -1,5 +1,5 @@
 param(
-    [string]$ApkPath = "YCS2_USE_THIS_SPLIT_ROUTE_RUNTIME_FIX_DEBUG_SIGNED_1.0.24-mod18_2026-06-22.apk",
+    [string]$ApkPath = "jcs2-mod.apk",
     [string]$Package = "modded.ycs2",
     [string]$LauncherActivity = "com.trueaxis.modmenu.ModLauncherActivity",
     [ValidateSet("LandscapeRight", "LandscapeLeft")]
@@ -7,8 +7,6 @@ param(
     [string]$LevelSearch = "Straight level for testing",
     [int]$BoostPulses = 55,
     [int]$PulseMs = 900,
-    [switch]$EnableGhostRoute,
-    [switch]$RequireGhostRoute,
     [string]$Adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe",
     [string]$OutDir = "_apk_build\runtime-straight-splits"
 )
@@ -154,15 +152,13 @@ function Enable-LauncherOptions {
     for ($i = 0; $i -lt 8; $i++) {
         if (DismissPermissionDialogIfPresent) { break }
         $xml = Dump-WindowXml
-        if ($xml -like "*START GAME*") { break }
+        if ($xml -like "*Start game*") { break }
         Start-Sleep -Milliseconds 500
     }
-    Wait-ForWindowText "START GAME" 25 | Set-Content -LiteralPath (Join-Path $RunDir "launcher-initial.xml") -Encoding UTF8
+    Wait-ForWindowText "Start game" 25 | Set-Content -LiteralPath (Join-Path $RunDir "launcher-initial.xml") -Encoding UTF8
     DismissPermissionDialogIfPresent | Out-Null
     foreach ($text in @(
-        "Show buggy experimental features",
-        "I understand: buggy, unstable, not ready.",
-        "Checkpoint/sector deltas vs raced replay ghost",
+        "Enable checkpoint/sector deltas vs saved replay ghost",
         "Show consecutive splits as an on-screen list"
     )) {
         $xml = ""
@@ -191,47 +187,14 @@ function Enable-LauncherOptions {
             Start-Sleep -Milliseconds 400
         }
     }
-    # Capture the final enabled experimental controls before returning to START GAME.
-    if ($EnableGhostRoute -or $RequireGhostRoute) {
-        $routeText = "Draw ghost track line (buggy/unstable)"
-        $xml = ""
-        for ($i = 0; $i -lt 8; $i++) {
-            if (DismissPermissionDialogIfPresent) {
-                Start-Sleep -Milliseconds 400
-                continue
-            }
-            $xml = Dump-WindowXml
-            if ($xml -like "*$routeText*") { break }
-            # Keep the gesture inside the ScrollView bounds recorded by uiautomator
-            # (roughly y=129..249 on the emulator) so the card scrolls instead of
-            # tapping the fixed START GAME button.
-            Invoke-Adb shell input swipe 240 240 240 135 450
-            Start-Sleep -Milliseconds 400
-        }
-        if ($xml -notlike "*$routeText*") {
-            $xml | Set-Content -LiteralPath (Join-Path $RunDir "launcher-route-option-missing.xml") -Encoding UTF8
-            throw "Timed out waiting for window text: $routeText"
-        }
-        $node = [regex]::Match(
-            $xml,
-            "text=`"$([regex]::Escape($routeText))`"[^>]*checked=`"(true|false)`"",
-            [System.Text.RegularExpressions.RegexOptions]::Singleline
-        )
-        if (-not $node.Success -or $node.Groups[1].Value -ne "true") {
-            Tap-WindowTextFromXml $routeText $xml
-            DismissPermissionDialogIfPresent | Out-Null
-            Start-Sleep -Milliseconds 400
-        }
-        Set-Content -LiteralPath (Join-Path $RunDir "launcher-route-option.xml") -Value $xml -Encoding UTF8
-    }
     for ($i = 0; $i -lt 8; $i++) {
         Invoke-Adb shell input swipe 240 135 240 240 450
         Start-Sleep -Milliseconds 300
         $xml = Dump-WindowXml
-        if ($xml -like "*START GAME*") { break }
+        if ($xml -like "*Start game*") { break }
     }
     Start-Sleep -Milliseconds 500
-    Tap-WindowText "START GAME" 10
+    Tap-WindowText "Start game" 10
 }
 
 function Type-SearchText {
@@ -276,7 +239,7 @@ function Assert-NoCrashEvidence {
     $debug = Get-Content -LiteralPath (Join-Path $RunDir "public_ycs2_mod_debug.log") -Raw -ErrorAction SilentlyContinue
     $native = Get-Content -LiteralPath (Join-Path $RunDir "public_ycs2_mod_native_crash.log") -Raw -ErrorAction SilentlyContinue
     $logcat = Get-Content -LiteralPath (Join-Path $RunDir "logcat.txt") -Raw -ErrorAction SilentlyContinue
-    if ($debug -match "UNCAUGHT|split HUD poll failed|ghost route overlay failed|Could not install") {
+    if ($debug -match "UNCAUGHT|split HUD poll failed|Could not install") {
         throw "Debug log contains mod failure evidence. See $RunDir"
     }
     if ($native -match "native fatal signal") {
@@ -365,7 +328,6 @@ Assert-NoCrashEvidence
 
 $debug = Get-Content -LiteralPath (Join-Path $RunDir "public_ycs2_mod_debug.log") -Raw
 $splitLines = ($debug -split "`n") | Where-Object { $_ -match "split checkpoint=" }
-$routeLines = ($debug -split "`n") | Where-Object { $_ -match "ghost route" }
 $redPositive = $splitLines | Where-Object { $_ -match "delta_ms=[1-9]\d*" -and $_ -match "color=red" }
 $postRaceSplitCount = $splitLines.Count
 $splitLines | Set-Content -LiteralPath (Join-Path $RunDir "split_timing_lines.txt") -Encoding UTF8
@@ -410,20 +372,15 @@ $summary = @(
     "level_search=$LevelSearch",
     "landscape_side=$LandscapeSide",
     "boost_pulses=$BoostPulses pulse_ms=$PulseMs",
-    "enable_ghost_route=$EnableGhostRoute require_ghost_route=$RequireGhostRoute",
     "passive_split_checkpoint_lines=$passiveSplitCount",
     "post_race_split_checkpoint_lines=$postRaceSplitCount",
     "red_positive_split_lines=$($redPositive.Count)",
-    "route_log_lines=$($routeLines.Count)",
     "run_dir=$RunDir"
 )
 $summary | Set-Content -LiteralPath (Join-Path $RunDir "summary.txt") -Encoding UTF8
 
 if ($passiveSplitCount -ne 0) {
     throw "Passive replay produced split checkpoint lines before Race. See $RunDir"
-}
-if ($RequireGhostRoute -and ($routeLines.Count -eq 0 -or $debug -notmatch "ghost route reconstructed points=")) {
-    throw "Ghost route overlay did not reconstruct a route. See $RunDir"
 }
 if ($postRaceSplitCount -eq 0) {
     throw "No checkpoint splits registered while racing the ghost. See $RunDir"

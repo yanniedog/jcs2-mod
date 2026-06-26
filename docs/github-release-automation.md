@@ -45,4 +45,5 @@ The release workflow calculates the next number from existing
 
 - APK `versionName`: `1.0.24-modN`
 - APK `versionCode`: `28 + N`
+- Release APK asset: `jcs2-mod.apk`
 - Release tag: `jcs-mod-v0.0.N`

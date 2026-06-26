@@ -14,45 +14,10 @@ const DLC_ITEM_SIZE: usize = 0x870;
 const DLC_PURCHASED_OFFSET: usize = 0x5c;
 const RETAINED_PATCH_POLL_MICROSECONDS: c_uint = 100_000;
 
-// --- Read-only ghost route reconstruction constants ---------------------------
-// The ghost replay is decompressed by the stock engine into `g_pGhost`, an array
-// of `g_nGhostSize` fixed 20-byte nodes. `Replay::UpdateGhost` integrates each
-// node exactly as below: when flag bit 3 is set the three float32s at +8/+0xC/+0x10
-// are velocity deltas (integrated into a running velocity, which is integrated into
-// the world position); otherwise the node is an absolute position keyframe. The
-// route reconstruction here reproduces that position math purely to read out the
-// full world-space path so it can be drawn. It never writes game memory.
-const GHOST_NODE_SIZE: usize = 0x14;
-const GHOST_NODE_FLAGS: usize = 1;
-const GHOST_NODE_DX: usize = 8;
-const GHOST_FLAG_DELTA: u8 = 0x08;
-const GHOST_FLAG_BOOST: u8 = 0x01;
-const GHOST_FLAG_AIR_BRAKE: u8 = 0x02;
-const GHOST_FLAG_BRAKE: u8 = 0x04;
-const ROUTE_STRIDE: usize = 4;
-const ROUTE_CLASS_ACCEL: f32 = 0.0;
-const ROUTE_CLASS_BOOST: f32 = 1.0;
-const ROUTE_CLASS_COAST: f32 = 2.0;
-const ROUTE_CLASS_BRAKE: f32 = 3.0;
-const MAX_ROUTE_POINTS: usize = 3_000;
-const MAX_GHOST_NODES: c_int = 2_000_000;
-
-// Anonymous OpenGL matrix-stack globals live in the engine's writable .bss. They
-// are not exported symbols, so their runtime addresses are derived from the load
-// slide of an exported neighbour (`g_nGhostSize`) plus their fixed link vaddrs,
-// recovered by disassembling OpenGl2EsSupportFunctions_GetModelViewProjectionMatrix.
-const GHOST_SIZE_VADDR: usize = 0x5a0514;
-const MV_MATRIX0_VADDR: usize = 0x33fffc;
-const PROJ_MATRIX0_VADDR: usize = 0x33fffc + 0x1000;
 const GHOST_TRANSFORM_POS_FLOAT: usize = 12;
-const GHOST_VIEW_MATRICES_FLOATS: c_int = 35;
 const REPLAY_HEADER_REPLAY_SIZE_OFFSET: usize = 0x00;
 const REPLAY_HEADER_CHECKPOINT_COUNT_OFFSET: usize = 0x08;
 const REPLAY_HEADER_FINISH_SECONDS_OFFSET: usize = 0x14;
-
-// Standard JNI function-table indices (JNINativeInterface order).
-const JNI_GET_ARRAY_LENGTH: usize = 171;
-const JNI_SET_FLOAT_ARRAY_REGION: usize = 213;
 
 type ThreadStart = unsafe extern "C" fn(*mut c_void) -> *mut c_void;
 
@@ -102,10 +67,6 @@ static mut FALLBACK_GHOST_CHECKPOINT_COUNT: c_int = 0;
 static mut FALLBACK_GHOST_FINISH_MS: i32 = -1;
 static mut FALLBACK_GHOST_CHECKPOINT_MS: [i32; CHECKPOINT_LIMIT_USIZE] =
     [-1; CHECKPOINT_LIMIT_USIZE];
-static mut GHOST_BUFFER: *mut *const u8 = ptr::null_mut();
-static mut GHOST_TRANSFORM: *mut f32 = ptr::null_mut();
-static mut GHOST_ROUTE: [f32; MAX_ROUTE_POINTS * ROUTE_STRIDE] =
-    [0.0; MAX_ROUTE_POINTS * ROUTE_STRIDE];
 static RETAINED_PATCH_WORKER_STARTED: AtomicBool = AtomicBool::new(false);
 static NATIVE_SIGNAL_HANDLER_STARTED: AtomicBool = AtomicBool::new(false);
 
@@ -197,7 +158,10 @@ unsafe fn write_native_signal_log(path: &'static [u8], signum: c_int) {
     if fd >= 0 {
         write_signal_log(fd, b"native fatal signal ");
         write_signal_log(fd, signal_label(signum));
-        write_signal_log(fd, b" in modded.ycs2; check Android tombstone/logcat for stack\n");
+        write_signal_log(
+            fd,
+            b" in modded.ycs2; check Android tombstone/logcat for stack\n",
+        );
         let _ = close(fd);
     }
 }
@@ -1186,218 +1150,4 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readSplitShow
         return -1;
     }
     ptr::read_volatile(SHOW_REPLAY) as i32
-}
-
-// --- Read-only ghost route line support --------------------------------------
-
-unsafe fn ensure_route_symbols() -> bool {
-    if GHOST_SIZE.is_null() {
-        GHOST_SIZE = resolve(b"g_nGhostSize\0") as *mut c_int;
-    }
-    if GHOST_BUFFER.is_null() {
-        GHOST_BUFFER = resolve(b"g_pGhost\0") as *mut *const u8;
-    }
-    if GHOST_TRANSFORM.is_null() {
-        GHOST_TRANSFORM = resolve(b"g_ghostTransform\0") as *mut f32;
-    }
-    !(GHOST_SIZE.is_null() || GHOST_BUFFER.is_null())
-}
-
-/// Number of ghost nodes the engine has currently decompressed, clamped to the
-/// reconstruction buffer capacity. Zero when no ghost replay is loaded.
-unsafe fn ghost_node_count() -> c_int {
-    if !ensure_route_symbols() {
-        return 0;
-    }
-    let n = ptr::read_volatile(GHOST_SIZE);
-    if n < 2 || n > MAX_GHOST_NODES {
-        return 0;
-    }
-    n
-}
-
-unsafe fn route_class(flags: u8, speed: f32, previous_speed: f32) -> f32 {
-    if flags & GHOST_FLAG_BOOST != 0 {
-        ROUTE_CLASS_BOOST
-    } else if flags & (GHOST_FLAG_AIR_BRAKE | GHOST_FLAG_BRAKE) != 0 {
-        ROUTE_CLASS_BRAKE
-    } else if speed > previous_speed + 1.0e-4 {
-        ROUTE_CLASS_ACCEL
-    } else {
-        ROUTE_CLASS_COAST
-    }
-}
-
-/// Reconstructs the entire ghost world-space path into `GHOST_ROUTE` by replaying
-/// the engine's own per-node position integration (read-only). Each stored point
-/// is x/y/z/class, where class is used by the Java overlay to colour the line.
-/// Returns the number of points written (<= MAX_ROUTE_POINTS); longer replays are
-/// evenly subsampled so the whole route is still represented.
-unsafe fn reconstruct_ghost_route() -> usize {
-    let n = ghost_node_count();
-    if n < 2 {
-        return 0;
-    }
-    let base = ptr::read_volatile(GHOST_BUFFER);
-    if base.is_null() {
-        return 0;
-    }
-    let total = n as usize;
-    let store_stride = (total + MAX_ROUTE_POINTS - 1) / MAX_ROUTE_POINTS;
-    let route = core::ptr::addr_of_mut!(GHOST_ROUTE) as *mut f32;
-    let mut pos = [0.0f32; 3];
-    let mut previous_pos = [0.0f32; 3];
-    let mut vel = [0.0f32; 3];
-    let mut previous_speed = 0.0f32;
-    let mut out = 0usize;
-    let mut i = 0usize;
-    while i < total {
-        let node = base.add(i * GHOST_NODE_SIZE);
-        let flags = ptr::read_volatile(node.add(GHOST_NODE_FLAGS));
-        let fx = ptr::read_volatile(node.add(GHOST_NODE_DX) as *const f32);
-        let fy = ptr::read_volatile(node.add(GHOST_NODE_DX + 4) as *const f32);
-        let fz = ptr::read_volatile(node.add(GHOST_NODE_DX + 8) as *const f32);
-        if flags & GHOST_FLAG_DELTA != 0 {
-            vel[0] += fx;
-            vel[1] += fy;
-            vel[2] += fz;
-            pos[0] += vel[0];
-            pos[1] += vel[1];
-            pos[2] += vel[2];
-        } else {
-            vel = [0.0, 0.0, 0.0];
-            pos = [fx, fy, fz];
-        }
-        let dx = pos[0] - previous_pos[0];
-        let dy = pos[1] - previous_pos[1];
-        let dz = pos[2] - previous_pos[2];
-        let speed = dx * dx + dy * dy + dz * dz;
-        let class = route_class(flags, speed, previous_speed);
-        let last = i + 1 == total;
-        if (i % store_stride == 0 || last) && out < MAX_ROUTE_POINTS {
-            ptr::write(route.add(out * ROUTE_STRIDE), pos[0]);
-            ptr::write(route.add(out * ROUTE_STRIDE + 1), pos[1]);
-            ptr::write(route.add(out * ROUTE_STRIDE + 2), pos[2]);
-            ptr::write(route.add(out * ROUTE_STRIDE + 3), class);
-            out += 1;
-        }
-        previous_pos = pos;
-        previous_speed = speed;
-        i += 1;
-    }
-    out
-}
-
-unsafe fn env_fn(env: *mut c_void, index: usize) -> usize {
-    if env.is_null() {
-        return 0;
-    }
-    let table = *(env as *const *const usize);
-    if table.is_null() {
-        return 0;
-    }
-    *table.add(index)
-}
-
-unsafe fn jni_array_length(env: *mut c_void, array: *mut c_void) -> c_int {
-    let raw = env_fn(env, JNI_GET_ARRAY_LENGTH);
-    if raw == 0 || array.is_null() {
-        return 0;
-    }
-    let func: unsafe extern "C" fn(*mut c_void, *mut c_void) -> c_int =
-        core::mem::transmute(raw);
-    func(env, array)
-}
-
-unsafe fn jni_set_float_region(
-    env: *mut c_void,
-    array: *mut c_void,
-    start: c_int,
-    len: c_int,
-    src: *const f32,
-) {
-    let raw = env_fn(env, JNI_SET_FLOAT_ARRAY_REGION);
-    if raw == 0 || array.is_null() || len <= 0 {
-        return;
-    }
-    let func: unsafe extern "C" fn(*mut c_void, *mut c_void, c_int, c_int, *const f32) =
-        core::mem::transmute(raw);
-    func(env, array, start, len, src);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readGhostRoutePointCount(
-    _env: *mut c_void,
-    _class: *mut c_void,
-) -> i32 {
-    let n = ghost_node_count();
-    if n < 2 {
-        return 0;
-    }
-    let total = n as usize;
-    if total > MAX_ROUTE_POINTS {
-        MAX_ROUTE_POINTS as i32
-    } else {
-        total as i32
-    }
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readGhostRoute(
-    env: *mut c_void,
-    _class: *mut c_void,
-    out: *mut c_void,
-) -> i32 {
-    let count = reconstruct_ghost_route();
-    if count == 0 {
-        return 0;
-    }
-    let capacity = (jni_array_length(env, out) / ROUTE_STRIDE as c_int) as usize;
-    let points = if count > capacity { capacity } else { count };
-    if points == 0 {
-        return 0;
-    }
-    let route = core::ptr::addr_of!(GHOST_ROUTE) as *const f32;
-    jni_set_float_region(env, out, 0, (points * ROUTE_STRIDE) as c_int, route);
-    points as i32
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readGhostViewMatrices(
-    env: *mut c_void,
-    _class: *mut c_void,
-    out: *mut c_void,
-) -> i32 {
-    if !ensure_route_symbols() || GHOST_SIZE.is_null() {
-        return 0;
-    }
-    if jni_array_length(env, out) < GHOST_VIEW_MATRICES_FLOATS {
-        return 0;
-    }
-    let slide = (GHOST_SIZE as usize).wrapping_sub(GHOST_SIZE_VADDR);
-    let modelview = (slide + MV_MATRIX0_VADDR) as *const f32;
-    let projection = (slide + PROJ_MATRIX0_VADDR) as *const f32;
-    let mut buffer = [0.0f32; GHOST_VIEW_MATRICES_FLOATS as usize];
-    let mut projection_nonzero = false;
-    let mut element = 0usize;
-    while element < 16 {
-        buffer[element] = ptr::read_volatile(modelview.add(element));
-        let proj = ptr::read_volatile(projection.add(element));
-        buffer[16 + element] = proj;
-        if proj != 0.0 {
-            projection_nonzero = true;
-        }
-        element += 1;
-    }
-    if !GHOST_TRANSFORM.is_null() {
-        buffer[32] = ptr::read_volatile(GHOST_TRANSFORM.add(GHOST_TRANSFORM_POS_FLOAT));
-        buffer[33] = ptr::read_volatile(GHOST_TRANSFORM.add(GHOST_TRANSFORM_POS_FLOAT + 1));
-        buffer[34] = ptr::read_volatile(GHOST_TRANSFORM.add(GHOST_TRANSFORM_POS_FLOAT + 2));
-    }
-    jni_set_float_region(env, out, 0, GHOST_VIEW_MATRICES_FLOATS, buffer.as_ptr());
-    if projection_nonzero {
-        1
-    } else {
-        0
-    }
 }

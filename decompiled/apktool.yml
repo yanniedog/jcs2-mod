@@ -1,5 +1,5 @@
 ﻿version: 2.10.0
-apkFileName: jcs_modded.apk
+apkFileName: jcs2-mod.apk
 isFrameworkApk: false
 usesFramework:
   ids:

@@ -1,4 +1,4 @@
-# Rebuild signed jcs_modded.apk: modmenu smali -> apktool -> zipalign -> apksigner
+# Rebuild signed jcs2-mod.apk: modmenu smali -> apktool -> zipalign -> apksigner
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $Root
@@ -47,7 +47,7 @@ $Java = Join-Path $JdkHome "bin\java.exe"
 
 $Unsigned = Join-Path $Root "_apk_build\unsigned.apk"
 $Aligned = Join-Path $Root "_apk_build\aligned.apk"
-$Output = Join-Path $Root "jcs_modded.apk"
+$Output = Join-Path $Root "jcs2-mod.apk"
 New-Item -ItemType Directory -Path (Split-Path $Unsigned) -Force | Out-Null
 
 Write-Host "Building APK with apktool..."
