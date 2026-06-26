@@ -57,7 +57,19 @@ Write-Host "Dexing modmenu classes..."
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "Disassembling to smali..."
-& $Java -jar (Join-Path $Root "tools\baksmali.jar") d (Join-Path $DexDir "classes.dex") -o $SmaliOut
+$BaksmaliJar = Join-Path $Root "tools\baksmali.jar"
+$BaksmaliLib = Join-Path $Root "tools\baksmali_lib"
+$BaksmaliDeps = @()
+if (Test-Path $BaksmaliLib) {
+    $BaksmaliDeps = @(Get-ChildItem -Path $BaksmaliLib -Filter *.jar -File |
+        ForEach-Object { $_.FullName })
+}
+if ($BaksmaliDeps.Count -gt 0) {
+    $BaksmaliClasspath = (@($BaksmaliJar) + $BaksmaliDeps) -join [System.IO.Path]::PathSeparator
+    & $Java -cp $BaksmaliClasspath org.jf.baksmali.Main d (Join-Path $DexDir "classes.dex") -o $SmaliOut
+} else {
+    & $Java -jar $BaksmaliJar d (Join-Path $DexDir "classes.dex") -o $SmaliOut
+}
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $Dest = Join-Path $Root "decompiled\smali\com\trueaxis\modmenu"
