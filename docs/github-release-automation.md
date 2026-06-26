@@ -7,6 +7,23 @@ The repository has two GitHub Actions workflows:
 - `release-apk`: runs after a pull request is merged into `main` and creates a
   signed APK plus a GitHub Release.
 
+## Large APK hosting and app updates
+
+Do not commit APK binaries to git. The APK is roughly 160 MB, which is too large
+for normal repository files. Instead, `release-apk` uploads the APK as a GitHub
+Release asset, where large binary artifacts are expected.
+
+Every release also uploads a tiny `jcs2-update.json` asset. The app checks this
+stable URL:
+
+`https://github.com/yanniedog/jcs2-mod/releases/latest/download/jcs2-update.json`
+
+That manifest points at the release APK asset and includes the package name,
+version name/code, APK size, and SHA-256. The app can automatically check,
+download, verify, and open the Android installer. Android still requires the
+user to approve sideload installation; silent self-install is not available to a
+normal APK.
+
 ## Required repository setup
 
 Add these under GitHub repository settings:

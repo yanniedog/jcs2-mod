@@ -1,4 +1,4 @@
-version: 2.10.0
+﻿version: 2.10.0
 apkFileName: jcs_modded.apk
 isFrameworkApk: false
 usesFramework:
@@ -12,8 +12,8 @@ packageInfo:
   forcedPackageId: 127
   renameManifestPackage: null
 versionInfo:
-  versionCode: 39
-  versionName: 1.0.24-mod11
+  versionCode: 50
+  versionName: 1.0.24-mod22
 resourcesAreCompressed: false
 sharedLibrary: false
 sparseResources: false
@@ -63,3 +63,11 @@ doNotCompress:
 - META-INF/androidx.versionedparcelable_versionedparcelable.version
 - META-INF/androidx.viewpager_viewpager.version
 - META-INF/com.google.android.material_material.version
+
+
+
+
+
+
+
+

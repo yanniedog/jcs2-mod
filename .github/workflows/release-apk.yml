@@ -96,14 +96,51 @@ jobs:
           $apk = Join-Path "apks" "${{ steps.version.outputs.apk_name }}"
           Copy-Item -LiteralPath "jcs_modded.apk" -Destination $apk -Force
           $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $apk).Hash
+          $hashLower = $hash.ToLowerInvariant()
+          $repo = $env:GITHUB_REPOSITORY
+          if (-not $repo) { $repo = "yanniedog/jcs2-mod" }
+          $buildInfo = @{}
+          $buildInfoPath = Join-Path "decompiled\assets" "ycs2-build-info.properties"
+          if (Test-Path $buildInfoPath) {
+            Get-Content -LiteralPath $buildInfoPath | ForEach-Object {
+              if ($_ -match '^\s*([^#=]+?)\s*=\s*(.*?)\s*$') {
+                $buildInfo[$Matches[1]] = $Matches[2]
+              }
+            }
+          }
+          $buildDateUtc = $buildInfo["build_date_utc"]
+          if (-not $buildDateUtc) {
+            $buildDateUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+          }
+          $apkName = "${{ steps.version.outputs.apk_name }}"
+          $tagName = "${{ steps.version.outputs.tag_name }}"
+          $manifest = Join-Path "apks" "jcs2-update.json"
+          [ordered]@{
+            schema = 1
+            package_name = "modded.ycs2"
+            version_name = "${{ steps.version.outputs.version_name }}"
+            version_code = [int]"${{ steps.version.outputs.version_code }}"
+            tag_name = $tagName
+            apk_name = $apkName
+            apk_url = "https://github.com/$repo/releases/download/$tagName/$apkName"
+            apk_sha256 = $hashLower
+            apk_size = (Get-Item -LiteralPath $apk).Length
+            build_date_utc = $buildDateUtc
+            release_url = "https://github.com/$repo/releases/tag/$tagName"
+            manifest_url = "https://github.com/$repo/releases/latest/download/jcs2-update.json"
+            published_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+          } | ConvertTo-Json | Set-Content -LiteralPath $manifest -Encoding UTF8
           "apk_path=$apk" >> $env:GITHUB_OUTPUT
+          "manifest_path=$manifest" >> $env:GITHUB_OUTPUT
           "sha256=$hash" >> $env:GITHUB_OUTPUT
           @"
           JCS2 Community Mod ${{ steps.version.outputs.version_name }}
 
           Commit: $env:GITHUB_SHA
           APK: ${{ steps.version.outputs.apk_name }}
+          Built: $buildDateUtc
           SHA-256: $hash
+          Update feed: https://github.com/$repo/releases/latest/download/jcs2-update.json
           "@ | Set-Content -LiteralPath release-notes.md -Encoding UTF8
 
       - name: Publish GitHub release
@@ -111,6 +148,7 @@ jobs:
         run: |
           gh release create "${{ steps.version.outputs.tag_name }}" `
             "${{ steps.asset.outputs.apk_path }}" `
+            "${{ steps.asset.outputs.manifest_path }}" `
             --target "$env:GITHUB_SHA" `
             --title "${{ steps.version.outputs.release_title }}" `
             --notes-file release-notes.md
@@ -119,5 +157,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.version.outputs.apk_name }}
-          path: ${{ steps.asset.outputs.apk_path }}
+          path: |
+            ${{ steps.asset.outputs.apk_path }}
+            ${{ steps.asset.outputs.manifest_path }}
           if-no-files-found: error

@@ -6,7 +6,7 @@
 # Delivers the stubbed IAP-verify result from a background thread.
 # Calling TrueaxisLib.IAPCheckSuccess synchronously inside TaServer_VerifyIAP
 # re-entered native on the game/UI thread and produced an ANR
-# ("MCS2 isn't responding"). The original code answered from a worker thread
+# ("YCS2 isn't responding"). The original code answered from a worker thread
 # after the network round-trip; this mirrors that, with a short delay so the
 # native VerifyIAP call has unwound before the callback fires.
 

@@ -56,10 +56,14 @@ public class LiveryDesignerActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ModDebugLog.install(this);
         car = getIntent() != null ? getIntent().getIntExtra(EXTRA_CAR, 0) : 0;
+        ModDebugLog.module("designer", "onCreate car=" + ModMenu.carName(car)
+                + " savedState=" + (savedInstanceState != null));
 
         Bitmap start = ModMenu.loadEditableLivery(this, car);
         if (start == null) {
+            ModDebugLog.module("designer", "editable livery unavailable; creating blank texture");
             start = Bitmap.createBitmap(ModMenu.textureSize(), ModMenu.textureSize(),
                     Bitmap.Config.ARGB_8888);
         }
@@ -69,7 +73,7 @@ public class LiveryDesignerActivity extends Activity {
         root.setBackgroundColor(BG);
         root.setPadding(dp(8), dp(6), dp(8), dp(6));
 
-        TextView title = text(ModMenu.carName(car) + " — livery designer", 16, ACCENT);
+        TextView title = text(ModMenu.carName(car) + " Ã¢â‚¬â€ livery designer", 16, ACCENT);
         title.setPadding(dp(4), 0, 0, dp(4));
         root.addView(title);
 
@@ -91,10 +95,12 @@ public class LiveryDesignerActivity extends Activity {
         setContentView(root);
         canvas.setColorListener(new DesignView.ColorListener() {
             public void onColorPicked(int color) {
+                ModDebugLog.module("designer", "picked color=" + color);
                 setColor(color);
             }
         });
         setColor(SWATCHES[3]);
+        ModDebugLog.logRuntime("designer ready");
     }
 
     private View buildToolRow() {
@@ -245,14 +251,22 @@ public class LiveryDesignerActivity extends Activity {
     }
 
     private void confirmRevert() {
+        ModDebugLog.module("designer", "confirm revert car=" + ModMenu.carName(car));
         new AlertDialog.Builder(this)
                 .setTitle("Revert to bundled livery?")
                 .setMessage("Discards your edits and starts again from the original car texture.")
                 .setPositiveButton("Revert", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
+                        ModDebugLog.module("designer", "revert confirmed car=" + ModMenu.carName(car));
                         Bitmap original = ModMenu.loadEditableLivery(
                                 LiveryDesignerActivity.this, ModMenu.carCount() > car ? car : 0);
-                        if (original != null) canvas.replaceBitmap(original);
+                        if (original != null) {
+                            canvas.replaceBitmap(original);
+                            ModDebugLog.module("designer", "revert loaded original car=" + ModMenu.carName(car));
+                        } else {
+                            ModDebugLog.module("designer", "revert original load returned null car="
+                                    + ModMenu.carName(car));
+                        }
                     }
                 })
                 .setNegativeButton("Keep editing", null)
@@ -261,12 +275,17 @@ public class LiveryDesignerActivity extends Activity {
 
     private void save() {
         try {
+            ModDebugLog.module("designer", "save clicked car=" + ModMenu.carName(car)
+                    + " bitmap=" + canvas.getBitmap().getWidth() + "x"
+                    + canvas.getBitmap().getHeight());
             ModMenu.saveDesignedLivery(this, car, canvas.getBitmap());
             Toast.makeText(this, ModMenu.carName(car)
                     + " livery saved. Restart the game to see it.", Toast.LENGTH_LONG).show();
+            ModDebugLog.module("designer", "save complete car=" + ModMenu.carName(car));
             finish();
         } catch (Throwable t) {
-            Log.e("MCS2Mod", "Could not save designed livery", t);
+            Log.e("YCS2Mod", "Could not save designed livery", t);
+            ModDebugLog.module("designer", "Could not save designed livery", t);
             Toast.makeText(this, "Could not save livery: " + t.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
@@ -278,6 +297,7 @@ public class LiveryDesignerActivity extends Activity {
 
     private void showColorPicker() {
         final int start = canvas.getColor();
+        ModDebugLog.module("designer", "open color picker start=" + start);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(16), dp(12), dp(16), dp(4));
@@ -633,6 +653,7 @@ public class LiveryDesignerActivity extends Activity {
                         public void onClick(DialogInterface dialog, int which) {
                             String s = input.getText().toString();
                             if (s.length() == 0) return;
+                            ModDebugLog.module("designer", "place text length=" + s.length());
                             pushUndo();
                             Paint tp = new Paint(Paint.ANTI_ALIAS_FLAG);
                             tp.setColor(color);

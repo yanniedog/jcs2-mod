@@ -20,22 +20,18 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$checkpointSplits:Landroid/widget/CheckBox;
-
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/CheckBox;)V
-    .registers 3
+.method constructor <init>(Landroid/app/Activity;)V
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 258
+    .line 400
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
-
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$checkpointSplits:Landroid/widget/CheckBox;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -45,36 +41,20 @@
 
 # virtual methods
 .method public onClick(Landroid/view/View;)V
-    .registers 4
+    .registers 3
 
-    .line 260
+    .line 402
+    const-string p1, "launcher"
+
+    const-string v0, "manual update check clicked"
+
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+
+    .line 403
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
 
-    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+    invoke-static {p1}, Lcom/trueaxis/modmenu/UpdateManager;->checkNow(Landroid/app/Activity;)V
 
-    move-result-object p1
-
-    invoke-interface {p1}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
-
-    move-result-object p1
-
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$checkpointSplits:Landroid/widget/CheckBox;
-
-    .line 261
-    invoke-virtual {v0}, Landroid/widget/CheckBox;->isChecked()Z
-
-    move-result v0
-
-    .line 260
-    const-string v1, "checkpoint_splits"
-
-    invoke-interface {p1, v1, v0}, Landroid/content/SharedPreferences$Editor;->putBoolean(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;
-
-    move-result-object p1
-
-    .line 261
-    invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
-
-    .line 262
+    .line 404
     return-void
 .end method

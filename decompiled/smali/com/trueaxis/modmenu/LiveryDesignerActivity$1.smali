@@ -33,7 +33,7 @@
         }
     .end annotation
 
-    .line 92
+    .line 96
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$1;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -44,14 +44,37 @@
 
 # virtual methods
 .method public onColorPicked(I)V
-    .registers 3
+    .registers 4
 
-    .line 94
+    .line 98
+    new-instance v0, Ljava/lang/StringBuilder;
+
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v1, "picked color="
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    invoke-virtual {v0, p1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v0
+
+    const-string v1, "designer"
+
+    invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+
+    .line 99
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$1;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     # invokes: Lcom/trueaxis/modmenu/LiveryDesignerActivity;->setColor(I)V
     invoke-static {v0, p1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->access$000(Lcom/trueaxis/modmenu/LiveryDesignerActivity;I)V
 
-    .line 95
+    .line 100
     return-void
 .end method

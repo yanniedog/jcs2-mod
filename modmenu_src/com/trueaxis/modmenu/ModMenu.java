@@ -21,6 +21,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -30,19 +31,38 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Properties;
 
 /**
- * Mod settings for the MCS2 (Jet Car Stunts 2) community build.
+ * Mod settings for the YCS2 (JCS2 mod) community build.
  * The launcher exposes only disclosure, game launch, and custom livery tools.
  */
 public class ModMenu {
     private static final String PREFS = "jcs_mod";
     private static final String K_CAR = "livery_car";
     private static final String K_CHECKPOINT_SPLITS = "checkpoint_splits";
+    private static final String K_SPLIT_LIST = "split_list";
+    private static final String K_SPLIT_REALTIME = "split_realtime";
+    private static final String K_SPLIT_SECTOR_DELTA = "split_sector_delta";
+    private static final String K_SPLIT_ALPHA = "split_alpha";
+    private static final String K_SPLIT_X = "split_x";
+    private static final String K_SPLIT_Y = "split_y";
+    private static final String K_GHOST_ROUTE = "ghost_route";
+    private static final String K_GHOST_ROUTE_ALPHA = "ghost_route_alpha";
+    private static final String K_GHOST_ROUTE_THICKNESS = "ghost_route_thickness";
+    private static final String K_YCS2_PREFIX = "ycs2_prefix";
+    private static final String K_EXPERIMENTAL_VISIBLE = "experimental_visible";
+    private static final String K_EXPERIMENTAL_ACK = "experimental_ack";
     private static final String REPO_URL = "https://github.com/yanniedog/jcs2-mod";
+    private static final String DISPLAY_NAME = "YCS2 (JCS2 mod)";
     private static final int REQUEST_IMPORT = 7301;
     private static final int REQUEST_EXPORT = 7302;
     private static final int TEXTURE_SIZE = 512;
+    private static final int DEFAULT_SPLIT_ALPHA = 90;
+    private static final int DEFAULT_SPLIT_X = 88;
+    private static final int DEFAULT_SPLIT_Y = 39;
+    private static final int DEFAULT_GHOST_ROUTE_ALPHA = 85;
+    private static final int DEFAULT_GHOST_ROUTE_THICKNESS = 7;
 
     private static final String[] CAR_NAMES = {
             "Buggy", "Original jetcar", "Jet", "Mini", "Sports", "Stock", "Truck"
@@ -132,21 +152,31 @@ public class ModMenu {
 
     /** Loads the current livery for editing: the saved custom one if present, else the bundled asset. */
     public static Bitmap loadEditableLivery(Context c, int car) {
+        ModDebugLog.install(c);
         File custom = customTexture(c, car);
         InputStream input = null;
         try {
+            ModDebugLog.module("livery", "load editable car=" + carName(car)
+                    + " customExists=" + custom.isFile()
+                    + " asset=" + CAR_TEXTURES[car]);
             input = custom.isFile()
                     ? new java.io.FileInputStream(custom)
                     : c.getAssets().open(CAR_TEXTURES[car]);
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inPreferredConfig = Bitmap.Config.ARGB_8888;
             Bitmap decoded = BitmapFactory.decodeStream(input, null, options);
-            if (decoded == null) return null;
+            if (decoded == null) {
+                ModDebugLog.module("livery", "decode returned null car=" + carName(car));
+                return null;
+            }
             Bitmap mutable = decoded.copy(Bitmap.Config.ARGB_8888, true);
             if (mutable != decoded) decoded.recycle();
+            ModDebugLog.module("livery", "loaded editable car=" + carName(car)
+                    + " size=" + mutable.getWidth() + "x" + mutable.getHeight());
             return mutable;
         } catch (Throwable t) {
-            Log.e("MCS2Mod", "Could not load livery for editing", t);
+            Log.e("YCS2Mod", "Could not load livery for editing", t);
+            ModDebugLog.module("livery", "Could not load livery for editing car=" + carName(car), t);
             return null;
         } finally {
             closeQuietly(input);
@@ -155,12 +185,16 @@ public class ModMenu {
 
     /** Saves a designed/edited bitmap as the car's livery (internal + external mirror). */
     public static void saveDesignedLivery(Context c, int car, Bitmap bitmap) throws Exception {
+        ModDebugLog.install(c);
+        ModDebugLog.module("livery", "save designed car=" + carName(car)
+                + " bitmap=" + bitmap.getWidth() + "x" + bitmap.getHeight());
         Bitmap scaled = bitmap.getWidth() == TEXTURE_SIZE && bitmap.getHeight() == TEXTURE_SIZE
                 ? bitmap
                 : Bitmap.createScaledBitmap(bitmap, TEXTURE_SIZE, TEXTURE_SIZE, true);
         try {
             writeLivery(customTexture(c, car), scaled);
             mirrorExternal(c, car, scaled);
+            ModDebugLog.module("livery", "save designed complete car=" + carName(car));
         } finally {
             if (scaled != bitmap) scaled.recycle();
         }
@@ -192,27 +226,137 @@ public class ModMenu {
     }
 
     public static boolean checkpointSplitsEnabled(Context c) {
-        return prefs(c).getBoolean(K_CHECKPOINT_SPLITS, true);
+        return experimentalFeaturesEnabled(c) && prefs(c).getBoolean(K_CHECKPOINT_SPLITS, false);
+    }
+
+    public static boolean splitListEnabled(Context c) {
+        return experimentalFeaturesEnabled(c) && prefs(c).getBoolean(K_SPLIT_LIST, false);
+    }
+
+    public static boolean realtimeSplitsEnabled(Context c) {
+        return experimentalFeaturesEnabled(c) && prefs(c).getBoolean(K_SPLIT_REALTIME, false);
+    }
+
+    public static boolean sectorSplitsEnabled(Context c) {
+        return checkpointSplitsEnabled(c) && prefs(c).getBoolean(K_SPLIT_SECTOR_DELTA, false);
+    }
+
+    public static int splitAlphaPercent(Context c) {
+        return clamp(prefs(c).getInt(K_SPLIT_ALPHA, DEFAULT_SPLIT_ALPHA), 10, 100);
+    }
+
+    public static int splitXdp(Context c) {
+        return clamp(prefs(c).getInt(K_SPLIT_X, DEFAULT_SPLIT_X), 0, 360);
+    }
+
+    public static int splitYdp(Context c) {
+        return clamp(prefs(c).getInt(K_SPLIT_Y, DEFAULT_SPLIT_Y), 0, 180);
+    }
+
+    public static boolean ghostRouteEnabled(Context c) {
+        return experimentalFeaturesEnabled(c) && prefs(c).getBoolean(K_GHOST_ROUTE, false);
+    }
+
+    public static int ghostRouteAlphaPercent(Context c) {
+        return clamp(prefs(c).getInt(K_GHOST_ROUTE_ALPHA, DEFAULT_GHOST_ROUTE_ALPHA), 5, 100);
+    }
+
+    public static int ghostRouteThicknessDp(Context c) {
+        return clamp(prefs(c).getInt(K_GHOST_ROUTE_THICKNESS, DEFAULT_GHOST_ROUTE_THICKNESS), 1, 16);
+    }
+
+    public static boolean ycs2PrefixEnabled(Context c) {
+        return experimentalFeaturesEnabled(c) && prefs(c).getBoolean(K_YCS2_PREFIX, false);
+    }
+
+    private static boolean experimentalFeaturesEnabled(Context c) {
+        return prefs(c).getBoolean(K_EXPERIMENTAL_VISIBLE, false)
+                && prefs(c).getBoolean(K_EXPERIMENTAL_ACK, false);
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    public static void validateCustomLiveriesForGame(Context c) {
+        ModDebugLog.install(c);
+        for (int car = 0; car < CAR_TEXTURES.length; car++) {
+            validateCustomLiveryFile(customTexture(c, car), car, "internal");
+            File external = externalTexture(c, car);
+            if (external != null) validateCustomLiveryFile(external, car, "external");
+        }
+    }
+
+    private static void validateCustomLiveryFile(File file, int car, String location) {
+        if (file == null || !file.isFile()) return;
+        try {
+            BitmapFactory.Options bounds = new BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(file.getAbsolutePath(), bounds);
+            boolean valid = bounds.outWidth == TEXTURE_SIZE && bounds.outHeight == TEXTURE_SIZE;
+            ModDebugLog.module("livery", "validate " + location
+                    + " car=" + carName(car)
+                    + " path=" + file.getAbsolutePath()
+                    + " size=" + bounds.outWidth + "x" + bounds.outHeight
+                    + " bytes=" + file.length()
+                    + " valid=" + valid);
+            if (!valid) quarantineLivery(file, car, location, "invalid-size-or-decode");
+        } catch (Throwable error) {
+            ModDebugLog.module("livery", "validate failed " + location
+                    + " car=" + carName(car) + " path=" + file.getAbsolutePath(), error);
+            quarantineLivery(file, car, location, "exception");
+        }
+    }
+
+    private static void quarantineLivery(File file, int car, String location, String reason) {
+        File quarantine = new File(file.getParentFile(),
+                file.getName() + ".bad-" + System.currentTimeMillis());
+        boolean renamed = false;
+        try {
+            renamed = file.renameTo(quarantine);
+            if (!renamed) renamed = file.delete();
+        } catch (Throwable error) {
+            ModDebugLog.module("livery", "quarantine failed " + location
+                    + " car=" + carName(car)
+                    + " reason=" + reason
+                    + " path=" + file.getAbsolutePath(), error);
+            return;
+        }
+        ModDebugLog.module("livery", "quarantined " + location
+                + " car=" + carName(car)
+                + " reason=" + reason
+                + " path=" + file.getAbsolutePath()
+                + " target=" + quarantine.getAbsolutePath()
+                + " success=" + renamed);
     }
 
     /**
      * Full-screen pre-launch mod menu shown before the native game (and splash) starts.
-     * All options are visible immediately; nothing overlays gameplay.
+     * Experimental HUD/disclosure controls are hidden until explicitly acknowledged.
      */
     public static void showPreLaunchMenu(final Activity a, final Runnable onPlay) {
+        ModDebugLog.install(a);
+        ModDebugLog.module("launcher", "show pre-launch menu checkpointSplits="
+                + checkpointSplitsEnabled(a));
+        ModIdentity.configure(a);
         try {
             LinearLayout root = new LinearLayout(a);
             root.setOrientation(LinearLayout.VERTICAL);
             root.setBackgroundColor(Color.rgb(13, 17, 23));
             root.setPadding(dp(a, 20), dp(a, 16), dp(a, 20), dp(a, 16));
 
-            TextView title = label(a, "MCS2 COMMUNITY MOD", 23, Color.rgb(255, 128, 0));
+            TextView title = label(a, DISPLAY_NAME, 23, Color.rgb(255, 128, 0));
             title.setGravity(Gravity.CENTER);
             title.setPadding(0, 0, 0, dp(a, 2));
             root.addView(title);
 
+            TextView version = label(a, buildSummary(a), 11, Color.rgb(210, 216, 222));
+            version.setGravity(Gravity.CENTER);
+            version.setPadding(0, 0, 0, dp(a, 3));
+            root.addView(version);
+
             TextView subtitle = label(a,
-                    "This is the modified APK. Replays and leaderboard submissions originate from a modified client.",
+                    "This is the YCS2 modified APK. Replays and leaderboard submissions originate from a modified client.",
                     11, Color.rgb(170, 178, 185));
             subtitle.setGravity(Gravity.CENTER);
             subtitle.setPadding(0, 0, 0, dp(a, 8));
@@ -224,8 +368,10 @@ public class ModMenu {
             repo.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     try {
+                        ModDebugLog.module("launcher", "open repo url=" + REPO_URL);
                         a.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(REPO_URL)));
                     } catch (Throwable error) {
+                        ModDebugLog.module("launcher", "open repo failed", error);
                         Toast.makeText(a, REPO_URL, Toast.LENGTH_LONG).show();
                     }
                 }
@@ -244,27 +390,109 @@ public class ModMenu {
             Button liveries = button(a, "Custom livery editor");
             liveries.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
+                    ModDebugLog.module("launcher", "custom livery editor clicked");
                     showLiveryManager(a);
                 }
             });
             card.addView(liveries, fill());
 
-            final CheckBox checkpointSplits = new CheckBox(a);
-            checkpointSplits.setText("Checkpoint splits vs personal-best ghost");
-            checkpointSplits.setTextColor(Color.WHITE);
-            checkpointSplits.setTextSize(11.0f);
-            checkpointSplits.setChecked(checkpointSplitsEnabled(a));
-            checkpointSplits.setPadding(0, dp(a, 6), 0, 0);
-            checkpointSplits.setOnClickListener(new View.OnClickListener() {
+            Button updates = button(a, "Check for updates");
+            updates.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
-                    prefs(a).edit().putBoolean(
-                            K_CHECKPOINT_SPLITS, checkpointSplits.isChecked()).apply();
+                    ModDebugLog.module("launcher", "manual update check clicked");
+                    UpdateManager.checkNow(a);
                 }
             });
-            card.addView(checkpointSplits, fill());
+            card.addView(updates, fill());
+
+            final LinearLayout experimental = new LinearLayout(a);
+            experimental.setOrientation(LinearLayout.VERTICAL);
+
+            final CheckBox showExperimental = new CheckBox(a);
+            showExperimental.setText("Show buggy experimental features");
+            showExperimental.setTextColor(Color.WHITE);
+            showExperimental.setTextSize(11.0f);
+            showExperimental.setChecked(prefs(a).getBoolean(K_EXPERIMENTAL_VISIBLE, false));
+            showExperimental.setPadding(0, dp(a, 8), 0, 0);
+            card.addView(showExperimental, fill());
+
+            final CheckBox acknowledgeExperimental = new CheckBox(a);
+            acknowledgeExperimental.setText("I understand: buggy, unstable, not ready.");
+            acknowledgeExperimental.setTextColor(Color.rgb(255, 200, 120));
+            acknowledgeExperimental.setTextSize(11.0f);
+            acknowledgeExperimental.setChecked(prefs(a).getBoolean(K_EXPERIMENTAL_ACK, false));
+            acknowledgeExperimental.setPadding(0, dp(a, 2), 0, 0);
+            card.addView(acknowledgeExperimental, fill());
+
+            showExperimental.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    prefs(a).edit().putBoolean(
+                            K_EXPERIMENTAL_VISIBLE, showExperimental.isChecked()).apply();
+                    ModIdentity.configure(a);
+                    updateExperimentalVisibility(a, experimental);
+                    ModDebugLog.module("launcher", "experimental section visible="
+                            + showExperimental.isChecked());
+                }
+            });
+
+            acknowledgeExperimental.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    prefs(a).edit().putBoolean(
+                            K_EXPERIMENTAL_ACK, acknowledgeExperimental.isChecked()).apply();
+                    ModIdentity.configure(a);
+                    updateExperimentalVisibility(a, experimental);
+                    ModDebugLog.module("launcher", "experimental section acknowledged="
+                            + acknowledgeExperimental.isChecked());
+                }
+            });
+
+            experimental.addView(sectionHeader(a, "Buggy experimental features"));
+            TextView experimentalNote = label(a,
+                    "These are unstable and unfinished.",
+                    10, Color.rgb(255, 200, 120));
+            experimentalNote.setPadding(0, 0, 0, dp(a, 4));
+            experimental.addView(experimentalNote);
+
+            addCheckBox(a, experimental, "Checkpoint/sector deltas vs raced replay ghost",
+                    K_CHECKPOINT_SPLITS, false);
+
+            experimental.addView(sectionHeader(a, "Split HUD options"));
+            addCheckBox(a, experimental, "Sector delta mode (off: checkpoint delta)",
+                    K_SPLIT_SECTOR_DELTA, false);
+            addCheckBox(a, experimental, "Show consecutive splits as an on-screen list",
+                    K_SPLIT_LIST, false);
+            addCheckBox(a, experimental, "Continuously refresh the split readout while racing a ghost",
+                    K_SPLIT_REALTIME, false);
+            addSeek(a, experimental, "Split text transparency", K_SPLIT_ALPHA,
+                    DEFAULT_SPLIT_ALPHA, 10, 100, "%");
+            addSeek(a, experimental, "Split text horizontal position", K_SPLIT_X,
+                    DEFAULT_SPLIT_X, 0, 360, " dp");
+            addSeek(a, experimental, "Split text vertical position", K_SPLIT_Y,
+                    DEFAULT_SPLIT_Y, 0, 180, " dp");
+
+            experimental.addView(sectionHeader(a, "Ghost track line"));
+            addCheckBox(a, experimental,
+                    "Draw ghost track line (buggy/unstable)",
+                    K_GHOST_ROUTE, false);
+            addSeek(a, experimental, "Ghost track line transparency", K_GHOST_ROUTE_ALPHA,
+                    DEFAULT_GHOST_ROUTE_ALPHA, 5, 100, "%");
+            addSeek(a, experimental, "Ghost track line thickness", K_GHOST_ROUTE_THICKNESS,
+                    DEFAULT_GHOST_ROUTE_THICKNESS, 1, 16, " dp");
+            TextView routeNote = label(a,
+                    "Read-only overlay; it should not alter replay, timing, score, physics, or controls.",
+                    10, Color.rgb(150, 158, 165));
+            routeNote.setPadding(0, dp(a, 4), 0, 0);
+            experimental.addView(routeNote);
+
+            experimental.addView(sectionHeader(a, "Disclosure"));
+            addCheckBox(a, experimental,
+                    "Prefix submitted names with (YCS2) where Java-side name fields are visible",
+                    K_YCS2_PREFIX, false);
+            updateExperimentalVisibility(a, experimental);
+            card.addView(experimental, fill());
 
             TextView note = label(a,
-                    "Always active: offline IAP ownership compatibility, 999 checkpoint-time capacity, and blue flame visual identification. A best-effort repeated flap-pulse marker identifies mod-origin replays when supported. Checkpoint splits are a read-only mod HUD. No configurable gameplay, score, or native-value modifications are included.",
+                    "Always active: offline IAP ownership compatibility, 999 checkpoint-time capacity, and blue flame visual identification. Replay data is not modified.",
                     10, Color.rgb(150, 158, 165));
             note.setPadding(0, dp(a, 10), 0, 0);
             card.addView(note);
@@ -285,6 +513,7 @@ public class ModMenu {
             playLp.topMargin = dp(a, 12);
             play.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
+                    ModDebugLog.module("launcher", "play button invoking onPlay");
                     onPlay.run();
                 }
             });
@@ -292,12 +521,98 @@ public class ModMenu {
 
             a.setContentView(root);
         } catch (Throwable t) {
-            Log.e("MCS2Mod", "Could not show pre-launch mod menu", t);
+            Log.e("YCS2Mod", "Could not show pre-launch mod menu", t);
+            ModDebugLog.module("launcher", "Could not show pre-launch mod menu; falling back to game", t);
             onPlay.run();
         }
     }
 
+    private static String buildSummary(Context c) {
+        try {
+            android.content.pm.PackageInfo info =
+                    c.getPackageManager().getPackageInfo(c.getPackageName(), 0);
+            String summary = "Version " + info.versionName + " | Build " + info.versionCode;
+            String buildDate = buildDateUtc(c);
+            if (buildDate.length() > 0) {
+                summary += " | Built " + buildDate;
+            }
+            return summary;
+        } catch (Throwable error) {
+            return "Version unknown";
+        }
+    }
+
+    private static String buildDateUtc(Context c) {
+        InputStream input = null;
+        try {
+            input = c.getAssets().open("ycs2-build-info.properties");
+            Properties properties = new Properties();
+            properties.load(input);
+            return properties.getProperty("build_date_utc", "").trim();
+        } catch (Throwable ignored) {
+            return "";
+        } finally {
+            closeQuietly(input);
+        }
+    }
+
+    private static void addCheckBox(final Context c, LinearLayout card, String text,
+                                    final String key, boolean defaultValue) {
+        final CheckBox checkBox = new CheckBox(c);
+        checkBox.setText(text);
+        checkBox.setTextColor(Color.WHITE);
+        checkBox.setTextSize(11.0f);
+        checkBox.setChecked(prefs(c).getBoolean(key, defaultValue));
+        checkBox.setPadding(0, dp(c, 4), 0, 0);
+        checkBox.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                prefs(c).edit().putBoolean(key, checkBox.isChecked()).apply();
+                ModIdentity.configure(c);
+                ModDebugLog.module("launcher", "option toggled key=" + key
+                        + " value=" + checkBox.isChecked());
+            }
+        });
+        card.addView(checkBox, fill());
+    }
+
+    private static void updateExperimentalVisibility(Context c, View content) {
+        content.setVisibility(experimentalFeaturesEnabled(c) ? View.VISIBLE : View.GONE);
+    }
+
+    private static void addSeek(final Context c, LinearLayout card, String label,
+                                final String key, int defaultValue, final int min,
+                                int max, final String suffix) {
+        final TextView value = label(c, "", 10, Color.rgb(210, 216, 222));
+        final SeekBar seekBar = new SeekBar(c);
+        seekBar.setMax(max - min);
+        seekBar.setProgress(clamp(prefs(c).getInt(key, defaultValue), min, max) - min);
+        updateSeekLabel(value, label, min + seekBar.getProgress(), suffix);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int newValue = min + progress;
+                prefs(c).edit().putInt(key, newValue).apply();
+                updateSeekLabel(value, label, newValue, suffix);
+                ModDebugLog.module("launcher", "option changed key=" + key + " value=" + newValue);
+            }
+
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        value.setPadding(0, dp(c, 4), 0, 0);
+        card.addView(value, fill());
+        card.addView(seekBar, fill());
+    }
+
+    private static void updateSeekLabel(TextView view, String label, int value, String suffix) {
+        view.setText(label + ": " + value + suffix);
+    }
+
     public static void showLiveryManager(final Activity a) {
+        ModDebugLog.install(a);
+        ModDebugLog.module("livery", "open manager selectedCar=" + carName(selectedCar(a)));
         try {
             final LinearLayout manager = new LinearLayout(a);
             manager.setOrientation(LinearLayout.VERTICAL);
@@ -323,7 +638,7 @@ public class ModMenu {
             status.setPadding(0, dp(a, 5), 0, dp(a, 5));
             manager.addView(status);
 
-            Button design = button(a, "🎨  Open livery designer");
+            Button design = button(a, "Ã°Å¸Å½Â¨  Open livery designer");
             design.setTextSize(13.0f);
             design.setTextColor(Color.WHITE);
             design.setBackgroundDrawable(background(Color.rgb(255, 128, 0), dp(a, 8)));
@@ -369,6 +684,8 @@ public class ModMenu {
                 public void onItemSelected(android.widget.AdapterView<?> parent, View view,
                                            int position, long id) {
                     rememberCar(a, cars);
+                    ModDebugLog.module("livery", "manager selected car=" + carName(position)
+                            + " customExists=" + customTexture(a, position).isFile());
                     refresh.run();
                 }
 
@@ -381,12 +698,15 @@ public class ModMenu {
                 public void onClick(View v) {
                     rememberCar(a, cars);
                     try {
+                        ModDebugLog.module("livery", "launch import picker car="
+                                + carName(selectedCar(a)));
                         Intent intent = new Intent(Build.VERSION.SDK_INT >= 19
                                 ? "android.intent.action.OPEN_DOCUMENT" : Intent.ACTION_GET_CONTENT);
                         intent.addCategory(Intent.CATEGORY_OPENABLE);
                         intent.setType("image/*");
                         a.startActivityForResult(intent, REQUEST_IMPORT);
                     } catch (Throwable t) {
+                        ModDebugLog.module("livery", "launch import picker failed", t);
                         toast(a, "No file picker available on this device.");
                     }
                 }
@@ -400,6 +720,7 @@ public class ModMenu {
                     }
                     int car = selectedCar(a);
                     try {
+                        ModDebugLog.module("livery", "launch export picker car=" + carName(car));
                         Intent intent = new Intent("android.intent.action.CREATE_DOCUMENT");
                         intent.addCategory(Intent.CATEGORY_OPENABLE);
                         intent.setType("image/png");
@@ -407,6 +728,7 @@ public class ModMenu {
                                 "jcs2-" + CAR_NAMES[car].toLowerCase().replace(' ', '-') + "-livery.png");
                         a.startActivityForResult(intent, REQUEST_EXPORT);
                     } catch (Throwable t) {
+                        ModDebugLog.module("livery", "launch export picker failed", t);
                         toast(a, "No file picker available on this device.");
                     }
                 }
@@ -414,6 +736,7 @@ public class ModMenu {
             restore.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     int car = cars.getSelectedItemPosition();
+                    ModDebugLog.module("livery", "restore default car=" + carName(car));
                     deleteCustomLivery(a, car);
                     refresh.run();
                     toast(a, CAR_NAMES[car] + " restored. Restart the game to apply.");
@@ -426,7 +749,8 @@ public class ModMenu {
                     .setNegativeButton("Close", null)
                     .show();
         } catch (Throwable t) {
-            Log.e("MCS2Mod", "Could not open livery manager", t);
+            Log.e("YCS2Mod", "Could not open livery manager", t);
+            ModDebugLog.module("livery", "Could not open livery manager", t);
             toast(a, "Could not open livery manager.");
         }
     }
@@ -434,32 +758,45 @@ public class ModMenu {
     public static boolean handleActivityResult(Activity a, int requestCode, int resultCode,
                                                Intent data) {
         if (requestCode != REQUEST_IMPORT && requestCode != REQUEST_EXPORT) return false;
+        ModDebugLog.install(a);
+        ModDebugLog.module("livery", "handle result request=" + requestCode
+                + " result=" + resultCode
+                + " hasData=" + (data != null)
+                + " hasUri=" + (data != null && data.getData() != null));
         if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null) return true;
         Uri uri = data.getData();
         int car = selectedCar(a);
         try {
             if (requestCode == REQUEST_IMPORT) {
+                ModDebugLog.module("livery", "import result uri=" + uri + " car=" + carName(car));
                 importLivery(a, uri, car);
                 toast(a, CAR_NAMES[car] + " livery imported. Restart the game to apply.");
             } else {
+                ModDebugLog.module("livery", "export result uri=" + uri + " car=" + carName(car));
                 exportLivery(a, uri, car);
                 toast(a, CAR_NAMES[car] + " livery exported for editing.");
             }
+            ModDebugLog.module("livery", "activity result handled successfully request=" + requestCode);
         } catch (Throwable t) {
-            Log.e("MCS2Mod", "Livery file operation failed", t);
+            Log.e("YCS2Mod", "Livery file operation failed", t);
+            ModDebugLog.module("livery", "Livery file operation failed", t);
             toast(a, "Livery operation failed: " + t.getMessage());
         }
         return true;
     }
 
     private static void importLivery(Context c, Uri uri, int car) throws Exception {
+        ModDebugLog.module("livery", "import start car=" + carName(car) + " uri=" + uri);
         Bitmap source = decodeSampled(c, uri);
         if (source == null) throw new IllegalArgumentException("Unsupported image");
         Bitmap scaled = null;
         try {
+            ModDebugLog.module("livery", "import decoded source="
+                    + source.getWidth() + "x" + source.getHeight());
             scaled = Bitmap.createScaledBitmap(source, TEXTURE_SIZE, TEXTURE_SIZE, true);
             writeLivery(customTexture(c, car), scaled);
             mirrorExternal(c, car, scaled);
+            ModDebugLog.module("livery", "import complete car=" + carName(car));
         } finally {
             if (scaled != null && scaled != source) scaled.recycle();
             source.recycle();
@@ -468,6 +805,7 @@ public class ModMenu {
 
     /** Decodes an image, downsampling huge sources so we never OOM on import. */
     private static Bitmap decodeSampled(Context c, Uri uri) throws Exception {
+        ModDebugLog.module("livery", "decode probe uri=" + uri);
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
         InputStream probe = null;
@@ -480,6 +818,8 @@ public class ModMenu {
         int sample = 1;
         int largest = Math.max(bounds.outWidth, bounds.outHeight);
         while (largest / sample > TEXTURE_SIZE * 2) sample *= 2;
+        ModDebugLog.module("livery", "decode bounds width=" + bounds.outWidth
+                + " height=" + bounds.outHeight + " sample=" + sample);
 
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inSampleSize = sample;
@@ -495,6 +835,8 @@ public class ModMenu {
 
     /** Atomically writes a bitmap as a PNG to target (via a .tmp + rename). */
     private static void writeLivery(File target, Bitmap bitmap) throws Exception {
+        ModDebugLog.module("livery", "write livery target=" + target.getAbsolutePath()
+                + " bitmap=" + bitmap.getWidth() + "x" + bitmap.getHeight());
         File parent = target.getParentFile();
         if (parent == null || (!parent.isDirectory() && !parent.mkdirs())) {
             throw new IllegalStateException("Could not create livery folder");
@@ -513,6 +855,8 @@ public class ModMenu {
                 throw new IllegalStateException("Could not replace old livery");
             }
             if (!temp.renameTo(target)) throw new IllegalStateException("Could not save livery");
+            ModDebugLog.module("livery", "write livery complete target=" + target.getAbsolutePath()
+                    + " bytes=" + target.length());
         } finally {
             closeQuietly(output);
             if (temp.exists()) temp.delete();
@@ -523,14 +867,23 @@ public class ModMenu {
     private static void mirrorExternal(Context c, int car, Bitmap bitmap) {
         try {
             File external = externalTexture(c, car);
-            if (external != null) writeLivery(external, bitmap);
-        } catch (Throwable ignored) {
+            if (external != null) {
+                ModDebugLog.module("livery", "mirror external car=" + carName(car)
+                        + " target=" + external.getAbsolutePath());
+                writeLivery(external, bitmap);
+            } else {
+                ModDebugLog.module("livery", "mirror external skipped; no external files dir");
+            }
+        } catch (Throwable error) {
+            ModDebugLog.module("livery", "mirror external failed car=" + carName(car), error);
         }
     }
 
     private static void exportLivery(Context c, Uri uri, int car) throws Exception {
+        ModDebugLog.module("livery", "export start car=" + carName(car) + " uri=" + uri);
         InputStream input = null;
         OutputStream output = null;
+        int total = 0;
         try {
             File custom = customTexture(c, car);
             input = custom.isFile()
@@ -540,8 +893,13 @@ public class ModMenu {
             if (output == null) throw new IllegalStateException("Could not open export destination");
             byte[] buffer = new byte[16384];
             int count;
-            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+            while ((count = input.read(buffer)) != -1) {
+                output.write(buffer, 0, count);
+                total += count;
+            }
             output.flush();
+            ModDebugLog.module("livery", "export complete car=" + carName(car)
+                    + " bytes=" + total + " custom=" + custom.isFile());
         } finally {
             closeQuietly(input);
             closeQuietly(output);
@@ -550,13 +908,24 @@ public class ModMenu {
 
     /** Removes the custom livery (internal + external mirror) for one car. */
     public static void deleteCustomLivery(Context c, int car) {
+        ModDebugLog.install(c);
         File custom = customTexture(c, car);
-        if (custom.exists()) custom.delete();
+        if (custom.exists()) {
+            boolean deleted = custom.delete();
+            ModDebugLog.module("livery", "delete internal car=" + carName(car)
+                    + " path=" + custom.getAbsolutePath() + " deleted=" + deleted);
+        }
         File external = externalTexture(c, car);
-        if (external != null && external.exists()) external.delete();
+        if (external != null && external.exists()) {
+            boolean deleted = external.delete();
+            ModDebugLog.module("livery", "delete external car=" + carName(car)
+                    + " path=" + external.getAbsolutePath() + " deleted=" + deleted);
+        }
     }
 
     public static void resetAllCustomLiveries(Context c) {
+        ModDebugLog.install(c);
+        ModDebugLog.module("livery", "reset all custom liveries");
         for (int car = 0; car < CAR_TEXTURES.length; car++) {
             deleteCustomLivery(c, car);
         }

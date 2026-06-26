@@ -48,3 +48,6 @@ desktop.ini
 *~
 .idea/
 .vscode/
+
+# Local project memory store
+.projectmem/

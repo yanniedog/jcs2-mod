@@ -321,6 +321,17 @@
 .method public TaServer_PostWithRef(ZLjava/lang/String;[BIII)V
     .locals 9
 
+    invoke-static {p1, p2, p3}, Lcom/trueaxis/modmenu/ModIdentity;->prepareSubmissionBytes(ZLjava/lang/String;[B)[B
+
+    move-result-object p3
+
+    if-eqz p1, :cond_ycs2_identity
+
+    if-eqz p3, :cond_ycs2_identity
+
+    array-length p4, p3
+
+    :cond_ycs2_identity
     const/4 v0, -0x1
 
     if-ne p5, v0, :cond_0
@@ -430,7 +441,7 @@
     # receipt and failing (-> IAPCheckFail, which locks/blocks startup),
     # report verified=1, error=0 back to native. Done on a background thread
     # (VerifyStub) to avoid re-entering native synchronously on the game
-    # thread, which caused an ANR ("MCS2 isn't responding").
+    # thread, which caused an ANR ("YCS2 isn't responding").
     new-instance v0, Lcom/trueaxis/server/VerifyStub;
 
     invoke-direct {v0, p2, p3, p4}, Lcom/trueaxis/server/VerifyStub;-><init>([BJ)V

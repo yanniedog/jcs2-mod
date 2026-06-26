@@ -1,0 +1,415 @@
+package com.trueaxis.modmenu;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.os.ParcelFileDescriptor;
+import android.widget.Toast;
+
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.MessageDigest;
+import java.util.Locale;
+
+/**
+ * Small self-updater for side-loaded community builds.
+ *
+ * Android does not allow this APK to silently replace itself. The updater can
+ * check, download, verify, and open the package installer; the user still has to
+ * approve installing the replacement APK.
+ */
+public final class UpdateManager {
+    private static final String PREFS = "jcs_mod_update";
+    private static final String K_LAST_CHECK_MS = "last_check_ms";
+    private static final String K_DOWNLOAD_ID = "download_id";
+    private static final String K_DOWNLOAD_SHA256 = "download_sha256";
+    private static final String K_DOWNLOAD_VERSION_CODE = "download_version_code";
+    private static final String UPDATE_MANIFEST_URL =
+            "https://github.com/yanniedog/jcs2-mod/releases/latest/download/jcs2-update.json";
+    private static final String APK_MIME = "application/vnd.android.package-archive";
+    private static final long CHECK_INTERVAL_MS = 12L * 60L * 60L * 1000L;
+    private static final int MAX_MANIFEST_CHARS = 65536;
+    private static boolean checking;
+
+    private UpdateManager() {
+    }
+
+    public static void checkSilently(final Activity activity) {
+        resumePendingInstall(activity, false);
+        long now = System.currentTimeMillis();
+        long last = prefs(activity).getLong(K_LAST_CHECK_MS, 0L);
+        if (now - last < CHECK_INTERVAL_MS) return;
+        checkForUpdates(activity, false);
+    }
+
+    public static void checkNow(final Activity activity) {
+        resumePendingInstall(activity, true);
+        checkForUpdates(activity, true);
+    }
+
+    private static void checkForUpdates(final Activity activity, final boolean interactive) {
+        if (checking) {
+            if (interactive) toast(activity, "Update check is already running.");
+            return;
+        }
+        checking = true;
+        prefs(activity).edit().putLong(K_LAST_CHECK_MS, System.currentTimeMillis()).apply();
+        if (interactive) toast(activity, "Checking for updates...");
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    final UpdateInfo latest = fetchUpdateInfo();
+                    final PackageInfo current = activity.getPackageManager()
+                            .getPackageInfo(activity.getPackageName(), 0);
+                    if (!activity.getPackageName().equals(latest.packageName)) {
+                        throw new IllegalStateException("Update package mismatch: "
+                                + latest.packageName);
+                    }
+                    if (latest.versionCode > current.versionCode) {
+                        runOnUi(activity, new Runnable() {
+                            public void run() {
+                                showUpdateAvailable(activity, latest, current);
+                            }
+                        });
+                    } else if (interactive) {
+                        runOnUi(activity, new Runnable() {
+                            public void run() {
+                                toast(activity, "You are already on the latest version.");
+                            }
+                        });
+                    }
+                } catch (final Throwable error) {
+                    ModDebugLog.module("update", "update check failed", error);
+                    if (interactive) {
+                        runOnUi(activity, new Runnable() {
+                            public void run() {
+                                toast(activity, "Update check failed: " + readable(error));
+                            }
+                        });
+                    }
+                } finally {
+                    checking = false;
+                }
+            }
+        }, "YCS2UpdateCheck").start();
+    }
+
+    private static void showUpdateAvailable(final Activity activity,
+                                            final UpdateInfo latest,
+                                            PackageInfo current) {
+        String size = latest.apkSize > 0 ? "\nSize: " + formatBytes(latest.apkSize) : "";
+        new AlertDialog.Builder(activity)
+                .setTitle("Update available")
+                .setMessage("Installed: " + current.versionName + " (" + current.versionCode + ")"
+                        + "\nLatest: " + latest.versionName + " (" + latest.versionCode + ")"
+                        + size
+                        + "\n\nThe APK will download now, then Android will ask you to approve installing it.")
+                .setPositiveButton("Download update", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        startDownload(activity, latest);
+                    }
+                })
+                .setNegativeButton("Later", null)
+                .show();
+    }
+
+    private static UpdateInfo fetchUpdateInfo() throws Exception {
+        HttpURLConnection connection = (HttpURLConnection) new URL(UPDATE_MANIFEST_URL)
+                .openConnection();
+        connection.setConnectTimeout(10000);
+        connection.setReadTimeout(20000);
+        connection.setUseCaches(false);
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("User-Agent", "YCS2ModUpdater/1.0");
+        int status = connection.getResponseCode();
+        if (status < 200 || status >= 300) {
+            throw new IllegalStateException("HTTP " + status);
+        }
+        InputStream input = null;
+        try {
+            input = connection.getInputStream();
+            JSONObject json = new JSONObject(readString(input));
+            UpdateInfo info = new UpdateInfo();
+            info.packageName = json.optString("package_name", "");
+            info.versionCode = json.optInt("version_code", 0);
+            info.versionName = json.optString("version_name", "");
+            info.apkName = json.optString("apk_name", "jcs2-update.apk");
+            info.apkUrl = json.optString("apk_url", "");
+            info.apkSha256 = json.optString("apk_sha256", "");
+            info.apkSize = json.optLong("apk_size", 0L);
+            if (info.packageName.length() == 0
+                    || info.versionCode <= 0
+                    || info.versionName.length() == 0
+                    || info.apkUrl.length() == 0) {
+                throw new IllegalStateException("Update manifest is incomplete");
+            }
+            return info;
+        } finally {
+            closeQuietly(input);
+            connection.disconnect();
+        }
+    }
+
+    private static void startDownload(final Activity activity, final UpdateInfo info) {
+        try {
+            DownloadManager manager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
+            if (manager == null) throw new IllegalStateException("Download manager is unavailable");
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(info.apkUrl));
+            request.setTitle("YCS2 update " + info.versionName);
+            request.setDescription(info.apkName);
+            request.setMimeType(APK_MIME);
+            request.setNotificationVisibility(
+                    DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setAllowedOverRoaming(true);
+            if (Build.VERSION.SDK_INT >= 16) request.setAllowedOverMetered(true);
+            request.setDestinationInExternalFilesDir(
+                    activity, Environment.DIRECTORY_DOWNLOADS, info.apkName);
+            final long id = manager.enqueue(request);
+            prefs(activity).edit()
+                    .putLong(K_DOWNLOAD_ID, id)
+                    .putString(K_DOWNLOAD_SHA256, info.apkSha256)
+                    .putInt(K_DOWNLOAD_VERSION_CODE, info.versionCode)
+                    .apply();
+            ModDebugLog.module("update", "download started id=" + id
+                    + " version=" + info.versionName + " url=" + info.apkUrl);
+            toast(activity, "Downloading update. The installer will open when it finishes.");
+            registerDownloadReceiver(activity, id);
+        } catch (Throwable error) {
+            ModDebugLog.module("update", "download start failed", error);
+            toast(activity, "Could not start update download: " + readable(error));
+        }
+    }
+
+    private static void registerDownloadReceiver(final Activity activity, final long id) {
+        final BroadcastReceiver receiver = new BroadcastReceiver() {
+            public void onReceive(Context context, Intent intent) {
+                long completed = intent == null ? -1L
+                        : intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
+                if (completed != id) return;
+                try {
+                    activity.unregisterReceiver(this);
+                } catch (Throwable ignored) {
+                }
+                installDownloadedApk(activity, id, true);
+            }
+        };
+        try {
+            activity.registerReceiver(receiver,
+                    new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+        } catch (Throwable error) {
+            ModDebugLog.module("update", "download receiver registration failed", error);
+        }
+    }
+
+    private static void resumePendingInstall(Activity activity, boolean interactive) {
+        long id = prefs(activity).getLong(K_DOWNLOAD_ID, -1L);
+        if (id < 0L) return;
+        installDownloadedApk(activity, id, interactive);
+    }
+
+    private static void installDownloadedApk(final Activity activity,
+                                             final long id,
+                                             boolean interactive) {
+        DownloadManager manager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
+        if (manager == null) return;
+        Cursor cursor = null;
+        try {
+            cursor = manager.query(new DownloadManager.Query().setFilterById(id));
+            if (cursor == null || !cursor.moveToFirst()) {
+                clearDownload(activity);
+                return;
+            }
+            int status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+            if (status == DownloadManager.STATUS_PENDING
+                    || status == DownloadManager.STATUS_PAUSED
+                    || status == DownloadManager.STATUS_RUNNING) {
+                if (interactive) toast(activity, "Update download is still in progress.");
+                return;
+            }
+            if (status != DownloadManager.STATUS_SUCCESSFUL) {
+                clearDownload(activity);
+                if (interactive) toast(activity, "Update download failed. Please try again.");
+                return;
+            }
+            String expectedSha = prefs(activity).getString(K_DOWNLOAD_SHA256, "");
+            if (expectedSha.length() > 0) {
+                String actualSha = sha256(manager, id);
+                if (!expectedSha.equalsIgnoreCase(actualSha)) {
+                    manager.remove(id);
+                    clearDownload(activity);
+                    toast(activity, "Downloaded update did not match its checksum.");
+                    ModDebugLog.module("update", "checksum mismatch expected="
+                            + expectedSha + " actual=" + actualSha);
+                    return;
+                }
+            }
+            if (!canInstallPackages(activity)) {
+                promptInstallPermission(activity);
+                return;
+            }
+            Uri apk = manager.getUriForDownloadedFile(id);
+            if (apk == null) throw new IllegalStateException("Downloaded APK URI unavailable");
+            Intent install = new Intent(Intent.ACTION_VIEW);
+            install.setDataAndType(apk, APK_MIME);
+            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            activity.startActivity(install);
+            ModDebugLog.module("update", "installer opened for download id=" + id);
+        } catch (Throwable error) {
+            ModDebugLog.module("update", "install downloaded apk failed", error);
+            if (interactive) toast(activity, "Could not open installer: " + readable(error));
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+    }
+
+    private static boolean canInstallPackages(Context context) {
+        if (Build.VERSION.SDK_INT < 26) return true;
+        try {
+            Method method = PackageManager.class.getMethod("canRequestPackageInstalls");
+            Object result = method.invoke(context.getPackageManager());
+            return Boolean.TRUE.equals(result);
+        } catch (Throwable ignored) {
+            return true;
+        }
+    }
+
+    private static void promptInstallPermission(final Activity activity) {
+        new AlertDialog.Builder(activity)
+                .setTitle("Allow YCS2 updates")
+                .setMessage("Android needs permission for this app to install downloaded APK updates. "
+                        + "After enabling it, return here and tap Check for updates.")
+                .setPositiveButton("Open settings", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        try {
+                            Intent intent = new Intent(
+                                    "android.settings.MANAGE_UNKNOWN_APP_SOURCES",
+                                    Uri.parse("package:" + activity.getPackageName()));
+                            activity.startActivity(intent);
+                        } catch (Throwable error) {
+                            ModDebugLog.module("update", "unknown sources settings failed", error);
+                            toast(activity, "Open Android settings and allow installs for YCS2.");
+                        }
+                    }
+                })
+                .setNegativeButton("Later", null)
+                .show();
+    }
+
+    private static String sha256(DownloadManager manager, long id) throws Exception {
+        ParcelFileDescriptor descriptor = null;
+        FileInputStream input = null;
+        try {
+            descriptor = manager.openDownloadedFile(id);
+            input = new FileInputStream(descriptor.getFileDescriptor());
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[65536];
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                digest.update(buffer, 0, count);
+            }
+            return hex(digest.digest());
+        } finally {
+            closeQuietly(input);
+            if (descriptor != null) {
+                try {
+                    descriptor.close();
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+    }
+
+    private static String readString(InputStream input) throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"));
+        StringBuilder out = new StringBuilder();
+        char[] buffer = new char[4096];
+        int count;
+        while ((count = reader.read(buffer)) != -1) {
+            out.append(buffer, 0, count);
+            if (out.length() > MAX_MANIFEST_CHARS) {
+                throw new IllegalStateException("Update manifest is too large");
+            }
+        }
+        return out.toString();
+    }
+
+    private static String hex(byte[] bytes) {
+        StringBuilder out = new StringBuilder(bytes.length * 2);
+        for (int i = 0; i < bytes.length; i++) {
+            int value = bytes[i] & 0xff;
+            if (value < 16) out.append('0');
+            out.append(Integer.toHexString(value));
+        }
+        return out.toString();
+    }
+
+    private static String formatBytes(long bytes) {
+        if (bytes < 1024L * 1024L) return (bytes / 1024L) + " KB";
+        return String.format(Locale.US, "%.1f MB", bytes / 1024.0 / 1024.0);
+    }
+
+    private static String readable(Throwable error) {
+        String message = error.getMessage();
+        return message == null || message.length() == 0
+                ? error.getClass().getSimpleName() : message;
+    }
+
+    private static SharedPreferences prefs(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    private static void clearDownload(Context context) {
+        prefs(context).edit()
+                .remove(K_DOWNLOAD_ID)
+                .remove(K_DOWNLOAD_SHA256)
+                .remove(K_DOWNLOAD_VERSION_CODE)
+                .apply();
+    }
+
+    private static void runOnUi(Activity activity, Runnable runnable) {
+        if (activity.isFinishing()) return;
+        activity.runOnUiThread(runnable);
+    }
+
+    private static void toast(final Context context, final String text) {
+        Toast.makeText(context, text, Toast.LENGTH_LONG).show();
+    }
+
+    private static void closeQuietly(java.io.Closeable closeable) {
+        if (closeable == null) return;
+        try {
+            closeable.close();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private static final class UpdateInfo {
+        String packageName;
+        int versionCode;
+        String versionName;
+        String apkName;
+        String apkUrl;
+        String apkSha256;
+        long apkSize;
+    }
+}

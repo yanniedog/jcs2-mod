@@ -8,7 +8,7 @@
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+    value = Lcom/trueaxis/modmenu/ModMenu;->showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -20,22 +20,26 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$cars:Landroid/widget/Spinner;
+.field final synthetic val$acknowledgeExperimental:Landroid/widget/CheckBox;
+
+.field final synthetic val$experimental:Landroid/widget/LinearLayout;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
-    .registers 3
+.method constructor <init>(Landroid/app/Activity;Landroid/widget/CheckBox;Landroid/widget/LinearLayout;)V
+    .registers 4
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 330
+    .line 438
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$cars:Landroid/widget/Spinner;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$acknowledgeExperimental:Landroid/widget/CheckBox;
+
+    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$experimental:Landroid/widget/LinearLayout;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -47,58 +51,78 @@
 .method public onClick(Landroid/view/View;)V
     .registers 4
 
-    .line 332
+    .line 440
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$cars:Landroid/widget/Spinner;
+    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$000(Landroid/content/Context;Landroid/widget/Spinner;)V
+    move-result-object p1
 
-    .line 334
-    :try_start_7
-    new-instance p1, Landroid/content/Intent;
+    invoke-interface {p1}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
 
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
+    move-result-object p1
 
-    const-class v1, Lcom/trueaxis/modmenu/LiveryDesignerActivity;
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$acknowledgeExperimental:Landroid/widget/CheckBox;
 
-    invoke-direct {p1, v0, v1}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
+    .line 441
+    invoke-virtual {v0}, Landroid/widget/CheckBox;->isChecked()Z
 
-    .line 335
-    const-string v0, "car"
+    move-result v0
 
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$cars:Landroid/widget/Spinner;
+    .line 440
+    const-string v1, "experimental_ack"
 
-    invoke-virtual {v1}, Landroid/widget/Spinner;->getSelectedItemPosition()I
+    invoke-interface {p1, v1, v0}, Landroid/content/SharedPreferences$Editor;->putBoolean(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;
 
-    move-result v1
+    move-result-object p1
 
-    invoke-virtual {p1, v0, v1}, Landroid/content/Intent;->putExtra(Ljava/lang/String;I)Landroid/content/Intent;
+    .line 441
+    invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 336
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
-
-    invoke-virtual {v0, p1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
-    :try_end_20
-    .catchall {:try_start_7 .. :try_end_20} :catchall_21
-
-    .line 339
-    goto :goto_29
-
-    .line 337
-    :catchall_21
-    move-exception p1
-
-    .line 338
+    .line 442
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
-    const-string v0, "Could not open the designer."
+    invoke-static {p1}, Lcom/trueaxis/modmenu/ModIdentity;->configure(Landroid/content/Context;)V
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Ljava/lang/String;)V
+    .line 443
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
-    .line 340
-    :goto_29
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$experimental:Landroid/widget/LinearLayout;
+
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateExperimentalVisibility(Landroid/content/Context;Landroid/view/View;)V
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$000(Landroid/content/Context;Landroid/view/View;)V
+
+    .line 444
+    new-instance p1, Ljava/lang/StringBuilder;
+
+    invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v0, "experimental section acknowledged="
+
+    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p1
+
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$acknowledgeExperimental:Landroid/widget/CheckBox;
+
+    .line 445
+    invoke-virtual {v0}, Landroid/widget/CheckBox;->isChecked()Z
+
+    move-result v0
+
+    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+
+    move-result-object p1
+
+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object p1
+
+    .line 444
+    const-string v0, "launcher"
+
+    invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+
+    .line 446
     return-void
 .end method

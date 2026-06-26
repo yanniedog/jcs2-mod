@@ -100,10 +100,10 @@
 .method constructor <init>(Landroid/content/Context;Landroid/graphics/Bitmap;)V
     .registers 5
 
-    .line 411
+    .line 431
     invoke-direct {p0, p1}, Landroid/view/View;-><init>(Landroid/content/Context;)V
 
-    .line 391
+    .line 411
     new-instance p1, Landroid/graphics/Paint;
 
     const/4 v0, 0x1
@@ -112,7 +112,7 @@
 
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
-    .line 392
+    .line 412
     new-instance p1, Landroid/graphics/Paint;
 
     const/4 v1, 0x2
@@ -121,7 +121,7 @@
 
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->blit:Landroid/graphics/Paint;
 
-    .line 393
+    .line 413
     new-instance p1, Landroid/graphics/PorterDuffXfermode;
 
     sget-object v1, Landroid/graphics/PorterDuff$Mode;->CLEAR:Landroid/graphics/PorterDuff$Mode;
@@ -130,55 +130,55 @@
 
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->clear:Landroid/graphics/PorterDuffXfermode;
 
-    .line 395
+    .line 415
     new-instance p1, Ljava/util/ArrayList;
 
     invoke-direct {p1}, Ljava/util/ArrayList;-><init>()V
 
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->undo:Ljava/util/ArrayList;
 
-    .line 396
+    .line 416
     new-instance p1, Ljava/util/ArrayList;
 
     invoke-direct {p1}, Ljava/util/ArrayList;-><init>()V
 
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->redo:Ljava/util/ArrayList;
 
-    .line 399
+    .line 419
     const/4 p1, 0x0
 
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
-    .line 400
+    .line 420
     const/high16 p1, -0x10000
 
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
 
-    .line 401
+    .line 421
     const/high16 p1, 0x41200000    # 10.0f
 
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->strokeWidth:F
 
-    .line 403
+    .line 423
     new-instance p1, Landroid/graphics/RectF;
 
     invoke-direct {p1}, Landroid/graphics/RectF;-><init>()V
 
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dst:Landroid/graphics/RectF;
 
-    .line 404
+    .line 424
     const/high16 p1, 0x3f800000    # 1.0f
 
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->scale:F
 
-    .line 405
+    .line 425
     new-instance p1, Landroid/graphics/Path;
 
     invoke-direct {p1}, Landroid/graphics/Path;-><init>()V
 
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->stroke:Landroid/graphics/Path;
 
-    .line 412
+    .line 432
     invoke-virtual {p2}, Landroid/graphics/Bitmap;->isMutable()Z
 
     move-result p1
@@ -187,7 +187,7 @@
 
     goto :goto_54
 
-    .line 413
+    .line 433
     :cond_4e
     sget-object p1, Landroid/graphics/Bitmap$Config;->ARGB_8888:Landroid/graphics/Bitmap$Config;
 
@@ -198,7 +198,7 @@
     :goto_54
     iput-object p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
-    .line 414
+    .line 434
     new-instance p1, Landroid/graphics/Canvas;
 
     iget-object p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
@@ -207,42 +207,42 @@
 
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmapCanvas:Landroid/graphics/Canvas;
 
-    .line 415
+    .line 435
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     sget-object p2, Landroid/graphics/Paint$Style;->STROKE:Landroid/graphics/Paint$Style;
 
     invoke-virtual {p1, p2}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 416
+    .line 436
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     sget-object p2, Landroid/graphics/Paint$Cap;->ROUND:Landroid/graphics/Paint$Cap;
 
     invoke-virtual {p1, p2}, Landroid/graphics/Paint;->setStrokeCap(Landroid/graphics/Paint$Cap;)V
 
-    .line 417
+    .line 437
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     sget-object p2, Landroid/graphics/Paint$Join;->ROUND:Landroid/graphics/Paint$Join;
 
     invoke-virtual {p1, p2}, Landroid/graphics/Paint;->setStrokeJoin(Landroid/graphics/Paint$Join;)V
 
-    .line 418
+    .line 438
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->makeChecker()Landroid/graphics/Bitmap;
 
     move-result-object p1
 
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->checker:Landroid/graphics/Bitmap;
 
-    .line 419
+    .line 439
     return-void
 .end method
 
 .method static synthetic access$1000(Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;)I
     .registers 1
 
-    .line 381
+    .line 401
     iget p0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
 
     return p0
@@ -251,7 +251,7 @@
 .method static synthetic access$1100(Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;)F
     .registers 1
 
-    .line 381
+    .line 401
     iget p0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->strokeWidth:F
 
     return p0
@@ -260,7 +260,7 @@
 .method static synthetic access$1200(Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;)Landroid/graphics/Canvas;
     .registers 1
 
-    .line 381
+    .line 401
     iget-object p0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmapCanvas:Landroid/graphics/Canvas;
 
     return-object p0
@@ -269,7 +269,7 @@
 .method static synthetic access$900(Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;)V
     .registers 1
 
-    .line 381
+    .line 401
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->pushUndo()V
 
     return-void
@@ -278,35 +278,35 @@
 .method private applyStrokePaint()V
     .registers 3
 
-    .line 607
+    .line 627
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     iget v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->strokeWidth:F
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStrokeWidth(F)V
 
-    .line 608
+    .line 628
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     sget-object v1, Landroid/graphics/Paint$Style;->STROKE:Landroid/graphics/Paint$Style;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 609
+    .line 629
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
     const/4 v1, 0x1
 
     if-ne v0, v1, :cond_21
 
-    .line 610
+    .line 630
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->clear:Landroid/graphics/PorterDuffXfermode;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setXfermode(Landroid/graphics/Xfermode;)Landroid/graphics/Xfermode;
 
-    .line 611
+    .line 631
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     const/4 v1, 0x0
@@ -315,7 +315,7 @@
 
     goto :goto_2e
 
-    .line 613
+    .line 633
     :cond_21
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
@@ -323,14 +323,14 @@
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setXfermode(Landroid/graphics/Xfermode;)Landroid/graphics/Xfermode;
 
-    .line 614
+    .line 634
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     iget v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 616
+    .line 636
     :goto_2e
     return-void
 .end method
@@ -338,7 +338,7 @@
 .method private bmpX(F)F
     .registers 3
 
-    .line 518
+    .line 538
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dst:Landroid/graphics/RectF;
 
     iget v0, v0, Landroid/graphics/RectF;->left:F
@@ -355,7 +355,7 @@
 .method private bmpY(F)F
     .registers 3
 
-    .line 522
+    .line 542
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dst:Landroid/graphics/RectF;
 
     iget v0, v0, Landroid/graphics/RectF;->top:F
@@ -372,7 +372,7 @@
 .method private clampX(I)I
     .registers 3
 
-    .line 650
+    .line 671
     if-gez p1, :cond_4
 
     const/4 p1, 0x0
@@ -404,7 +404,7 @@
 .method private clampY(I)I
     .registers 3
 
-    .line 654
+    .line 675
     if-gez p1, :cond_4
 
     const/4 p1, 0x0
@@ -436,7 +436,7 @@
 .method private static copy(Landroid/graphics/Bitmap;)Landroid/graphics/Bitmap;
     .registers 3
 
-    .line 479
+    .line 499
     sget-object v0, Landroid/graphics/Bitmap$Config;->ARGB_8888:Landroid/graphics/Bitmap$Config;
 
     const/4 v1, 0x1
@@ -451,21 +451,21 @@
 .method private floodFill(III)V
     .registers 16
 
-    .line 659
+    .line 680
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
     invoke-virtual {v0}, Landroid/graphics/Bitmap;->getWidth()I
 
     move-result v0
 
-    .line 660
+    .line 681
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
     invoke-virtual {v1}, Landroid/graphics/Bitmap;->getHeight()I
 
     move-result v9
 
-    .line 661
+    .line 682
     if-ltz p1, :cond_92
 
     if-ltz p2, :cond_92
@@ -476,13 +476,13 @@
 
     goto/16 :goto_92
 
-    .line 662
+    .line 683
     :cond_16
     mul-int v10, v0, v9
 
     new-array v11, v10, [I
 
-    .line 663
+    .line 684
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
     const/4 v5, 0x0
@@ -501,26 +501,26 @@
 
     invoke-virtual/range {v1 .. v8}, Landroid/graphics/Bitmap;->getPixels([IIIIIII)V
 
-    .line 664
+    .line 685
     mul-int p2, p2, v0
 
     add-int/2addr p2, p1
 
     aget p1, v11, p2
 
-    .line 665
+    .line 686
     if-ne p1, p3, :cond_2e
 
     return-void
 
-    .line 666
+    .line 687
     :cond_2e
     new-array v1, v10, [I
 
-    .line 667
+    .line 688
     nop
 
-    .line 668
+    .line 689
     const/4 v2, 0x0
 
     aput p2, v1, v2
@@ -529,38 +529,38 @@
 
     const/4 v2, 0x1
 
-    .line 669
+    .line 690
     :goto_36
     if-lez v2, :cond_85
 
-    .line 670
+    .line 691
     add-int/lit8 v2, v2, -0x1
 
     aget v3, v1, v2
 
-    .line 671
+    .line 692
     aget v4, v11, v3
 
     if-eq v4, p1, :cond_41
 
     goto :goto_36
 
-    .line 672
+    .line 693
     :cond_41
     rem-int v4, v3, v0
 
-    .line 673
+    .line 694
     nop
 
-    .line 674
+    .line 695
     nop
 
-    .line 675
+    .line 696
     sub-int/2addr v3, v4
 
     move v5, v4
 
-    .line 676
+    .line 697
     :goto_47
     if-lez v5, :cond_53
 
@@ -576,7 +576,7 @@
 
     goto :goto_47
 
-    .line 677
+    .line 698
     :cond_53
     :goto_53
     add-int/lit8 v6, v0, -0x1
@@ -595,20 +595,20 @@
 
     goto :goto_53
 
-    .line 678
+    .line 699
     :cond_61
     nop
 
     :goto_62
     if-gt v5, v4, :cond_84
 
-    .line 679
+    .line 700
     add-int v6, v3, v5
 
-    .line 680
+    .line 701
     aput p3, v11, v6
 
-    .line 681
+    .line 702
     sub-int v7, v6, v0
 
     if-ltz v7, :cond_75
@@ -623,7 +623,7 @@
 
     move v2, v8
 
-    .line 682
+    .line 703
     :cond_75
     add-int/2addr v6, v0
 
@@ -639,17 +639,17 @@
 
     move v2, v7
 
-    .line 678
+    .line 699
     :cond_81
     add-int/lit8 v5, v5, 0x1
 
     goto :goto_62
 
-    .line 684
+    .line 705
     :cond_84
     goto :goto_36
 
-    .line 685
+    .line 706
     :cond_85
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
@@ -669,10 +669,10 @@
 
     invoke-virtual/range {v1 .. v8}, Landroid/graphics/Bitmap;->setPixels([IIIIIII)V
 
-    .line 686
+    .line 707
     return-void
 
-    .line 661
+    .line 682
     :cond_92
     :goto_92
     return-void
@@ -681,10 +681,10 @@
 .method private makeChecker()Landroid/graphics/Bitmap;
     .registers 12
 
-    .line 689
+    .line 710
     nop
 
-    .line 690
+    .line 711
     sget-object v0, Landroid/graphics/Bitmap$Config;->ARGB_8888:Landroid/graphics/Bitmap$Config;
 
     const/16 v1, 0x20
@@ -693,17 +693,17 @@
 
     move-result-object v0
 
-    .line 691
+    .line 712
     new-instance v8, Landroid/graphics/Canvas;
 
     invoke-direct {v8, v0}, Landroid/graphics/Canvas;-><init>(Landroid/graphics/Bitmap;)V
 
-    .line 692
+    .line 713
     new-instance v9, Landroid/graphics/Paint;
 
     invoke-direct {v9}, Landroid/graphics/Paint;-><init>()V
 
-    .line 693
+    .line 714
     const/16 v2, 0x4c
 
     const/16 v3, 0x54
@@ -716,7 +716,7 @@
 
     invoke-virtual {v9, v2}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 694
+    .line 715
     int-to-float v1, v1
 
     const/4 v3, 0x0
@@ -733,7 +733,7 @@
 
     invoke-virtual/range {v2 .. v7}, Landroid/graphics/Canvas;->drawRect(FFFFLandroid/graphics/Paint;)V
 
-    .line 695
+    .line 716
     const/16 v2, 0x3c
 
     const/16 v3, 0x44
@@ -746,7 +746,7 @@
 
     invoke-virtual {v9, v2}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 696
+    .line 717
     const/16 v2, 0x10
 
     int-to-float v10, v2
@@ -763,7 +763,7 @@
 
     invoke-virtual/range {v2 .. v7}, Landroid/graphics/Canvas;->drawRect(FFFFLandroid/graphics/Paint;)V
 
-    .line 697
+    .line 718
     move v3, v10
 
     move v4, v10
@@ -774,37 +774,37 @@
 
     invoke-virtual/range {v2 .. v7}, Landroid/graphics/Canvas;->drawRect(FFFFLandroid/graphics/Paint;)V
 
-    .line 698
+    .line 719
     return-object v0
 .end method
 
 .method private onDown(FF)V
     .registers 5
 
-    .line 546
+    .line 566
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->curX:F
 
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startX:F
 
-    .line 547
+    .line 567
     iput p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->curY:F
 
     iput p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startY:F
 
-    .line 548
+    .line 568
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
     const/4 v1, 0x5
 
     if-ne v0, v1, :cond_11
 
-    .line 549
+    .line 569
     invoke-direct {p0, p1, p2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->pickColor(FF)V
 
-    .line 550
+    .line 570
     return-void
 
-    .line 552
+    .line 572
     :cond_11
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
@@ -812,13 +812,13 @@
 
     if-ne v0, v1, :cond_1a
 
-    .line 553
+    .line 573
     invoke-direct {p0, p1, p2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->promptText(FF)V
 
-    .line 554
+    .line 574
     return-void
 
-    .line 556
+    .line 576
     :cond_1a
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
@@ -826,10 +826,10 @@
 
     if-ne v0, v1, :cond_33
 
-    .line 557
+    .line 577
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->pushUndo()V
 
-    .line 558
+    .line 578
     invoke-static {p1}, Ljava/lang/Math;->round(F)I
 
     move-result p1
@@ -842,22 +842,22 @@
 
     invoke-direct {p0, p1, p2, v0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->floodFill(III)V
 
-    .line 559
+    .line 579
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->invalidate()V
 
-    .line 560
+    .line 580
     return-void
 
-    .line 562
+    .line 582
     :cond_33
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->pushUndo()V
 
-    .line 563
+    .line 583
     const/4 v0, 0x1
 
     iput-boolean v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dragging:Z
 
-    .line 564
+    .line 584
     iget v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
     if-eqz v1, :cond_41
@@ -866,31 +866,31 @@
 
     if-ne v1, v0, :cond_58
 
-    .line 565
+    .line 585
     :cond_41
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->stroke:Landroid/graphics/Path;
 
     invoke-virtual {v0}, Landroid/graphics/Path;->reset()V
 
-    .line 566
+    .line 586
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->stroke:Landroid/graphics/Path;
 
     invoke-virtual {v0, p1, p2}, Landroid/graphics/Path;->moveTo(FF)V
 
-    .line 567
+    .line 587
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->applyStrokePaint()V
 
-    .line 568
+    .line 588
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmapCanvas:Landroid/graphics/Canvas;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1, p2, v1}, Landroid/graphics/Canvas;->drawPoint(FFLandroid/graphics/Paint;)V
 
-    .line 569
+    .line 589
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->invalidate()V
 
-    .line 571
+    .line 591
     :cond_58
     return-void
 .end method
@@ -898,21 +898,21 @@
 .method private onMove(FF)V
     .registers 11
 
-    .line 574
+    .line 594
     iget-boolean v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dragging:Z
 
     if-nez v0, :cond_5
 
     return-void
 
-    .line 575
+    .line 595
     :cond_5
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->curX:F
 
-    .line 576
+    .line 596
     iput p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->curY:F
 
-    .line 577
+    .line 597
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
     if-eqz v0, :cond_12
@@ -923,11 +923,11 @@
 
     if-ne v0, v1, :cond_26
 
-    .line 578
+    .line 598
     :cond_12
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->applyStrokePaint()V
 
-    .line 579
+    .line 599
     iget-object v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmapCanvas:Landroid/graphics/Canvas;
 
     iget v3, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startX:F
@@ -942,37 +942,37 @@
 
     invoke-virtual/range {v2 .. v7}, Landroid/graphics/Canvas;->drawLine(FFFFLandroid/graphics/Paint;)V
 
-    .line 580
+    .line 600
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startX:F
 
-    .line 581
+    .line 601
     iput p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startY:F
 
-    .line 583
+    .line 603
     :cond_26
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->invalidate()V
 
-    .line 584
+    .line 604
     return-void
 .end method
 
 .method private onUp(FF)V
     .registers 11
 
-    .line 587
+    .line 607
     iget-boolean v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dragging:Z
 
     if-nez v0, :cond_5
 
     return-void
 
-    .line 588
+    .line 608
     :cond_5
     const/4 v0, 0x0
 
     iput-boolean v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dragging:Z
 
-    .line 590
+    .line 610
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
     const/4 v1, 0x3
@@ -981,33 +981,33 @@
 
     if-ne v0, v1, :cond_36
 
-    .line 591
+    .line 611
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setXfermode(Landroid/graphics/Xfermode;)Landroid/graphics/Xfermode;
 
-    .line 592
+    .line 612
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     iget v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 593
+    .line 613
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     iget v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->strokeWidth:F
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStrokeWidth(F)V
 
-    .line 594
+    .line 614
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     sget-object v1, Landroid/graphics/Paint$Style;->STROKE:Landroid/graphics/Paint$Style;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 595
+    .line 615
     iget-object v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmapCanvas:Landroid/graphics/Canvas;
 
     iget v3, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startX:F
@@ -1024,7 +1024,7 @@
 
     goto :goto_6d
 
-    .line 596
+    .line 616
     :cond_36
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
@@ -1032,26 +1032,26 @@
 
     if-ne v0, v1, :cond_6d
 
-    .line 597
+    .line 617
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setXfermode(Landroid/graphics/Xfermode;)Landroid/graphics/Xfermode;
 
-    .line 598
+    .line 618
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     iget v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 599
+    .line 619
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     sget-object v1, Landroid/graphics/Paint$Style;->FILL:Landroid/graphics/Paint$Style;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 600
+    .line 620
     iget-object v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmapCanvas:Landroid/graphics/Canvas;
 
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startX:F
@@ -1068,7 +1068,7 @@
 
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startX:F
 
-    .line 601
+    .line 621
     invoke-static {v0, p1}, Ljava/lang/Math;->max(FF)F
 
     move-result v5
@@ -1081,22 +1081,22 @@
 
     iget-object v7, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
-    .line 600
+    .line 620
     invoke-virtual/range {v2 .. v7}, Landroid/graphics/Canvas;->drawRect(FFFFLandroid/graphics/Paint;)V
 
-    .line 603
+    .line 623
     :cond_6d
     :goto_6d
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->invalidate()V
 
-    .line 604
+    .line 624
     return-void
 .end method
 
 .method private pickColor(FF)V
     .registers 4
 
-    .line 619
+    .line 639
     invoke-static {p1}, Ljava/lang/Math;->round(F)I
 
     move-result p1
@@ -1105,7 +1105,7 @@
 
     move-result p1
 
-    .line 620
+    .line 640
     invoke-static {p2}, Ljava/lang/Math;->round(F)I
 
     move-result p2
@@ -1114,17 +1114,17 @@
 
     move-result p2
 
-    .line 621
+    .line 641
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
     invoke-virtual {v0, p1, p2}, Landroid/graphics/Bitmap;->getPixel(II)I
 
     move-result p1
 
-    .line 622
+    .line 642
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
 
-    .line 623
+    .line 643
     iget-object p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->colorListener:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$ColorListener;
 
     if-eqz p2, :cond_21
@@ -1133,7 +1133,7 @@
 
     invoke-interface {p2, p1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$ColorListener;->onColorPicked(I)V
 
-    .line 624
+    .line 644
     :cond_21
     return-void
 .end method
@@ -1141,7 +1141,7 @@
 .method private promptText(FF)V
     .registers 6
 
-    .line 627
+    .line 647
     new-instance v0, Landroid/widget/EditText;
 
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->getContext()Landroid/content/Context;
@@ -1150,12 +1150,12 @@
 
     invoke-direct {v0, v1}, Landroid/widget/EditText;-><init>(Landroid/content/Context;)V
 
-    .line 628
+    .line 648
     const-string v1, "Text / number"
 
     invoke-virtual {v0, v1}, Landroid/widget/EditText;->setHint(Ljava/lang/CharSequence;)V
 
-    .line 629
+    .line 649
     new-instance v1, Landroid/app/AlertDialog$Builder;
 
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->getContext()Landroid/content/Context;
@@ -1164,14 +1164,14 @@
 
     invoke-direct {v1, v2}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
 
-    .line 630
+    .line 650
     const-string v2, "Add text"
 
     invoke-virtual {v1, v2}, Landroid/app/AlertDialog$Builder;->setTitle(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v1
 
-    .line 631
+    .line 651
     invoke-virtual {v1, v0}, Landroid/app/AlertDialog$Builder;->setView(Landroid/view/View;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v1
@@ -1180,14 +1180,14 @@
 
     invoke-direct {v2, p0, v0, p1, p2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$1;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;Landroid/widget/EditText;FF)V
 
-    .line 632
+    .line 652
     const-string p1, "Place"
 
     invoke-virtual {v1, p1, v2}, Landroid/app/AlertDialog$Builder;->setPositiveButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
 
     move-result-object p1
 
-    .line 645
+    .line 666
     const-string p2, "Cancel"
 
     const/4 v0, 0x0
@@ -1196,17 +1196,17 @@
 
     move-result-object p1
 
-    .line 646
+    .line 667
     invoke-virtual {p1}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
 
-    .line 647
+    .line 668
     return-void
 .end method
 
 .method private pushUndo()V
     .registers 4
 
-    .line 469
+    .line 489
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->undo:Ljava/util/ArrayList;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
@@ -1217,7 +1217,7 @@
 
     invoke-virtual {v0, v1}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
 
-    .line 470
+    .line 490
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->undo:Ljava/util/ArrayList;
 
     invoke-virtual {v0}, Ljava/util/ArrayList;->size()I
@@ -1230,7 +1230,7 @@
 
     if-le v0, v1, :cond_21
 
-    .line 471
+    .line 491
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->undo:Ljava/util/ArrayList;
 
     invoke-virtual {v0, v2}, Ljava/util/ArrayList;->remove(I)Ljava/lang/Object;
@@ -1239,10 +1239,10 @@
 
     check-cast v0, Landroid/graphics/Bitmap;
 
-    .line 472
+    .line 492
     invoke-virtual {v0}, Landroid/graphics/Bitmap;->recycle()V
 
-    .line 474
+    .line 494
     :cond_21
     nop
 
@@ -1269,20 +1269,20 @@
 
     goto :goto_22
 
-    .line 475
+    .line 495
     :cond_38
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->redo:Ljava/util/ArrayList;
 
     invoke-virtual {v0}, Ljava/util/ArrayList;->clear()V
 
-    .line 476
+    .line 496
     return-void
 .end method
 
 .method private viewX(F)F
     .registers 4
 
-    .line 510
+    .line 530
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dst:Landroid/graphics/RectF;
 
     iget v0, v0, Landroid/graphics/RectF;->left:F
@@ -1299,7 +1299,7 @@
 .method private viewY(F)F
     .registers 4
 
-    .line 514
+    .line 534
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dst:Landroid/graphics/RectF;
 
     iget v0, v0, Landroid/graphics/RectF;->top:F
@@ -1318,7 +1318,7 @@
 .method getBitmap()Landroid/graphics/Bitmap;
     .registers 2
 
-    .line 442
+    .line 462
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
     return-object v0
@@ -1327,7 +1327,7 @@
 .method getColor()I
     .registers 2
 
-    .line 434
+    .line 454
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
 
     return v0
@@ -1336,7 +1336,7 @@
 .method protected onDraw(Landroid/graphics/Canvas;)V
     .registers 10
 
-    .line 493
+    .line 513
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->checker:Landroid/graphics/Bitmap;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dst:Landroid/graphics/RectF;
@@ -1345,7 +1345,7 @@
 
     invoke-virtual {p1, v0, v2, v1, v2}, Landroid/graphics/Canvas;->drawBitmap(Landroid/graphics/Bitmap;Landroid/graphics/Rect;Landroid/graphics/RectF;Landroid/graphics/Paint;)V
 
-    .line 494
+    .line 514
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dst:Landroid/graphics/RectF;
@@ -1354,7 +1354,7 @@
 
     invoke-virtual {p1, v0, v2, v1, v3}, Landroid/graphics/Canvas;->drawBitmap(Landroid/graphics/Bitmap;Landroid/graphics/Rect;Landroid/graphics/RectF;Landroid/graphics/Paint;)V
 
-    .line 495
+    .line 515
     iget-boolean v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dragging:Z
 
     if-eqz v0, :cond_ad
@@ -1371,20 +1371,20 @@
 
     if-ne v0, v1, :cond_ad
 
-    .line 496
+    .line 516
     :cond_1f
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setXfermode(Landroid/graphics/Xfermode;)Landroid/graphics/Xfermode;
 
-    .line 497
+    .line 517
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     iget v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
 
     invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 498
+    .line 518
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     iget v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->strokeWidth:F
@@ -1395,7 +1395,7 @@
 
     invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setStrokeWidth(F)V
 
-    .line 499
+    .line 519
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
     iget v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
@@ -1412,12 +1412,12 @@
     :goto_41
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 500
+    .line 520
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
     if-ne v0, v3, :cond_67
 
-    .line 501
+    .line 521
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startX:F
 
     invoke-direct {p0, v0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->viewX(F)F
@@ -1450,7 +1450,7 @@
 
     goto :goto_ad
 
-    .line 503
+    .line 523
     :cond_67
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startX:F
 
@@ -1486,7 +1486,7 @@
 
     iget v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->startX:F
 
-    .line 504
+    .line 524
     invoke-direct {p0, v0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->viewX(F)F
 
     move-result v0
@@ -1519,12 +1519,12 @@
 
     iget-object v7, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->paint:Landroid/graphics/Paint;
 
-    .line 503
+    .line 523
     move-object v2, p1
 
     invoke-virtual/range {v2 .. v7}, Landroid/graphics/Canvas;->drawRect(FFFFLandroid/graphics/Paint;)V
 
-    .line 507
+    .line 527
     :cond_ad
     :goto_ad
     return-void
@@ -1533,14 +1533,14 @@
 .method protected onSizeChanged(IIII)V
     .registers 6
 
-    .line 484
+    .line 504
     invoke-static {p1, p2}, Ljava/lang/Math;->min(II)I
 
     move-result p3
 
     int-to-float p3, p3
 
-    .line 485
+    .line 505
     iget-object p4, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
     invoke-virtual {p4}, Landroid/graphics/Bitmap;->getWidth()I
@@ -1553,7 +1553,7 @@
 
     iput p4, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->scale:F
 
-    .line 486
+    .line 506
     int-to-float p1, p1
 
     sub-float/2addr p1, p3
@@ -1562,14 +1562,14 @@
 
     div-float/2addr p1, p4
 
-    .line 487
+    .line 507
     int-to-float p2, p2
 
     sub-float/2addr p2, p3
 
     div-float/2addr p2, p4
 
-    .line 488
+    .line 508
     iget-object p4, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dst:Landroid/graphics/RectF;
 
     add-float v0, p1, p3
@@ -1578,14 +1578,14 @@
 
     invoke-virtual {p4, p1, p2, v0, p3}, Landroid/graphics/RectF;->set(FFFF)V
 
-    .line 489
+    .line 509
     return-void
 .end method
 
 .method public onTouchEvent(Landroid/view/MotionEvent;)Z
     .registers 4
 
-    .line 527
+    .line 547
     invoke-virtual {p1}, Landroid/view/MotionEvent;->getX()F
 
     move-result v0
@@ -1594,7 +1594,7 @@
 
     move-result v0
 
-    .line 528
+    .line 548
     invoke-virtual {p1}, Landroid/view/MotionEvent;->getY()F
 
     move-result v1
@@ -1603,40 +1603,40 @@
 
     move-result v1
 
-    .line 529
+    .line 549
     invoke-virtual {p1}, Landroid/view/MotionEvent;->getAction()I
 
     move-result p1
 
     packed-switch p1, :pswitch_data_28
 
-    .line 540
+    .line 560
     const/4 p1, 0x0
 
     return p1
 
-    .line 534
+    .line 554
     :pswitch_19
     invoke-direct {p0, v0, v1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->onMove(FF)V
 
-    .line 535
+    .line 555
     goto :goto_25
 
-    .line 537
+    .line 557
     :pswitch_1d
     invoke-direct {p0, v0, v1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->onUp(FF)V
 
-    .line 538
+    .line 558
     goto :goto_25
 
-    .line 531
+    .line 551
     :pswitch_21
     invoke-direct {p0, v0, v1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->onDown(FF)V
 
-    .line 532
+    .line 552
     nop
 
-    .line 542
+    .line 562
     :goto_25
     const/4 p1, 0x1
 
@@ -1655,7 +1655,7 @@
 .method redo()V
     .registers 3
 
-    .line 461
+    .line 481
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->redo:Ljava/util/ArrayList;
 
     invoke-virtual {v0}, Ljava/util/ArrayList;->isEmpty()Z
@@ -1666,7 +1666,7 @@
 
     return-void
 
-    .line 462
+    .line 482
     :cond_9
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->undo:Ljava/util/ArrayList;
 
@@ -1678,7 +1678,7 @@
 
     invoke-virtual {v0, v1}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
 
-    .line 463
+    .line 483
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->redo:Ljava/util/ArrayList;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->redo:Ljava/util/ArrayList;
@@ -1697,7 +1697,7 @@
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
-    .line 464
+    .line 484
     new-instance v0, Landroid/graphics/Canvas;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
@@ -1706,20 +1706,20 @@
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmapCanvas:Landroid/graphics/Canvas;
 
-    .line 465
+    .line 485
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->invalidate()V
 
-    .line 466
+    .line 486
     return-void
 .end method
 
 .method replaceBitmap(Landroid/graphics/Bitmap;)V
     .registers 4
 
-    .line 446
+    .line 466
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->pushUndo()V
 
-    .line 447
+    .line 467
     invoke-virtual {p1}, Landroid/graphics/Bitmap;->isMutable()Z
 
     move-result v0
@@ -1740,7 +1740,7 @@
     :goto_11
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
-    .line 448
+    .line 468
     new-instance p1, Landroid/graphics/Canvas;
 
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
@@ -1749,57 +1749,57 @@
 
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmapCanvas:Landroid/graphics/Canvas;
 
-    .line 449
+    .line 469
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->invalidate()V
 
-    .line 450
+    .line 470
     return-void
 .end method
 
 .method setColor(I)V
     .registers 2
 
-    .line 430
+    .line 450
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
 
-    .line 431
+    .line 451
     return-void
 .end method
 
 .method setColorListener(Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$ColorListener;)V
     .registers 2
 
-    .line 422
+    .line 442
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->colorListener:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$ColorListener;
 
-    .line 423
+    .line 443
     return-void
 .end method
 
 .method setStrokeWidth(F)V
     .registers 2
 
-    .line 438
+    .line 458
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->strokeWidth:F
 
-    .line 439
+    .line 459
     return-void
 .end method
 
 .method setTool(I)V
     .registers 2
 
-    .line 426
+    .line 446
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->tool:I
 
-    .line 427
+    .line 447
     return-void
 .end method
 
 .method undo()V
     .registers 3
 
-    .line 453
+    .line 473
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->undo:Ljava/util/ArrayList;
 
     invoke-virtual {v0}, Ljava/util/ArrayList;->isEmpty()Z
@@ -1810,7 +1810,7 @@
 
     return-void
 
-    .line 454
+    .line 474
     :cond_9
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->redo:Ljava/util/ArrayList;
 
@@ -1822,7 +1822,7 @@
 
     invoke-virtual {v0, v1}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
 
-    .line 455
+    .line 475
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->undo:Ljava/util/ArrayList;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->undo:Ljava/util/ArrayList;
@@ -1841,7 +1841,7 @@
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
 
-    .line 456
+    .line 476
     new-instance v0, Landroid/graphics/Canvas;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmap:Landroid/graphics/Bitmap;
@@ -1850,9 +1850,9 @@
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmapCanvas:Landroid/graphics/Canvas;
 
-    .line 457
+    .line 477
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->invalidate()V
 
-    .line 458
+    .line 478
     return-void
 .end method

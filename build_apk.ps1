@@ -9,6 +9,33 @@ Copy-Item (Join-Path $Root "mod_assets\shaders\afterburner.vert") `
 Copy-Item (Join-Path $Root "mod_assets\shaders\afterburner_fix.vert") `
     (Join-Path $Root "decompiled\assets\shaders\afterburner_fix.vert") -Force
 
+$ApktoolYml = Join-Path $Root "decompiled\apktool.yml"
+$VersionText = Get-Content $ApktoolYml -Raw
+$VersionName = "unknown"
+$VersionCode = "0"
+if ($VersionText -match 'versionName:\s*(\S+)') { $VersionName = $Matches[1] }
+if ($VersionText -match 'versionCode:\s*(\d+)') { $VersionCode = $Matches[1] }
+$BuildDateUtc = $env:JCS2_BUILD_DATE_UTC
+if (-not $BuildDateUtc) {
+    $BuildDateUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+}
+$GitSha = "unknown"
+try {
+    $GitSha = (& git rev-parse --short=12 HEAD 2>$null).Trim()
+    if (-not $GitSha) { $GitSha = "unknown" }
+} catch {
+    $GitSha = "unknown"
+}
+$BuildInfo = Join-Path $Root "decompiled\assets\ycs2-build-info.properties"
+New-Item -ItemType Directory -Path (Split-Path $BuildInfo) -Force | Out-Null
+@(
+    "build_date_utc=$BuildDateUtc",
+    "version_name=$VersionName",
+    "version_code=$VersionCode",
+    "git_sha=$GitSha"
+) | Set-Content -LiteralPath $BuildInfo -Encoding ASCII
+Write-Host "Stamped build metadata: $VersionName build $VersionCode built $BuildDateUtc"
+
 & (Join-Path $Root "build_modmenu.ps1")
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -52,23 +79,51 @@ Write-Host "Aligning..."
 & $Zipalign -f 4 $Unsigned $Aligned
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-$Keystore = Join-Path $Root "jcs2.keystore"
-if (-not (Test-Path $Keystore)) {
-    Write-Error "Missing jcs2.keystore for signing."
-}
-
 $StorePass = $env:JCS2_KEYSTORE_PASS
 if (-not $StorePass -and (Test-Path (Join-Path $Root "keystore.properties"))) {
     Get-Content (Join-Path $Root "keystore.properties") | ForEach-Object {
         if ($_ -match '^\s*storePassword\s*=\s*(.+)\s*$') { $StorePass = $Matches[1] }
     }
 }
-if (-not $StorePass) {
-    Write-Error "Set JCS2_KEYSTORE_PASS or create keystore.properties with storePassword=..."
+
+$Keystore = Join-Path $Root "jcs2.keystore"
+$KeyPass = $StorePass
+$KeyAlias = $null
+if ((Test-Path $Keystore) -and $StorePass) {
+    Write-Host "Using release keystore."
+} else {
+    $Keystore = Join-Path $Root "_apk_build\jcs2-local.keystore"
+    $StorePass = "android"
+    $KeyPass = "android"
+    $KeyAlias = "jcs2local"
+    if (-not (Test-Path $Keystore)) {
+        $Keytool = Join-Path $JdkHome "bin\keytool.exe"
+        if (-not (Test-Path $Keytool)) {
+            Write-Error "keytool not found at $Keytool; cannot create local signing key."
+        }
+        Write-Host "Creating local signing key..."
+        & $Keytool -genkeypair -keystore $Keystore -storepass $StorePass -keypass $KeyPass `
+            -alias $KeyAlias -keyalg RSA -keysize 2048 -validity 10000 `
+            -dname "CN=YCS2 Local,O=YCS2,C=US"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    }
+    Write-Host "Using local signing key."
 }
 
 Write-Host "Signing..."
-& $Apksigner sign --ks $Keystore --ks-pass "pass:$StorePass" --key-pass "pass:$StorePass" --out $Output $Aligned
+Remove-Item $Output -Force -ErrorAction SilentlyContinue
+$SignArgs = @(
+    "sign",
+    "--ks", $Keystore,
+    "--ks-pass", "pass:$StorePass",
+    "--key-pass", "pass:$KeyPass",
+    "--out", $Output
+)
+if ($KeyAlias) {
+    $SignArgs += @("--ks-key-alias", $KeyAlias)
+}
+$SignArgs += $Aligned
+& $Apksigner @SignArgs
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 & python (Join-Path $Root "scripts\audit_mod_surface.py") --apk $Output

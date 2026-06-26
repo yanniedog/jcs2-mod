@@ -33,7 +33,7 @@
         }
     .end annotation
 
-    .line 183
+    .line 189
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$5;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -46,7 +46,7 @@
 .method public onProgressChanged(Landroid/widget/SeekBar;IZ)V
     .registers 4
 
-    .line 185
+    .line 191
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$5;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     # getter for: Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
@@ -64,20 +64,20 @@
 
     invoke-virtual {p1, p2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->setStrokeWidth(F)V
 
-    .line 186
+    .line 192
     return-void
 .end method
 
 .method public onStartTrackingTouch(Landroid/widget/SeekBar;)V
     .registers 2
 
-    .line 189
+    .line 195
     return-void
 .end method
 
 .method public onStopTrackingTouch(Landroid/widget/SeekBar;)V
     .registers 2
 
-    .line 192
+    .line 198
     return-void
 .end method

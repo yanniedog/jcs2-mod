@@ -60,6 +60,10 @@
 
     move-result-object p1
 
+    invoke-static {p1}, Lcom/trueaxis/modmenu/ModIdentity;->prefixDisplayName(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object p1
+
     invoke-static {}, Lcom/trueaxis/facebook/Facebook;->access$000()Ljava/lang/String;
 
     move-result-object p2

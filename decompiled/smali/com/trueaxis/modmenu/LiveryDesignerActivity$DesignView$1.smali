@@ -51,7 +51,7 @@
         }
     .end annotation
 
-    .line 632
+    .line 652
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$1;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$1;->val$input:Landroid/widget/EditText;
@@ -70,7 +70,7 @@
 .method public onClick(Landroid/content/DialogInterface;I)V
     .registers 6
 
-    .line 634
+    .line 654
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$1;->val$input:Landroid/widget/EditText;
 
     invoke-virtual {p1}, Landroid/widget/EditText;->getText()Landroid/text/Editable;
@@ -81,7 +81,7 @@
 
     move-result-object p1
 
-    .line 635
+    .line 655
     invoke-virtual {p1}, Ljava/lang/String;->length()I
 
     move-result p2
@@ -90,21 +90,48 @@
 
     return-void
 
-    .line 636
+    .line 656
     :cond_11
+    new-instance p2, Ljava/lang/StringBuilder;
+
+    invoke-direct {p2}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v0, "place text length="
+
+    invoke-virtual {p2, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p2
+
+    invoke-virtual {p1}, Ljava/lang/String;->length()I
+
+    move-result v0
+
+    invoke-virtual {p2, v0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object p2
+
+    invoke-virtual {p2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object p2
+
+    const-string v0, "designer"
+
+    invoke-static {v0, p2}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+
+    .line 657
     iget-object p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$1;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     # invokes: Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->pushUndo()V
     invoke-static {p2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->access$900(Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;)V
 
-    .line 637
+    .line 658
     new-instance p2, Landroid/graphics/Paint;
 
     const/4 v0, 0x1
 
     invoke-direct {p2, v0}, Landroid/graphics/Paint;-><init>(I)V
 
-    .line 638
+    .line 659
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$1;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     # getter for: Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
@@ -114,7 +141,7 @@
 
     invoke-virtual {p2, v0}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 639
+    .line 660
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$1;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     # getter for: Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->strokeWidth:F
@@ -134,12 +161,12 @@
 
     invoke-virtual {p2, v0}, Landroid/graphics/Paint;->setTextSize(F)V
 
-    .line 640
+    .line 661
     sget-object v0, Landroid/graphics/Paint$Align;->CENTER:Landroid/graphics/Paint$Align;
 
     invoke-virtual {p2, v0}, Landroid/graphics/Paint;->setTextAlign(Landroid/graphics/Paint$Align;)V
 
-    .line 641
+    .line 662
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$1;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     # getter for: Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->bitmapCanvas:Landroid/graphics/Canvas;
@@ -153,11 +180,11 @@
 
     invoke-virtual {v0, p1, v1, v2, p2}, Landroid/graphics/Canvas;->drawText(Ljava/lang/String;FFLandroid/graphics/Paint;)V
 
-    .line 642
+    .line 663
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$1;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     invoke-virtual {p1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->invalidate()V
 
-    .line 643
+    .line 664
     return-void
 .end method

@@ -51,7 +51,7 @@
         }
     .end annotation
 
-    .line 301
+    .line 321
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$12;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$12;->val$rgb:[I
@@ -70,14 +70,14 @@
 .method public onProgressChanged(Landroid/widget/SeekBar;IZ)V
     .registers 6
 
-    .line 303
+    .line 323
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$12;->val$rgb:[I
 
     iget p3, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$12;->val$channel:I
 
     aput p2, p1, p3
 
-    .line 304
+    .line 324
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$12;->val$preview:Landroid/view/View;
 
     iget-object p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$12;->val$rgb:[I
@@ -109,20 +109,20 @@
 
     invoke-virtual {p1, p2}, Landroid/view/View;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 305
+    .line 325
     return-void
 .end method
 
 .method public onStartTrackingTouch(Landroid/widget/SeekBar;)V
     .registers 2
 
-    .line 308
+    .line 328
     return-void
 .end method
 
 .method public onStopTrackingTouch(Landroid/widget/SeekBar;)V
     .registers 2
 
-    .line 311
+    .line 331
     return-void
 .end method

@@ -27,3 +27,7 @@ pub extern "C" fn open() {}
 pub extern "C" fn write() {}
 #[no_mangle]
 pub extern "C" fn close() {}
+#[no_mangle]
+pub extern "C" fn signal() {}
+#[no_mangle]
+pub extern "C" fn raise() {}

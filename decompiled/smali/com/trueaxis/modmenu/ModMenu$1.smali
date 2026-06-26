@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 224
+    .line 368
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -41,36 +41,48 @@
 
 # virtual methods
 .method public onClick(Landroid/view/View;)V
-    .registers 6
+    .registers 7
 
-    .line 227
+    .line 371
     const-string p1, "https://github.com/yanniedog/jcs2-mod"
 
-    :try_start_2
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
+    const-string v0, "launcher"
 
-    new-instance v1, Landroid/content/Intent;
+    :try_start_4
+    const-string v1, "open repo url=https://github.com/yanniedog/jcs2-mod"
 
-    const-string v2, "android.intent.action.VIEW"
+    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+
+    .line 372
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
+
+    new-instance v2, Landroid/content/Intent;
+
+    const-string v3, "android.intent.action.VIEW"
 
     invoke-static {p1}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
 
-    move-result-object v3
+    move-result-object v4
 
-    invoke-direct {v1, v2, v3}, Landroid/content/Intent;-><init>(Ljava/lang/String;Landroid/net/Uri;)V
+    invoke-direct {v2, v3, v4}, Landroid/content/Intent;-><init>(Ljava/lang/String;Landroid/net/Uri;)V
 
-    invoke-virtual {v0, v1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
-    :try_end_12
-    .catchall {:try_start_2 .. :try_end_12} :catchall_13
+    invoke-virtual {v1, v2}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
+    :try_end_19
+    .catchall {:try_start_4 .. :try_end_19} :catchall_1a
 
-    .line 230
-    goto :goto_1e
+    .line 376
+    goto :goto_2a
 
-    .line 228
-    :catchall_13
-    move-exception v0
+    .line 373
+    :catchall_1a
+    move-exception v1
 
-    .line 229
+    .line 374
+    const-string v2, "open repo failed"
+
+    invoke-static {v0, v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+
+    .line 375
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
 
     const/4 v1, 0x1
@@ -81,7 +93,7 @@
 
     invoke-virtual {p1}, Landroid/widget/Toast;->show()V
 
-    .line 231
-    :goto_1e
+    .line 377
+    :goto_2a
     return-void
 .end method

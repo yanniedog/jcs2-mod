@@ -25,7 +25,6 @@ FORBIDDEN = (
     b"g_bUnLockAll",
     b"g_bHyperBallistic",
     b"g_bAiOnPlayerCar",
-    b"g_nGhostSize",
     b"g_nFreeStyleBestTrickScore",
     b"g_nInAirStuntCounter",
     b"g_bIAPCrack",
@@ -115,7 +114,7 @@ def check_marker_invariants():
 
 
 def check_sources(skip_local_assets=False):
-    ok = check_marker_invariants()
+    ok = True
     for target in SOURCE_TARGETS:
         path = ROOT / target
         if not path.exists():
@@ -129,13 +128,28 @@ def check_sources(skip_local_assets=False):
     bridge = (ROOT / "native_bridge/src/lib.rs").read_text(encoding="utf-8")
     allowed_native_symbols = (
         "g_nMaxNumCheckPointTimes",
-        "g_nReplaySize",
-        "g_pReplay",
         "g_dlcConnections",
         "g_pfCheckPointTimes",
         "g_pfGhostCheckPointTimes",
         "g_nNumCheckPointTimes",
         "g_nNumGhostCheckPointTimes",
+        "g_nGhostSize",
+        "g_pReplayCompressedHeader",
+        "g_bShowReplay",
+        "g_fLastCheckPointTime",
+        "g_nLastCheckPoint",
+        "g_nGhostPos",
+        "g_nLastGhostPos",
+        "g_nLastReplaySize",
+        "g_nGhostRetrySkipTimeIndex",
+        "g_nLastGhostRetrySkipTimeIndex",
+        "g_nGhostRetryPauseTime",
+        "g_nLastGhostRetryPauseTime",
+        "g_nNumGhostRetrySkipTimes",
+        "g_pGhost",
+        "g_ghostTransform",
+        "g_ghostTransformLast",
+        "g_checkPointTransfrom",
     )
     for line in bridge.splitlines():
         if 'resolve(b"' in line and not any(symbol in line for symbol in allowed_native_symbols):
@@ -144,41 +158,169 @@ def check_sources(skip_local_assets=False):
         ok = fail("checkpoint-only JNI entry point is missing") and ok
     if "force_checkpoint_limit();" not in bridge or "CHECKPOINT_LIMIT_ADDRESS" not in bridge:
         ok = fail("unlimited checkpoint capacity is not continuously hardwired") and ok
-    if "RequiredPatches_installReplayVisualMarker" not in bridge:
-        ok = fail("narrow replay visual marker JNI entry point is missing") and ok
+    forbidden_replay_writers = (
+        "RequiredPatches_installReplayVisualMarker",
+        "replay_marker_worker",
+        "mark_recent_nodes",
+        "mark_node",
+        'resolve(b"g_pReplay\\0")',
+        "g_nReplaySize",
+        "REPLAY_NODE_SIZE",
+        "VISUAL_FLAGS_OFFSET",
+        "PRESERVED_REPLAY_FLAGS",
+        "FLAPS_FULL_UP",
+        "FLAPS_FULL_DOWN",
+    )
+    for marker in forbidden_replay_writers:
+        if marker in bridge:
+            ok = fail(f"native bridge still contains replay-data mutation marker: {marker}") and ok
     if "RequiredPatches_readLatestCheckpointSplit" not in bridge:
         ok = fail("read-only checkpoint split JNI entry point is missing") and ok
-    if "checkpointCount > lastCheckpointCount + 1" not in (
-        ROOT / "modmenu_src/com/trueaxis/modmenu/SplitTimeHud.java"
-    ).read_text(encoding="utf-8"):
-        ok = fail("checkpoint split HUD no longer suppresses replay-load checkpoint jumps") and ok
     if (
-        "original_flags & PRESERVED_REPLAY_FLAGS" not in bridge
-        or "PRESERVED_REPLAY_FLAGS: u8 = 0x0c" not in bridge
+        "RequiredPatches_readLatestCheckpointCurrentMillis" not in bridge
+        or "RequiredPatches_readLatestCheckpointGhostMillis" not in bridge
+        or "RequiredPatches_readGhostCheckpointMillis" not in bridge
     ):
-        ok = fail("replay marker does not preserve brake/resting and respawn replay flags") and ok
-    if "REMARK_RECENT_NODES: c_int = 120" not in bridge or "mark_recent_nodes(nodes, size)" not in bridge:
-        ok = fail("replay marker no longer re-marks recent nodes after live capture completes") and ok
-    if bridge.count("ptr::write_volatile(") != 3:
-        ok = fail("native bridge must have exactly three value writes: IAP ownership, checkpoints, and replay visual flags") and ok
+        ok = fail("checkpoint split source-time JNI entry points are missing") and ok
+    if (
+        "RequiredPatches_installNativeCrashLogger" not in bridge
+        or "native_signal_handler" not in bridge
+        or "ycs2_mod_native_crash.log" not in bridge
+    ):
+        ok = fail("native fatal-signal crash logging is missing") and ok
+    if "/storage/emulated/0/YCS2CommunityMod/logs/ycs2_mod_native_crash.log" not in bridge:
+        ok = fail("native fatal-signal crash log is not written to the public shared log folder") and ok
+    if 'GHOST_SIZE = resolve(b"g_nGhostSize\\0") as *mut c_int' not in bridge:
+        ok = fail("checkpoint split HUD no longer detects raced replay ghosts") and ok
+    if 'SHOW_REPLAY = resolve(b"g_bShowReplay\\0") as *mut u8' not in bridge:
+        ok = fail("checkpoint split HUD no longer resolves the replay/viewing diagnostic flag") and ok
+    if 'REPLAY_COMPRESSED_HEADER = resolve(b"g_pReplayCompressedHeader\\0")' not in bridge:
+        ok = fail("checkpoint split HUD no longer reads replay header timing metadata for finish splits") and ok
+    if "1i64 << 32" not in bridge or "(((checkpoint + 1) as i64) << 32)" not in bridge:
+        ok = fail("checkpoint split reader no longer reports persistent ghost/split states") and ok
+    if "fn decoded_live_checkpoint_index()" not in bridge or "0x00ff_ffff" not in bridge:
+        ok = fail("checkpoint split reader no longer decodes the engine checkpoint flag/counter") and ok
+    if "fn scan_live_checkpoint_from_last_time()" not in bridge or "last_checkpoint_ms()" not in bridge:
+        ok = fail("checkpoint split reader no longer keeps stock live checkpoint-time diagnostics") and ok
+    if "ghost_checkpoint_ms(checkpoint)" not in bridge or "fn live_checkpoint_ms(checkpoint: c_int)" not in bridge:
+        ok = fail("checkpoint split reader no longer compares live checkpoint time against the clean ghost checkpoint snapshot") and ok
+    if "effective_ghost_checkpoint_count()" not in bridge or "FALLBACK_GHOST_CHECKPOINT_COUNT" not in bridge:
+        ok = fail("checkpoint split reader no longer supports normal-level ghost checkpoint fallback state") and ok
+    if "FALLBACK_GHOST_FINISH_MS" not in bridge or "final_finish_split" not in bridge:
+        ok = fail("checkpoint split reader no longer emits synthetic final finish splits") and ok
+    if "capture_ghost_replay_baseline()" not in bridge or "replay_header_checkpoint_count()" not in bridge:
+        ok = fail("checkpoint split reader no longer preserves ghost timing across retry/restart") and ok
+    if "LAST_CHECKPOINT_INDEX" not in bridge or 'resolve(b"g_nLastCheckPoint\\0")' not in bridge:
+        ok = fail("checkpoint split reader no longer reads g_nLastCheckPoint for diagnostics/fallback") and ok
+    if "RequiredPatches_readSplitScannedCheckpointIndex" not in bridge or "RequiredPatches_readSplitDecodedEngineCheckpointIndex" not in bridge:
+        ok = fail("checkpoint split diagnostics no longer expose scanned/decoded checkpoint indexes") and ok
+    if (
+        "RequiredPatches_readGhostRoute" not in bridge
+        or "RequiredPatches_readGhostViewMatrices" not in bridge
+        or "RequiredPatches_readGhostRoutePointCount" not in bridge
+    ):
+        ok = fail("read-only ghost route JNI entry points are missing") and ok
+    if "fn reconstruct_ghost_route()" not in bridge or 'resolve(b"g_pGhost\\0")' not in bridge:
+        ok = fail("ghost route reconstruction no longer reads the decompressed ghost replay buffer") and ok
+    if "GHOST_FLAG_DELTA" not in bridge or "GHOST_NODE_SIZE" not in bridge:
+        ok = fail("ghost route reconstruction no longer replays the stock per-node integration") and ok
+    split_hud = (ROOT / "modmenu_src/com/trueaxis/modmenu/SplitTimeHud.java").read_text(
+        encoding="utf-8"
+    )
+    mod_menu = (ROOT / "modmenu_src/com/trueaxis/modmenu/ModMenu.java").read_text(
+        encoding="utf-8"
+    )
+    if "checkpointCount > lastCheckpointCount + 1" not in split_hud:
+        ok = fail("checkpoint split HUD no longer suppresses replay-load checkpoint jumps") and ok
+    if '"split checkpoint jump accepted from="' not in split_hud:
+        ok = fail("checkpoint split HUD no longer accepts real checkpoint jumps after racing has started") and ok
+    if (
+        "SPLIT_READY = Color.rgb(255, 220, 0)" not in split_hud
+        or "SPLIT_FAST = Color.rgb(0, 220, 80)" not in split_hud
+        or "SPLIT_SLOW = Color.rgb(255, 70, 70)" not in split_hud
+        or "splitColor(displayMillis)" not in split_hud
+    ):
+        ok = fail("checkpoint split HUD is not hardwired to ready/yellow, faster/green, slower/red text") and ok
+    if '"SPLIT --"' not in split_hud or '"%s%d %s%.2f"' not in split_hud:
+        ok = fail("checkpoint split HUD is not visibly persistent during replay ghost races") and ok
+    if "sectorSplitMillis" not in split_hud or "previousCumulativeSplitMillis" not in split_hud:
+        ok = fail("checkpoint split HUD no longer supports sector-to-sector delta mode") and ok
+    if "cumulative_delta_ms" not in split_hud or 'sectorMode ? "sector" : "checkpoint"' not in split_hud:
+        ok = fail("checkpoint split HUD no longer logs whether delta mode is checkpoint or sector") and ok
+    if "readLatestCheckpointCurrentMillis()" not in split_hud or "readLatestCheckpointGhostMillis()" not in split_hud:
+        ok = fail("checkpoint split HUD no longer logs current and ghost checkpoint source times") and ok
+    if "readGhostCheckpointMillis(checkpoint)" not in split_hud or '"ghost checkpoint=%d ghost_ms=%d"' not in split_hud:
+        ok = fail("checkpoint split HUD no longer logs replay ghost checkpoint timestamps") and ok
+    if '"split HUD poll failed; disabling HUD"' not in split_hud:
+        ok = fail("checkpoint split HUD Java failures are not logged and isolated") and ok
+    if "ModMenu.splitXdp(activity)" not in split_hud or "ModMenu.splitYdp(activity)" not in split_hud:
+        ok = fail("checkpoint split HUD no longer uses configurable on-screen position") and ok
+    if "ModMenu.splitAlphaPercent(activity)" not in split_hud:
+        ok = fail("checkpoint split HUD no longer uses configurable transparency") and ok
+    if "SpannableStringBuilder" not in split_hud or "ForegroundColorSpan" not in split_hud:
+        ok = fail("checkpoint split HUD no longer keeps per-line split colours persistent") and ok
+    if "split.bringToFront()" not in split_hud or "split.setTranslationZ(1000.0f)" not in split_hud:
+        ok = fail("checkpoint split HUD is not forced above the native SurfaceView") and ok
+    if "K_EXPERIMENTAL_VISIBLE" not in mod_menu or "K_EXPERIMENTAL_ACK" not in mod_menu:
+        ok = fail("experimental ghost/split features are not hidden behind an acknowledgement gate") and ok
+    if 'prefs(c).getBoolean(K_CHECKPOINT_SPLITS, false)' not in mod_menu:
+        ok = fail("checkpoint split HUD is no longer disabled by default") and ok
+    if "K_SPLIT_SECTOR_DELTA" not in mod_menu or "sectorSplitsEnabled" not in mod_menu:
+        ok = fail("sector delta mode is missing from the experimental split HUD options") and ok
+    if 'prefs(c).getBoolean(K_SPLIT_SECTOR_DELTA, false)' not in mod_menu:
+        ok = fail("sector delta mode is no longer disabled by default") and ok
+    if any(marker in mod_menu for marker in ('"a) ', '"b) ', '"c) ', '"e) ', '"f) ')):
+        ok = fail("mod menu still contains letter-numbered option labels") and ok
+    if "validateCustomLiveriesForGame" not in mod_menu or "quarantineLivery" not in mod_menu:
+        ok = fail("custom livery validation/quarantine is missing from startup safety checks") and ok
+    if bridge.count("ptr::write_volatile(") != 2:
+        ok = fail("native bridge must have exactly two value writes: IAP ownership and checkpoint capacity only") and ok
     if "DLC_PURCHASED_OFFSET: usize = 0x5c" not in bridge or "DLC_ITEM_COUNT: usize = 0x200" not in bridge:
         ok = fail("retained IAP ownership patch no longer targets stock DLC purchase flags") and ok
-    if "REPLAY_NODE_SIZE: usize = 0x14" not in bridge or "VISUAL_FLAGS_OFFSET: usize = 1" not in bridge:
-        ok = fail("replay marker node size or visual-only field offset changed") and ok
-    if "FLAPS_FULL_UP: u8 = 0xf0" not in bridge or "FLAPS_FULL_DOWN: u8 = 0x00" not in bridge:
-        ok = fail("replay marker no longer oscillates the synchronized stock flap field") and ok
-    if "growth <= MAX_RECORDING_GROWTH" not in bridge or "Never mark viewed replays" not in bridge:
-        ok = fail("replay marker no longer skips replay loading/decompression") and ok
-    if "pthread_create(" not in bridge or "replay_marker_worker" not in bridge:
-        ok = fail("replay marker worker is missing") and ok
+    if "pthread_create(" not in bridge or "retained_patch_worker" not in bridge:
+        ok = fail("retained native patch worker is missing") and ok
 
     required_patches = (ROOT / "modmenu_src/com/trueaxis/modmenu/RequiredPatches.java").read_text(
         encoding="utf-8"
     )
-    if "installReplayVisualMarker();" not in required_patches:
-        ok = fail("gameplay does not attempt to install the replay visual marker") and ok
-    if 'throw new IllegalStateException("Replay visual marker unavailable")' in required_patches:
-        ok = fail("optional replay marker failure must not crash game startup") and ok
+    debug_log = (ROOT / "modmenu_src/com/trueaxis/modmenu/ModDebugLog.java").read_text(
+        encoding="utf-8"
+    )
+    if "ycs2_mod_debug.log" not in debug_log or "setDefaultUncaughtExceptionHandler" not in debug_log:
+        ok = fail("local Android debug crash log is missing") and ok
+    if "YCS2CommunityMod/logs" not in debug_log or "public_shared_log_dir" not in debug_log:
+        ok = fail("local Android debug log is not stored in the public shared log folder") and ok
+    if "requestSharedLogPermission" not in debug_log or "onRequestPermissionsResult" not in debug_log:
+        ok = fail("local Android debug log does not request/handle shared-folder storage permission") and ok
+    if "debug log storage moved" not in debug_log or "copyPreviousLog" not in debug_log:
+        ok = fail("local Android debug log does not move/copy startup logs after storage permission is granted") and ok
+    if "LOG WRITE FAILURE" not in debug_log or "fallback_path" not in debug_log:
+        ok = fail("local Android debug log write failures are not captured with fallback context") and ok
+    if "permission WRITE_EXTERNAL_STORAGE" not in debug_log or "external_storage_state" not in debug_log:
+        ok = fail("local Android debug log no longer records storage permission/state") and ok
+    if "registerActivityLifecycleCallbacks" not in debug_log or "logRuntime(\"startup\")" not in debug_log:
+        ok = fail("local Android debug log no longer records lifecycle/runtime context") and ok
+    if "getHistoricalProcessExitReasons" not in debug_log or "process exit history" not in debug_log:
+        ok = fail("local Android debug log no longer records process-exit history") and ok
+    if "onTrimMemory" not in debug_log or "onLowMemory" not in debug_log:
+        ok = fail("local Android debug log no longer records memory-pressure callbacks") and ok
+    if "onConfigurationChanged" not in debug_log:
+        ok = fail("local Android debug log no longer records configuration changes") and ok
+    if "ModDebugLog.install(activity)" not in required_patches or "ModDebugLog.log(\"checkpoint split HUD enabled\")" not in required_patches:
+        ok = fail("required patches do not initialise the local debug log") and ok
+    if "installNativeCrashLogger()" not in required_patches:
+        ok = fail("required patches do not install the native fatal-signal logger") and ok
+    if "GhostRouteOverlay.install(activity)" not in required_patches or "ghostRouteEnabled(activity)" not in required_patches:
+        ok = fail("ghost route overlay is no longer gated behind its disabled-by-default toggle") and ok
+    ghost_overlay = (ROOT / "modmenu_src/com/trueaxis/modmenu/GhostRouteOverlay.java").read_text(
+        encoding="utf-8"
+    )
+    if "readGhostRoute" not in ghost_overlay or "readGhostViewMatrices" not in ghost_overlay:
+        ok = fail("ghost route overlay no longer renders the reconstructed read-only path") and ok
+    if "ghost route overlay failed; disabling" not in ghost_overlay:
+        ok = fail("ghost route overlay Java failures are not isolated and logged") and ok
+    if "installReplayVisualMarker" in required_patches or "replay visual marker disabled; replay data is not modified" not in required_patches:
+        ok = fail("required patches must explicitly avoid replay-data mutation") and ok
     if "catch (Throwable error)" not in required_patches or "NATIVE_AVAILABLE" not in required_patches:
         ok = fail("native patch failures are not isolated from game startup") and ok
 
@@ -187,6 +329,12 @@ def check_sources(skip_local_assets=False):
     )
     if "RequiredPatches.apply()" in launcher:
         ok = fail("launcher applies native patches before the game activity is ready") and ok
+    if "!isTaskRoot()" not in launcher or "non-root launcher entry; finishing to reveal existing game task" not in launcher:
+        ok = fail("launcher relaunch while game is active no longer returns to the game task") and ok
+    if "requestSharedLogPermission(ModLauncherActivity.this)" not in launcher or "ModDebugLog.onRequestPermissionsResult" not in launcher:
+        ok = fail("launcher no longer requests shared-folder debug log access") and ok
+    if "ModMenu.validateCustomLiveriesForGame(ModLauncherActivity.this)" not in launcher:
+        ok = fail("launcher no longer validates custom liveries before native game startup") and ok
     activity = (ROOT / "decompiled/smali/com/trueaxis/jetcarstunts2/Jetcarstunts2Activity.smali").read_text(
         encoding="utf-8"
     )
