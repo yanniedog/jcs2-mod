@@ -157,6 +157,9 @@ final class SplitTimeHud {
             }
 
             private void showSplit(TextView split, int checkpointCount, int splitMillis) {
+                int effectiveGhostCount = RequiredPatches.readSplitGhostCheckpointCount();
+                boolean finishSplit = checkpointCount > effectiveGhostCount
+                        && RequiredPatches.readSplitReplayHeaderFinishMillis() > 0;
                 boolean sectorMode = ModMenu.sectorSplitsEnabled(activity);
                 int displayMillis = sectorMode
                         ? sectorSplitMillis(checkpointCount, splitMillis)
@@ -174,12 +177,11 @@ final class SplitTimeHud {
                 int lastCheckpointMillis = RequiredPatches.readSplitLastCheckpointMillis();
                 int engineCheckpoint = RequiredPatches.readSplitEngineLastCheckpointIndex();
                 int liveCount = RequiredPatches.readSplitLiveCheckpointCount();
-                int effectiveGhostCount = RequiredPatches.readSplitGhostCheckpointCount();
                 int officialGhostCount = RequiredPatches.readSplitOfficialGhostCheckpointCount();
                 ModDebugLog.log(String.format(Locale.US,
-                        "split checkpoint=%d current_ms=%d ghost_ms=%d delta_ms=%d cumulative_delta_ms=%d mode=%s last_checkpoint_ms=%d scanned_checkpoint=%d decoded_engine_checkpoint=%d engine_checkpoint=%d selected_checkpoint=%d live_count=%d effective_ghost_count=%d official_ghost_count=%d live_cp_ms=%d live_appended_ms=%d official_ghost_cp_ms=%d replay_header_size=%d replay_header_checkpoints=%d replay_header_finish_ms=%d ghost_pos=%d last_ghost_pos=%d last_replay_size=%d replay_visual_ms=%d ghost_visual_ms=%d visual_delta_ms=%d ghost_checkpoint_dist_sq1000=%d ghost_retry_index=%d last_ghost_retry_index=%d ghost_retry_pause=%d last_ghost_retry_pause=%d ghost_retry_count=%d live_array=%s official_ghost_array=%s color=%s list=%s",
+                        "split checkpoint=%d current_ms=%d ghost_ms=%d delta_ms=%d cumulative_delta_ms=%d mode=%s finish=%s last_checkpoint_ms=%d scanned_checkpoint=%d decoded_engine_checkpoint=%d engine_checkpoint=%d selected_checkpoint=%d live_count=%d effective_ghost_count=%d official_ghost_count=%d live_cp_ms=%d live_appended_ms=%d official_ghost_cp_ms=%d replay_header_size=%d replay_header_checkpoints=%d replay_header_finish_ms=%d ghost_pos=%d last_ghost_pos=%d last_replay_size=%d replay_visual_ms=%d ghost_visual_ms=%d visual_delta_ms=%d ghost_checkpoint_dist_sq1000=%d ghost_retry_index=%d last_ghost_retry_index=%d ghost_retry_pause=%d last_ghost_retry_pause=%d ghost_retry_count=%d live_array=%s official_ghost_array=%s color=%s list=%s",
                         checkpointCount, currentMillis, ghostMillis, displayMillis, splitMillis,
-                        sectorMode ? "sector" : "checkpoint",
+                        sectorMode ? "sector" : "checkpoint", finishSplit ? "true" : "false",
                         lastCheckpointMillis, RequiredPatches.readSplitScannedCheckpointIndex(),
                         RequiredPatches.readSplitDecodedEngineCheckpointIndex(),
                         engineCheckpoint, RequiredPatches.readSplitResolvedCheckpoint(),
@@ -293,14 +295,20 @@ final class SplitTimeHud {
             }
 
             private void logGhostCheckpoints(int checkpointCount) {
-                if (checkpointCount <= loggedGhostCheckpointCount) return;
-                for (int checkpoint = loggedGhostCheckpointCount + 1;
-                        checkpoint <= checkpointCount; checkpoint++) {
-                    ModDebugLog.log(String.format(Locale.US,
-                            "ghost checkpoint=%d ghost_ms=%d",
-                            checkpoint, RequiredPatches.readGhostCheckpointMillis(checkpoint)));
+                int loggedCheckpointCount = checkpointCount;
+                if (checkpointCount > 0
+                        && RequiredPatches.readGhostCheckpointMillis(checkpointCount + 1) > 0) {
+                    loggedCheckpointCount = checkpointCount + 1;
                 }
-                loggedGhostCheckpointCount = checkpointCount;
+                if (loggedCheckpointCount <= loggedGhostCheckpointCount) return;
+                for (int checkpoint = loggedGhostCheckpointCount + 1;
+                        checkpoint <= loggedCheckpointCount; checkpoint++) {
+                    ModDebugLog.log(String.format(Locale.US,
+                            "ghost checkpoint=%d ghost_ms=%d finish=%s",
+                            checkpoint, RequiredPatches.readGhostCheckpointMillis(checkpoint),
+                            checkpoint > checkpointCount ? "true" : "false"));
+                }
+                loggedGhostCheckpointCount = loggedCheckpointCount;
             }
 
             private String liveArrayTrace(int count) {

@@ -245,6 +245,16 @@ def check_sources(skip_local_assets=False):
         ok = fail("checkpoint split reader no longer supports normal-level ghost checkpoint fallback state") and ok
     if "FALLBACK_GHOST_FINISH_MS" not in bridge or "final_finish_split" not in bridge:
         ok = fail("checkpoint split reader no longer emits synthetic final finish splits") and ok
+    if "Java_com_trueaxis_modmenu_RequiredPatches_readLatestCheckpointSplit" in bridge:
+        split_reader = bridge.split(
+            "Java_com_trueaxis_modmenu_RequiredPatches_readLatestCheckpointSplit", 1
+        )[1].split("#[no_mangle]", 1)[0]
+        finish_index = split_reader.find("let finish = final_finish_split(ghost_count);")
+        show_replay_index = split_reader.find("ptr::read_volatile(SHOW_REPLAY) != 0")
+        if finish_index < 0 or show_replay_index < 0 or finish_index > show_replay_index:
+            ok = fail(
+                "checkpoint split reader can reset on post-finish replay state before emitting the final finish split"
+            ) and ok
     if "capture_ghost_replay_baseline()" not in bridge or "replay_header_checkpoint_count()" not in bridge:
         ok = fail("checkpoint split reader no longer preserves ghost timing across retry/restart") and ok
     if "LAST_CHECKPOINT_INDEX" not in bridge or 'resolve(b"g_nLastCheckPoint\\0")' not in bridge:
@@ -288,9 +298,11 @@ def check_sources(skip_local_assets=False):
         ok = fail("checkpoint split HUD no longer supports sector-to-sector delta mode") and ok
     if "cumulative_delta_ms" not in split_hud or 'sectorMode ? "sector" : "checkpoint"' not in split_hud:
         ok = fail("checkpoint split HUD no longer logs whether delta mode is checkpoint or sector") and ok
+    if "checkpointCount > effectiveGhostCount" not in split_hud or "finish=%s" not in split_hud:
+        ok = fail("checkpoint split HUD no longer marks finish-line splits explicitly") and ok
     if "readLatestCheckpointCurrentMillis()" not in split_hud or "readLatestCheckpointGhostMillis()" not in split_hud:
         ok = fail("checkpoint split HUD no longer logs current and ghost checkpoint source times") and ok
-    if "readGhostCheckpointMillis(checkpoint)" not in split_hud or '"ghost checkpoint=%d ghost_ms=%d"' not in split_hud:
+    if "readGhostCheckpointMillis(checkpoint)" not in split_hud or '"ghost checkpoint=%d ghost_ms=%d finish=%s"' not in split_hud:
         ok = fail("checkpoint split HUD no longer logs replay ghost checkpoint timestamps") and ok
     if '"split HUD poll failed; disabling HUD"' not in split_hud:
         ok = fail("checkpoint split HUD Java failures are not logged and isolated") and ok
@@ -324,7 +336,8 @@ def check_sources(skip_local_assets=False):
     if (
         "straight_on_split_proof.txt" not in straight_runtime
         or "expected_checkpoint_count" not in straight_runtime
-        or "Straight On did not record every checkpoint split" not in straight_runtime
+        or "ghost_final_finish_split_recorded=true" not in straight_runtime
+        or "Straight On did not record the finish line as the final ghost checkpoint split" not in straight_runtime
         or "ghost_checkpoint_analysis.csv" not in straight_runtime
         or "Straight On did not record every stock ghost checkpoint time" not in straight_runtime
     ):

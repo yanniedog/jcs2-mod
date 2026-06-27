@@ -11,6 +11,7 @@ param(
     [string]$RegularLevelName = "Straight On",
     [string]$LevelSearch = "Straight level for testing",
     [int]$DriveHoldMs = 70000,
+    [int]$ClearAcceleratorTutorialMs = 2500,
     [int]$AcceleratorX = 444,
     [int]$AcceleratorY = 204,
     [int]$BoostX = 36,
@@ -268,7 +269,7 @@ function Enable-AccelerateWithJetOption {
     Tap 88 292
     Start-Sleep -Seconds 1
     Save-Screenshot "01g-help-and-options-after-accelerate-with-jet.png"
-    Tap 88 267
+    Tap 88 292
     Start-Sleep -Seconds 2
     Save-Screenshot "01h-main-menu-after-accelerate-with-jet.png"
 }
@@ -418,6 +419,10 @@ Close-ExternalBrowserIfPresent | Out-Null
 Start-Sleep -Seconds 2
 Save-Screenshot "01b-main-menu-after-login-dismiss.png"
 Enable-AccelerateWithJetOption
+Dismiss-StartupLoginOverlay
+Close-ExternalBrowserIfPresent | Out-Null
+Start-Sleep -Seconds 1
+Save-Screenshot "01i-main-menu-after-settings-login-dismiss.png"
 
 if ($LevelMode -eq "RegularStraightOn") {
     Open-RegularStraightOnReplayRace
@@ -435,6 +440,15 @@ Set-LandscapeNeutralSensors
 Close-ExternalBrowserIfPresent | Out-Null
 Save-Screenshot "06-race-start.png"
 
+if ($ClearAcceleratorTutorialMs -gt 0) {
+    Write-Host "Clearing first-run accelerator tutorial gate for ${ClearAcceleratorTutorialMs}ms"
+    $tutorialHold = @(Start-TouchHold "tutorial-accelerator-clear" $AcceleratorX $AcceleratorY $ClearAcceleratorTutorialMs)
+    Wait-TouchHold $tutorialHold
+    Start-Sleep -Seconds 1
+    Set-LandscapeNeutralSensors
+    Save-Screenshot "06b-tutorial-clear.png"
+}
+
 if ($UseSeparateBoostTouch) {
     $driveMode = "accelerator + boost"
     $holdJobs = @(
@@ -448,6 +462,9 @@ if ($UseSeparateBoostTouch) {
     )
 } else {
     $driveMode = "boost only with Accelerate with jet"
+    if ($ClearAcceleratorTutorialMs -gt 0) {
+        $driveMode = "$driveMode after tutorial clear"
+    }
     $holdJobs = @(
         (Start-TouchHold "boost-hold" $BoostX $BoostY $DriveHoldMs)
     )
@@ -486,7 +503,7 @@ $ghostCheckpointLines | Set-Content -LiteralPath (Join-Path $RunDir "ghost_check
 $timingRows = foreach ($line in $splitLines) {
     $match = [regex]::Match(
         $line,
-        "split checkpoint=(?<checkpoint>-?\d+) current_ms=(?<current>-?\d+) ghost_ms=(?<ghost>-?\d+) delta_ms=(?<delta>-?\d+) cumulative_delta_ms=(?<cumulative>-?\d+) mode=(?<mode>\w+) last_checkpoint_ms=(?<last>-?\d+) scanned_checkpoint=(?<scanned>-?\d+) decoded_engine_checkpoint=(?<decoded>-?\d+) engine_checkpoint=(?<engine>-?\d+) selected_checkpoint=(?<selected>-?\d+) live_count=(?<live_count>-?\d+) effective_ghost_count=(?<effective_ghost_count>-?\d+) official_ghost_count=(?<official_ghost_count>-?\d+) live_cp_ms=(?<live_cp>-?\d+) live_appended_ms=(?<live_appended>-?\d+) official_ghost_cp_ms=(?<official_ghost_cp>-?\d+) replay_header_size=(?<header_size>-?\d+) replay_header_checkpoints=(?<header_checkpoints>-?\d+) replay_header_finish_ms=(?<header_finish>-?\d+)"
+        "split checkpoint=(?<checkpoint>-?\d+) current_ms=(?<current>-?\d+) ghost_ms=(?<ghost>-?\d+) delta_ms=(?<delta>-?\d+) cumulative_delta_ms=(?<cumulative>-?\d+) mode=(?<mode>\w+) finish=(?<finish>\w+) last_checkpoint_ms=(?<last>-?\d+) scanned_checkpoint=(?<scanned>-?\d+) decoded_engine_checkpoint=(?<decoded>-?\d+) engine_checkpoint=(?<engine>-?\d+) selected_checkpoint=(?<selected>-?\d+) live_count=(?<live_count>-?\d+) effective_ghost_count=(?<effective_ghost_count>-?\d+) official_ghost_count=(?<official_ghost_count>-?\d+) live_cp_ms=(?<live_cp>-?\d+) live_appended_ms=(?<live_appended>-?\d+) official_ghost_cp_ms=(?<official_ghost_cp>-?\d+) replay_header_size=(?<header_size>-?\d+) replay_header_checkpoints=(?<header_checkpoints>-?\d+) replay_header_finish_ms=(?<header_finish>-?\d+)"
     )
     if ($match.Success) {
         [pscustomobject]@{
@@ -496,6 +513,7 @@ $timingRows = foreach ($line in $splitLines) {
             delta_ms = [int]$match.Groups["delta"].Value
             cumulative_delta_ms = [int]$match.Groups["cumulative"].Value
             mode = $match.Groups["mode"].Value
+            is_finish = $match.Groups["finish"].Value -eq "true"
             last_checkpoint_ms = [int]$match.Groups["last"].Value
             scanned_checkpoint = [int]$match.Groups["scanned"].Value
             decoded_engine_checkpoint = [int]$match.Groups["decoded"].Value
@@ -533,11 +551,12 @@ $armedRows = foreach ($line in ($debug -split "`n")) {
 }
 
 $ghostRows = foreach ($line in $ghostCheckpointLines) {
-    $match = [regex]::Match($line, "ghost checkpoint=(?<checkpoint>\d+) ghost_ms=(?<ghost_ms>-?\d+)")
+    $match = [regex]::Match($line, "ghost checkpoint=(?<checkpoint>\d+) ghost_ms=(?<ghost_ms>-?\d+)(?: finish=(?<finish>\w+))?")
     if ($match.Success) {
         [pscustomobject]@{
             checkpoint = [int]$match.Groups["checkpoint"].Value
             ghost_ms = [int]$match.Groups["ghost_ms"].Value
+            is_finish = $match.Groups["finish"].Value -eq "true"
         }
     }
 }
@@ -562,7 +581,11 @@ if ($ghostRows) {
     $ghostGroups = $ghostRows | Group-Object -Property checkpoint | Sort-Object { [int]$_.Name }
     $uniqueGhostCheckpoints = @($ghostGroups | ForEach-Object { [int]$_.Name })
     $expectedGhostCheckpointCount = [int][Math]::Max($maxArmedGhostCount, ($uniqueGhostCheckpoints | Measure-Object -Maximum).Maximum)
+    $expectedGhostFinishCheckpoint = $maxArmedGhostCount + 1
+    $ghostFinishRows = @($ghostRows | Where-Object { $_.is_finish })
     $proofLines.Add("ghost_checkpoint_rows=$($ghostRows.Count)")
+    $proofLines.Add("expected_ghost_finish_checkpoint=$expectedGhostFinishCheckpoint")
+    $proofLines.Add("ghost_finish_rows=$($ghostFinishRows.Count)")
     $proofLines.Add("unique_ghost_checkpoints=$($uniqueGhostCheckpoints -join ',')")
 
     $missingGhost = New-Object System.Collections.Generic.List[int]
@@ -578,7 +601,7 @@ if ($ghostRows) {
         if ($row.ghost_ms -le 0) {
             [void]$badGhostRows.Add("checkpoint $($row.checkpoint) has non-positive ghost_ms=$($row.ghost_ms)")
         }
-        $proofLines.Add(("ghost_checkpoint={0} ghost_ms={1} samples={2}" -f $row.checkpoint, $row.ghost_ms, $group.Count))
+        $proofLines.Add(("ghost_checkpoint={0} ghost_ms={1} finish={2} samples={3}" -f $row.checkpoint, $row.ghost_ms, $row.is_finish, $group.Count))
     }
 
     if ($missingGhost.Count -gt 0) {
@@ -591,6 +614,20 @@ if ($ghostRows) {
         $proofLines | Set-Content -LiteralPath (Join-Path $RunDir "straight_on_split_proof.txt") -Encoding UTF8
         throw "Straight On ghost checkpoint timing rows failed consistency checks. See $RunDir\ghost_checkpoint_bad_rows.txt"
     }
+    if ($maxArmedGhostCount -gt 0) {
+        if ($ghostFinishRows.Count -lt 1) {
+            $proofLines.Add("missing_ghost_finish_checkpoint=$expectedGhostFinishCheckpoint")
+            $proofLines | Set-Content -LiteralPath (Join-Path $RunDir "straight_on_split_proof.txt") -Encoding UTF8
+            throw "Straight On did not record the finish line as the final ghost checkpoint split. Expected checkpoint $expectedGhostFinishCheckpoint. See $RunDir"
+        }
+        $badGhostFinishRows = @($ghostFinishRows | Where-Object { $_.checkpoint -ne $expectedGhostFinishCheckpoint })
+        if ($badGhostFinishRows.Count -gt 0) {
+            $proofLines.Add("bad_ghost_finish_checkpoints=$((@($badGhostFinishRows | ForEach-Object { $_.checkpoint }) | Sort-Object -Unique) -join ',')")
+            $proofLines | Set-Content -LiteralPath (Join-Path $RunDir "straight_on_split_proof.txt") -Encoding UTF8
+            throw "Straight On recorded a ghost finish split, but not as final checkpoint $expectedGhostFinishCheckpoint. See $RunDir"
+        }
+        $proofLines.Add("ghost_final_finish_split_recorded=true")
+    }
 } elseif ($maxArmedGhostCount -gt 0) {
     $proofLines | Set-Content -LiteralPath (Join-Path $RunDir "straight_on_split_proof.txt") -Encoding UTF8
     throw "Straight On armed $maxArmedGhostCount ghost checkpoints but logged none. See $RunDir"
@@ -599,13 +636,19 @@ if ($ghostRows) {
 if ($timingRows) {
     $maxGhostCount = ($timingRows | Measure-Object -Property effective_ghost_count -Maximum).Maximum
     $maxHeaderCheckpoints = ($timingRows | Measure-Object -Property replay_header_checkpoints -Maximum).Maximum
-    $expectedCheckpointCount = [int][Math]::Max($maxGhostCount, $maxHeaderCheckpoints)
+    $expectedIntermediateCheckpointCount = [int][Math]::Max($maxGhostCount, $maxHeaderCheckpoints)
+    $expectedCheckpointCount = $expectedIntermediateCheckpointCount + 1
+    $finishRows = @($timingRows | Where-Object { $_.is_finish })
+    $expectedFinalCheckpoint = $expectedCheckpointCount
     $checkpointGroups = $timingRows | Group-Object -Property checkpoint | Sort-Object { [int]$_.Name }
     $uniqueCheckpoints = @($checkpointGroups | ForEach-Object { [int]$_.Name })
+    $proofLines.Add("expected_intermediate_checkpoint_count=$expectedIntermediateCheckpointCount")
     $proofLines.Add("expected_checkpoint_count=$expectedCheckpointCount")
+    $proofLines.Add("expected_final_checkpoint=$expectedFinalCheckpoint")
+    $proofLines.Add("finish_split_rows=$($finishRows.Count)")
     $proofLines.Add("unique_recorded_checkpoints=$($uniqueCheckpoints -join ',')")
 
-    if ($expectedCheckpointCount -lt 1) {
+    if ($expectedIntermediateCheckpointCount -lt 1) {
         throw "Could not determine Straight On ghost checkpoint count. See $RunDir"
     }
 
@@ -617,8 +660,17 @@ if ($timingRows) {
     }
     if ($missing.Count -gt 0) {
         $proofLines.Add("missing_checkpoints=$($missing -join ',')")
-        $proofLines | Set-Content -LiteralPath (Join-Path $RunDir "straight_on_split_proof.txt") -Encoding UTF8
-        throw "Straight On did not record every checkpoint split. Missing: $($missing -join ','). See $RunDir"
+    }
+    if ($finishRows.Count -lt 1) {
+        $proofLines.Add("missing_final_finish_split=$expectedFinalCheckpoint")
+    } else {
+        $badFinishRows = @($finishRows | Where-Object { $_.checkpoint -ne $expectedFinalCheckpoint })
+        if ($badFinishRows.Count -gt 0) {
+            $proofLines.Add("bad_final_finish_checkpoints=$((@($badFinishRows | ForEach-Object { $_.checkpoint }) | Sort-Object -Unique) -join ',')")
+            $proofLines | Set-Content -LiteralPath (Join-Path $RunDir "straight_on_split_proof.txt") -Encoding UTF8
+            throw "Straight On recorded a finish split, but not as the final checkpoint $expectedFinalCheckpoint. See $RunDir"
+        }
+        $proofLines.Add("final_finish_split_recorded=true")
     }
 
     $badRows = New-Object System.Collections.Generic.List[string]
@@ -647,8 +699,8 @@ if ($timingRows) {
 
     foreach ($group in $checkpointGroups) {
         $row = $group.Group | Select-Object -Last 1
-        $proofLines.Add(("checkpoint={0} current_ms={1} ghost_ms={2} delta_ms={3} live_appended_ms={4} samples={5}" -f `
-            $row.checkpoint, $row.current_ms, $row.ghost_ms, $row.delta_ms, $row.live_appended_ms, $group.Count))
+        $proofLines.Add(("checkpoint={0} current_ms={1} ghost_ms={2} delta_ms={3} live_appended_ms={4} finish={5} samples={6}" -f `
+            $row.checkpoint, $row.current_ms, $row.ghost_ms, $row.delta_ms, $row.live_appended_ms, $row.is_finish, $group.Count))
     }
 }
 $proofLines | Set-Content -LiteralPath (Join-Path $RunDir "straight_on_split_proof.txt") -Encoding UTF8
@@ -661,7 +713,7 @@ $summary = @(
     "level_search=$LevelSearch",
     "landscape_side=$LandscapeSide",
     "straight_acceleration=$StraightAcceleration straight_orientation=$StraightOrientation",
-    "drive_hold_ms=$DriveHoldMs drive_mode=$driveMode accelerate_with_jet=$EnableAccelerateWithJet accelerator=${AcceleratorX},${AcceleratorY} use_accelerator_hold=$UseAcceleratorHold separate_boost_touch=$UseSeparateBoostTouch boost=${BoostX},${BoostY}",
+    "drive_hold_ms=$DriveHoldMs drive_mode=$driveMode accelerate_with_jet=$EnableAccelerateWithJet clear_accelerator_tutorial_ms=$ClearAcceleratorTutorialMs accelerator=${AcceleratorX},${AcceleratorY} use_accelerator_hold=$UseAcceleratorHold separate_boost_touch=$UseSeparateBoostTouch boost=${BoostX},${BoostY}",
     "game_startup_wait_seconds=$GameStartupWaitSeconds",
     "clear_app_data_before_run=$ClearAppDataBeforeRun",
     "force_login_dismiss_tap=$ForceLoginDismissTap",
@@ -676,8 +728,8 @@ if ($passiveSplitCount -ne 0) {
     throw "Passive replay produced split checkpoint lines before Race. See $RunDir"
 }
 if ($postRaceSplitCount -eq 0) {
-    if (-not $ghostRows -or $maxArmedGhostCount -lt 1) {
-        throw "No checkpoint splits or stock ghost checkpoint timings registered while racing the ghost. See $RunDir"
+    if (-not $ghostRows -or $maxArmedGhostCount -lt 1 -or -not ($proofLines -contains "ghost_final_finish_split_recorded=true")) {
+        throw "No live checkpoint splits registered while racing the ghost, and the ghost finish checkpoint proof is incomplete. See $RunDir"
     }
 }
 

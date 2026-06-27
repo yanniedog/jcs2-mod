@@ -790,11 +790,6 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLatestChe
 
     capture_ghost_replay_baseline();
 
-    if ptr::read_volatile(SHOW_REPLAY) != 0 {
-        reset_split_tracking();
-        return 0;
-    }
-
     let ghost_count = effective_ghost_checkpoint_count();
     let ghost_size = ptr::read_volatile(GHOST_SIZE).max(0);
     if ghost_size < 1 || ghost_count < 1 {
@@ -808,6 +803,11 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLatestChe
     let finish = final_finish_split(ghost_count);
     if finish != 0 {
         return finish;
+    }
+
+    if ptr::read_volatile(SHOW_REPLAY) != 0 {
+        reset_split_tracking();
+        return 0;
     }
 
     let mut checkpoint = latest_live_checkpoint();
