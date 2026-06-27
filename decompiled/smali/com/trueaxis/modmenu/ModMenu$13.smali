@@ -34,7 +34,7 @@
         }
     .end annotation
 
-    .line 712
+    .line 748
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$cars:Landroid/widget/Spinner;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
@@ -51,14 +51,14 @@
 .method public onClick(Landroid/view/View;)V
     .registers 5
 
-    .line 714
+    .line 750
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$cars:Landroid/widget/Spinner;
 
     invoke-virtual {p1}, Landroid/widget/Spinner;->getSelectedItemPosition()I
 
     move-result p1
 
-    .line 715
+    .line 751
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -85,17 +85,17 @@
 
     invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 716
+    .line 752
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
 
     invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModMenu;->deleteCustomLivery(Landroid/content/Context;I)V
 
-    .line 717
+    .line 753
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$refresh:Ljava/lang/Runnable;
 
     invoke-interface {v0}, Ljava/lang/Runnable;->run()V
 
-    .line 718
+    .line 754
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
 
     new-instance v1, Ljava/lang/StringBuilder;
@@ -126,6 +126,6 @@
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
     invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModMenu;->access$300(Landroid/content/Context;Ljava/lang/String;)V
 
-    .line 719
+    .line 755
     return-void
 .end method

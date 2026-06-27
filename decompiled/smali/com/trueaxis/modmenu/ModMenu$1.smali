@@ -8,7 +8,7 @@
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
+    value = Lcom/trueaxis/modmenu/ModMenu;->linkButton(Landroid/app/Activity;Ljava/lang/String;ILandroid/graphics/drawable/Drawable;Ljava/lang/String;)Landroid/widget/Button;
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -20,18 +20,22 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
+.field final synthetic val$url:Ljava/lang/String;
+
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;)V
-    .registers 2
+.method constructor <init>(Ljava/lang/String;Landroid/app/Activity;)V
+    .registers 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 376
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
+    .line 123
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$url:Ljava/lang/String;
+
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -41,59 +45,97 @@
 
 # virtual methods
 .method public onClick(Landroid/view/View;)V
-    .registers 7
+    .registers 6
 
-    .line 379
-    const-string p1, "https://github.com/yanniedog/jcs2-mod"
+    .line 126
+    const-string p1, "launcher"
 
-    const-string v0, "launcher"
+    :try_start_2
+    new-instance v0, Ljava/lang/StringBuilder;
 
-    :try_start_4
-    const-string v1, "open repo url=https://github.com/yanniedog/jcs2-mod"
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
 
-    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    const-string v1, "open link url="
 
-    .line 380
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    new-instance v2, Landroid/content/Intent;
+    move-result-object v0
 
-    const-string v3, "android.intent.action.VIEW"
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$url:Ljava/lang/String;
 
-    invoke-static {p1}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    move-result-object v4
+    move-result-object v0
 
-    invoke-direct {v2, v3, v4}, Landroid/content/Intent;-><init>(Ljava/lang/String;Landroid/net/Uri;)V
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    invoke-virtual {v1, v2}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
-    :try_end_19
-    .catchall {:try_start_4 .. :try_end_19} :catchall_1a
+    move-result-object v0
 
-    .line 384
-    goto :goto_2a
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 381
-    :catchall_1a
-    move-exception v1
-
-    .line 382
-    const-string v2, "open repo failed"
-
-    invoke-static {v0, v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
-
-    .line 383
+    .line 127
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
+
+    new-instance v1, Landroid/content/Intent;
+
+    const-string v2, "android.intent.action.VIEW"
+
+    iget-object v3, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$url:Ljava/lang/String;
+
+    invoke-static {v3}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
+
+    move-result-object v3
+
+    invoke-direct {v1, v2, v3}, Landroid/content/Intent;-><init>(Ljava/lang/String;Landroid/net/Uri;)V
+
+    invoke-virtual {v0, v1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
+    :try_end_2c
+    .catchall {:try_start_2 .. :try_end_2c} :catchall_2d
+
+    .line 131
+    goto :goto_52
+
+    .line 128
+    :catchall_2d
+    move-exception v0
+
+    .line 129
+    new-instance v1, Ljava/lang/StringBuilder;
+
+    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v2, "open link failed url="
+
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
+    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$url:Ljava/lang/String;
+
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
+    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v1
+
+    invoke-static {p1, v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+
+    .line 130
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
+
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$url:Ljava/lang/String;
 
     const/4 v1, 0x1
 
-    invoke-static {v0, p1, v1}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
+    invoke-static {p1, v0, v1}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
 
     move-result-object p1
 
     invoke-virtual {p1}, Landroid/widget/Toast;->show()V
 
-    .line 385
-    :goto_2a
+    .line 132
+    :goto_52
     return-void
 .end method

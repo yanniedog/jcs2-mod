@@ -285,7 +285,7 @@
 .method private liveArrayTrace(I)Ljava/lang/String;
     .registers 8
 
-    .line 303
+    .line 306
     const/4 v0, 0x0
 
     invoke-static {p1, v0}, Ljava/lang/Math;->max(II)I
@@ -298,27 +298,27 @@
 
     move-result v1
 
-    .line 304
+    .line 307
     new-instance v2, Ljava/lang/StringBuilder;
 
     const-string v3, "["
 
     invoke-direct {v2, v3}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
 
-    .line 305
+    .line 308
     nop
 
     :goto_13
     if-ge v0, v1, :cond_31
 
-    .line 306
+    .line 309
     if-lez v0, :cond_1c
 
     const/16 v3, 0x2c
 
     invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    .line 307
+    .line 310
     :cond_1c
     add-int/lit8 v3, v0, 0x1
 
@@ -332,19 +332,19 @@
 
     move-result-object v4
 
-    .line 308
+    .line 311
     invoke-static {v0}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLiveArrayMillis(I)I
 
     move-result v0
 
     invoke-virtual {v4, v0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
-    .line 305
+    .line 308
     move v0, v3
 
     goto :goto_13
 
-    .line 310
+    .line 313
     :cond_31
     if-le p1, v1, :cond_38
 
@@ -352,13 +352,13 @@
 
     invoke-virtual {v2, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    .line 311
+    .line 314
     :cond_38
     const/16 p1, 0x5d
 
     invoke-virtual {v2, p1}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    .line 312
+    .line 315
     invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object p1
@@ -367,7 +367,7 @@
 .end method
 
 .method private logArmedDiagnostics(Ljava/lang/String;)V
-    .registers 13
+    .registers 16
 
     .line 275
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
@@ -472,7 +472,7 @@
     move-result-object v7
 
     .line 288
-    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLastCheckpointMillis()I
+    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitResolvedCheckpoint()I
 
     move-result v8
 
@@ -480,70 +480,109 @@
 
     move-result-object v8
 
-    const/16 v9, 0x9
+    .line 289
+    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLastCheckpointMillis()I
 
-    new-array v9, v9, [Ljava/lang/Object;
+    move-result v9
 
-    const/4 v10, 0x0
+    invoke-static {v9}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 
-    aput-object p1, v9, v10
+    move-result-object v9
+
+    .line 290
+    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLastReplaySize()I
+
+    move-result v10
+
+    invoke-static {v10}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+
+    move-result-object v10
+
+    .line 291
+    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitReplayVisualMillis()I
+
+    move-result v11
+
+    invoke-static {v11}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+
+    move-result-object v11
+
+    const/16 v12, 0xc
+
+    new-array v12, v12, [Ljava/lang/Object;
+
+    const/4 v13, 0x0
+
+    aput-object p1, v12, v13
 
     const/4 p1, 0x1
 
-    aput-object v1, v9, p1
+    aput-object v1, v12, p1
 
     const/4 p1, 0x2
 
-    aput-object v2, v9, p1
+    aput-object v2, v12, p1
 
     const/4 p1, 0x3
 
-    aput-object v3, v9, p1
+    aput-object v3, v12, p1
 
     const/4 p1, 0x4
 
-    aput-object v4, v9, p1
+    aput-object v4, v12, p1
 
     const/4 p1, 0x5
 
-    aput-object v5, v9, p1
+    aput-object v5, v12, p1
 
     const/4 p1, 0x6
 
-    aput-object v6, v9, p1
+    aput-object v6, v12, p1
 
     const/4 p1, 0x7
 
-    aput-object v7, v9, p1
+    aput-object v7, v12, p1
 
     const/16 p1, 0x8
 
-    aput-object v8, v9, p1
+    aput-object v8, v12, p1
+
+    const/16 p1, 0x9
+
+    aput-object v9, v12, p1
+
+    const/16 p1, 0xa
+
+    aput-object v10, v12, p1
+
+    const/16 p1, 0xb
+
+    aput-object v11, v12, p1
 
     .line 278
-    const-string p1, "split armed reason=%s live_count=%d ghost_count=%d ghost_size=%d show_replay=%d scanned_checkpoint=%d decoded_engine_checkpoint=%d engine_checkpoint=%d last_checkpoint_ms=%d"
+    const-string p1, "split armed reason=%s live_count=%d ghost_count=%d ghost_size=%d show_replay=%d scanned_checkpoint=%d decoded_engine_checkpoint=%d engine_checkpoint=%d selected_checkpoint=%d last_checkpoint_ms=%d last_replay_size=%d replay_visual_ms=%d"
 
-    invoke-static {v0, p1, v9}, Ljava/lang/String;->format(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+    invoke-static {v0, p1, v12}, Ljava/lang/String;->format(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
 
     move-result-object p1
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 289
+    .line 292
     return-void
 .end method
 
 .method private logGhostCheckpoints(I)V
     .registers 9
 
-    .line 292
+    .line 295
     iget v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->loggedGhostCheckpointCount:I
 
     if-gt p1, v0, :cond_5
 
     return-void
 
-    .line 293
+    .line 296
     :cond_5
     iget v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->loggedGhostCheckpointCount:I
 
@@ -551,14 +590,14 @@
 
     add-int/2addr v0, v1
 
-    .line 294
+    .line 297
     :goto_9
     if-gt v0, p1, :cond_2d
 
-    .line 295
+    .line 298
     sget-object v2, Ljava/util/Locale;->US:Ljava/util/Locale;
 
-    .line 297
+    .line 300
     invoke-static {v0}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 
     move-result-object v3
@@ -581,7 +620,7 @@
 
     aput-object v4, v5, v1
 
-    .line 295
+    .line 298
     const-string v3, "ghost checkpoint=%d ghost_ms=%d"
 
     invoke-static {v2, v3, v5}, Ljava/lang/String;->format(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
@@ -590,23 +629,23 @@
 
     invoke-static {v2}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 294
+    .line 297
     add-int/lit8 v0, v0, 0x1
 
     goto :goto_9
 
-    .line 299
+    .line 302
     :cond_2d
     iput p1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->loggedGhostCheckpointCount:I
 
-    .line 300
+    .line 303
     return-void
 .end method
 
 .method private officialGhostArrayTrace(I)Ljava/lang/String;
     .registers 8
 
-    .line 316
+    .line 319
     const/4 v0, 0x0
 
     invoke-static {p1, v0}, Ljava/lang/Math;->max(II)I
@@ -619,27 +658,27 @@
 
     move-result v1
 
-    .line 317
+    .line 320
     new-instance v2, Ljava/lang/StringBuilder;
 
     const-string v3, "["
 
     invoke-direct {v2, v3}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
 
-    .line 318
+    .line 321
     nop
 
     :goto_13
     if-ge v0, v1, :cond_31
 
-    .line 319
+    .line 322
     if-lez v0, :cond_1c
 
     const/16 v3, 0x2c
 
     invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    .line 320
+    .line 323
     :cond_1c
     add-int/lit8 v3, v0, 0x1
 
@@ -653,19 +692,19 @@
 
     move-result-object v4
 
-    .line 321
+    .line 324
     invoke-static {v0}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitOfficialGhostArrayMillis(I)I
 
     move-result v0
 
     invoke-virtual {v4, v0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
-    .line 318
+    .line 321
     move v0, v3
 
     goto :goto_13
 
-    .line 323
+    .line 326
     :cond_31
     if-le p1, v1, :cond_38
 
@@ -673,13 +712,13 @@
 
     invoke-virtual {v2, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    .line 324
+    .line 327
     :cond_38
     const/16 p1, 0x5d
 
     invoke-virtual {v2, p1}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    .line 325
+    .line 328
     invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object p1

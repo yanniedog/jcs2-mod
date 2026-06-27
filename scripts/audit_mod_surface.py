@@ -200,6 +200,10 @@ def check_sources(skip_local_assets=False):
         ok = fail("checkpoint split reader no longer reports persistent ghost/split states") and ok
     if "fn decoded_live_checkpoint_index()" not in bridge or "0x00ff_ffff" not in bridge:
         ok = fail("checkpoint split reader no longer decodes the engine checkpoint flag/counter") and ok
+    if "fn engine_checkpoint_has_state_flag()" not in bridge or "fn engine_checkpoint_candidate(ghost_count: c_int)" not in bridge:
+        ok = fail("checkpoint split reader no longer accepts regular-level engine checkpoint fallback state") and ok
+    if "fn replay_visual_ms()" not in bridge or "replay_nodes_to_ms(read_i32_pointer(LAST_REPLAY_SIZE))" not in bridge:
+        ok = fail("checkpoint split reader no longer uses the live replay visual clock fallback") and ok
     if "fn scan_live_checkpoint_from_last_time()" not in bridge or "last_checkpoint_ms()" not in bridge:
         ok = fail("checkpoint split reader no longer keeps stock live checkpoint-time diagnostics") and ok
     if "ghost_checkpoint_ms(checkpoint)" not in bridge or "fn live_checkpoint_ms(checkpoint: c_int)" not in bridge:
@@ -274,6 +278,10 @@ def check_sources(skip_local_assets=False):
         ok = fail("ghost route line controls must stay removed from the mod menu") and ok
     if "Enable checkpoint/sector deltas vs saved replay ghost" not in mod_menu:
         ok = fail("mod menu no longer exposes the requested split HUD label") and ok
+    if "DISCORD_URL = \"https://discord.gg/stBdE2Tfs2\"" not in mod_menu:
+        ok = fail("mod menu no longer links to the community Discord server") and ok
+    if "GitHubIconDrawable" not in mod_menu or "DiscordIconDrawable" not in mod_menu or "linkButton(" not in mod_menu:
+        ok = fail("mod menu no longer uses icon buttons for GitHub and Discord links") and ok
     if "K_SPLIT_SECTOR_DELTA" not in mod_menu or "sectorSplitsEnabled" not in mod_menu:
         ok = fail("sector delta mode is missing from the split HUD options") and ok
     if 'prefs(c).getBoolean(K_SPLIT_SECTOR_DELTA, false)' not in mod_menu:

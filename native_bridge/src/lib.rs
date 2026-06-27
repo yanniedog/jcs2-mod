@@ -374,6 +374,11 @@ unsafe fn live_checkpoint_index() -> c_int {
     ptr::read_volatile(LAST_CHECKPOINT_INDEX)
 }
 
+unsafe fn engine_checkpoint_has_state_flag() -> bool {
+    let raw = live_checkpoint_index();
+    raw >= 0 && (raw & !0x00ff_ffff) != 0
+}
+
 unsafe fn decoded_live_checkpoint_index() -> c_int {
     let raw = live_checkpoint_index();
     if raw < 0 {
@@ -542,6 +547,21 @@ unsafe fn official_ghost_checkpoint_time_ms(index: c_int) -> i32 {
     }
 }
 
+unsafe fn replay_visual_ms() -> i32 {
+    replay_nodes_to_ms(read_i32_pointer(LAST_REPLAY_SIZE))
+}
+
+unsafe fn engine_checkpoint_candidate(ghost_count: c_int) -> c_int {
+    let decoded = decoded_live_checkpoint_index();
+    if decoded < 1 || decoded > ghost_count {
+        return -1;
+    }
+    if !engine_checkpoint_has_state_flag() || replay_visual_ms() <= 0 {
+        return -1;
+    }
+    decoded
+}
+
 unsafe fn live_checkpoint_ms(checkpoint: c_int) -> i32 {
     if checkpoint < 1 {
         return -1;
@@ -559,6 +579,12 @@ unsafe fn live_checkpoint_ms(checkpoint: c_int) -> i32 {
         let millis = checkpoint_time_ms(ghost_count + checkpoint - 1);
         if millis > 0 {
             return millis;
+        }
+    }
+    if engine_checkpoint_candidate(ghost_count) == checkpoint {
+        let visual_ms = replay_visual_ms();
+        if visual_ms > 0 {
+            return visual_ms;
         }
     }
     let millis = checkpoint_time_ms(checkpoint - 1);
@@ -654,12 +680,15 @@ unsafe fn latest_live_checkpoint() -> c_int {
     let count = live_checkpoint_count();
     let decoded = decoded_live_checkpoint_index();
     let scanned = scan_live_checkpoint_from_last_time();
+    let engine = engine_checkpoint_candidate(ghost_count);
     let candidate = if last_checkpoint_ms() > 0 && decoded >= 1 {
         decoded
     } else if scanned >= 1 {
         scanned
     } else if count > ghost_count {
         count - ghost_count
+    } else if engine >= 1 {
+        engine
     } else {
         -1
     };

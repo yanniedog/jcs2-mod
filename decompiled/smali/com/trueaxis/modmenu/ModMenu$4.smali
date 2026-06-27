@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 435
+    .line 471
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$a:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$splitOptions:Landroid/widget/LinearLayout;
@@ -47,7 +47,7 @@
 .method public run()V
     .registers 3
 
-    .line 437
+    .line 473
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$a:Landroid/app/Activity;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$splitOptions:Landroid/widget/LinearLayout;
@@ -55,6 +55,6 @@
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;)V
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->access$000(Landroid/content/Context;Landroid/view/View;)V
 
-    .line 438
+    .line 474
     return-void
 .end method

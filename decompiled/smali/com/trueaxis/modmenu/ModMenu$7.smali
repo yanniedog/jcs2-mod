@@ -40,7 +40,7 @@
         }
     .end annotation
 
-    .line 564
+    .line 600
     iput p1, p0, Lcom/trueaxis/modmenu/ModMenu$7;->val$min:I
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$7;->val$c:Landroid/content/Context;
@@ -63,12 +63,12 @@
 .method public onProgressChanged(Landroid/widget/SeekBar;IZ)V
     .registers 5
 
-    .line 566
+    .line 602
     iget p1, p0, Lcom/trueaxis/modmenu/ModMenu$7;->val$min:I
 
     add-int/2addr p1, p2
 
-    .line 567
+    .line 603
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$7;->val$c:Landroid/content/Context;
 
     invoke-static {p2}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
@@ -87,7 +87,7 @@
 
     invoke-interface {p2}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 568
+    .line 604
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$7;->val$value:Landroid/widget/TextView;
 
     iget-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$7;->val$label:Ljava/lang/String;
@@ -97,7 +97,7 @@
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSeekLabel(Landroid/widget/TextView;Ljava/lang/String;ILjava/lang/String;)V
     invoke-static {p2, p3, p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/widget/TextView;Ljava/lang/String;ILjava/lang/String;)V
 
-    .line 569
+    .line 605
     new-instance p2, Ljava/lang/StringBuilder;
 
     invoke-direct {p2}, Ljava/lang/StringBuilder;-><init>()V
@@ -132,20 +132,20 @@
 
     invoke-static {p2, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 570
+    .line 606
     return-void
 .end method
 
 .method public onStartTrackingTouch(Landroid/widget/SeekBar;)V
     .registers 2
 
-    .line 573
+    .line 609
     return-void
 .end method
 
 .method public onStopTrackingTouch(Landroid/widget/SeekBar;)V
     .registers 2
 
-    .line 576
+    .line 612
     return-void
 .end method

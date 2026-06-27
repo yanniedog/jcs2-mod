@@ -8,7 +8,15 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PixelFormat;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -48,6 +56,7 @@ public class ModMenu {
     private static final String K_SPLIT_X = "split_x";
     private static final String K_SPLIT_Y = "split_y";
     private static final String REPO_URL = "https://github.com/yanniedog/jcs2-mod";
+    private static final String DISCORD_URL = "https://discord.gg/stBdE2Tfs2";
     private static final String DISPLAY_NAME = "JCS2 Community Mod";
     private static final int REQUEST_IMPORT = 7301;
     private static final int REQUEST_EXPORT = 7302;
@@ -97,6 +106,31 @@ public class ModMenu {
         view.setMinHeight(0);
         view.setMinimumHeight(0);
         view.setPadding(dp(c, 10), dp(c, 7), dp(c, 10), dp(c, 7));
+        return view;
+    }
+
+    private static Button linkButton(final Activity a, String text, int color, Drawable icon,
+            final String url) {
+        Button view = button(a, text);
+        view.setTextColor(Color.WHITE);
+        view.setTextSize(12.0f);
+        view.setGravity(Gravity.CENTER);
+        view.setBackgroundDrawable(background(color, dp(a, 8)));
+        int iconSize = dp(a, 18);
+        icon.setBounds(0, 0, iconSize, iconSize);
+        view.setCompoundDrawables(icon, null, null, null);
+        view.setCompoundDrawablePadding(dp(a, 7));
+        view.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                try {
+                    ModDebugLog.module("launcher", "open link url=" + url);
+                    a.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                } catch (Throwable error) {
+                    ModDebugLog.module("launcher", "open link failed url=" + url, error);
+                    Toast.makeText(a, url, Toast.LENGTH_LONG).show();
+                }
+            }
+        });
         return view;
     }
 
@@ -370,21 +404,23 @@ public class ModMenu {
             subtitle.setPadding(0, 0, 0, dp(a, 8));
             root.addView(subtitle);
 
-            TextView repo = label(a, "GitHub releases: " + REPO_URL, 11, Color.rgb(88, 166, 255));
-            repo.setGravity(Gravity.CENTER);
-            repo.setPadding(0, 0, 0, dp(a, 10));
-            repo.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    try {
-                        ModDebugLog.module("launcher", "open repo url=" + REPO_URL);
-                        a.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(REPO_URL)));
-                    } catch (Throwable error) {
-                        ModDebugLog.module("launcher", "open repo failed", error);
-                        Toast.makeText(a, REPO_URL, Toast.LENGTH_LONG).show();
-                    }
-                }
-            });
-            root.addView(repo);
+            LinearLayout links = new LinearLayout(a);
+            links.setOrientation(LinearLayout.HORIZONTAL);
+            links.setGravity(Gravity.CENTER);
+            links.setPadding(0, 0, 0, dp(a, 10));
+            LinearLayout.LayoutParams gitHubLinkParams = new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+            gitHubLinkParams.setMargins(dp(a, 4), 0, dp(a, 4), 0);
+            LinearLayout.LayoutParams discordLinkParams = new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+            discordLinkParams.setMargins(dp(a, 4), 0, dp(a, 4), 0);
+            links.addView(linkButton(a, "GitHub", Color.rgb(36, 41, 46),
+                    new GitHubIconDrawable(Color.WHITE, Color.rgb(36, 41, 46)), REPO_URL),
+                    gitHubLinkParams);
+            links.addView(linkButton(a, "Discord", Color.rgb(88, 101, 242),
+                    new DiscordIconDrawable(Color.WHITE, Color.rgb(88, 101, 242)), DISCORD_URL),
+                    discordLinkParams);
+            root.addView(links);
 
             ScrollView scroll = new ScrollView(a);
             scroll.setFillViewport(true);
@@ -904,6 +940,109 @@ public class ModMenu {
         ModDebugLog.module("livery", "reset all custom liveries");
         for (int car = 0; car < CAR_TEXTURES.length; car++) {
             deleteCustomLivery(c, car);
+        }
+    }
+
+    private abstract static class LinkIconDrawable extends Drawable {
+        final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        final Paint cutout = new Paint(Paint.ANTI_ALIAS_FLAG);
+        final Path path = new Path();
+
+        LinkIconDrawable(int color, int background) {
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(color);
+            cutout.setStyle(Paint.Style.FILL);
+            cutout.setColor(background);
+        }
+
+        public void setAlpha(int alpha) {
+            paint.setAlpha(alpha);
+            cutout.setAlpha(alpha);
+        }
+
+        public void setColorFilter(ColorFilter colorFilter) {
+            paint.setColorFilter(colorFilter);
+            cutout.setColorFilter(colorFilter);
+        }
+
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
+        }
+
+        public int getIntrinsicWidth() {
+            return 24;
+        }
+
+        public int getIntrinsicHeight() {
+            return 24;
+        }
+    }
+
+    private static class GitHubIconDrawable extends LinkIconDrawable {
+        GitHubIconDrawable(int color, int background) {
+            super(color, background);
+        }
+
+        public void draw(Canvas canvas) {
+            Rect b = getBounds();
+            float size = Math.min(b.width(), b.height());
+            float x = b.left + (b.width() - size) / 2.0f;
+            float y = b.top + (b.height() - size) / 2.0f;
+            float cx = x + size * 0.5f;
+            float cy = y + size * 0.5f;
+
+            path.reset();
+            path.moveTo(x + size * 0.24f, y + size * 0.30f);
+            path.lineTo(x + size * 0.18f, y + size * 0.08f);
+            path.lineTo(x + size * 0.38f, y + size * 0.20f);
+            path.lineTo(x + size * 0.62f, y + size * 0.20f);
+            path.lineTo(x + size * 0.82f, y + size * 0.08f);
+            path.lineTo(x + size * 0.76f, y + size * 0.30f);
+            path.close();
+            canvas.drawPath(path, paint);
+            canvas.drawCircle(cx, cy, size * 0.34f, paint);
+            RectF chin = new RectF(cx - size * 0.15f, y + size * 0.67f,
+                    cx + size * 0.15f, y + size * 0.93f);
+            canvas.drawRoundRect(chin, size * 0.08f, size * 0.08f, paint);
+        }
+    }
+
+    private static class DiscordIconDrawable extends LinkIconDrawable {
+        DiscordIconDrawable(int color, int background) {
+            super(color, background);
+        }
+
+        public void draw(Canvas canvas) {
+            Rect b = getBounds();
+            float size = Math.min(b.width(), b.height());
+            float x = b.left + (b.width() - size) / 2.0f;
+            float y = b.top + (b.height() - size) / 2.0f;
+
+            path.reset();
+            path.moveTo(x + size * 0.24f, y + size * 0.27f);
+            path.cubicTo(x + size * 0.36f, y + size * 0.19f,
+                    x + size * 0.64f, y + size * 0.19f,
+                    x + size * 0.76f, y + size * 0.27f);
+            path.cubicTo(x + size * 0.86f, y + size * 0.37f,
+                    x + size * 0.90f, y + size * 0.55f,
+                    x + size * 0.82f, y + size * 0.72f);
+            path.cubicTo(x + size * 0.73f, y + size * 0.78f,
+                    x + size * 0.62f, y + size * 0.72f,
+                    x + size * 0.57f, y + size * 0.66f);
+            path.lineTo(x + size * 0.43f, y + size * 0.66f);
+            path.cubicTo(x + size * 0.38f, y + size * 0.72f,
+                    x + size * 0.27f, y + size * 0.78f,
+                    x + size * 0.18f, y + size * 0.72f);
+            path.cubicTo(x + size * 0.10f, y + size * 0.55f,
+                    x + size * 0.14f, y + size * 0.37f,
+                    x + size * 0.24f, y + size * 0.27f);
+            path.close();
+            canvas.drawPath(path, paint);
+            canvas.drawCircle(x + size * 0.39f, y + size * 0.50f, size * 0.055f, cutout);
+            canvas.drawCircle(x + size * 0.61f, y + size * 0.50f, size * 0.055f, cutout);
+            RectF smile = new RectF(x + size * 0.43f, y + size * 0.57f,
+                    x + size * 0.57f, y + size * 0.63f);
+            canvas.drawRoundRect(smile, size * 0.03f, size * 0.03f, cutout);
         }
     }
 

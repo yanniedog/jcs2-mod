@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 475
+    .line 511
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$onPlay:Ljava/lang/Runnable;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,18 +43,18 @@
 .method public onClick(Landroid/view/View;)V
     .registers 3
 
-    .line 477
+    .line 513
     const-string p1, "launcher"
 
     const-string v0, "play button invoking onPlay"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 478
+    .line 514
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$onPlay:Ljava/lang/Runnable;
 
     invoke-interface {p1}, Ljava/lang/Runnable;->run()V
 
-    .line 479
+    .line 515
     return-void
 .end method

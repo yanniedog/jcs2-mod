@@ -276,7 +276,7 @@ final class SplitTimeHud {
                 if (now < nextArmedDiagnosticAt) return;
                 nextArmedDiagnosticAt = now + ("waiting".equals(reason) ? 10000L : 2000L);
                 ModDebugLog.log(String.format(Locale.US,
-                        "split armed reason=%s live_count=%d ghost_count=%d ghost_size=%d show_replay=%d scanned_checkpoint=%d decoded_engine_checkpoint=%d engine_checkpoint=%d last_checkpoint_ms=%d",
+                        "split armed reason=%s live_count=%d ghost_count=%d ghost_size=%d show_replay=%d scanned_checkpoint=%d decoded_engine_checkpoint=%d engine_checkpoint=%d selected_checkpoint=%d last_checkpoint_ms=%d last_replay_size=%d replay_visual_ms=%d",
                         reason,
                         RequiredPatches.readSplitLiveCheckpointCount(),
                         RequiredPatches.readSplitGhostCheckpointCount(),
@@ -285,7 +285,10 @@ final class SplitTimeHud {
                         RequiredPatches.readSplitScannedCheckpointIndex(),
                         RequiredPatches.readSplitDecodedEngineCheckpointIndex(),
                         RequiredPatches.readSplitEngineLastCheckpointIndex(),
-                        RequiredPatches.readSplitLastCheckpointMillis()));
+                        RequiredPatches.readSplitResolvedCheckpoint(),
+                        RequiredPatches.readSplitLastCheckpointMillis(),
+                        RequiredPatches.readSplitLastReplaySize(),
+                        RequiredPatches.readSplitReplayVisualMillis()));
             }
 
             private void logGhostCheckpoints(int checkpointCount) {
