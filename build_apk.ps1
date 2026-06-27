@@ -86,7 +86,7 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $Keystore = $env:JCS2_KEYSTORE
 if (-not $Keystore) { $Keystore = Join-Path $Root "jcs2.keystore" }
 $KeyAlias = $env:JCS2_KEY_ALIAS
-if (-not $KeyAlias) { $KeyAlias = "jcs2" }
+if (-not $KeyAlias) { $KeyAlias = "jcs2local" }
 $StorePass = "android"
 if ($env:JCS2_KEYSTORE_PASS) { $StorePass = $env:JCS2_KEYSTORE_PASS }
 $KeyPass = $StorePass
