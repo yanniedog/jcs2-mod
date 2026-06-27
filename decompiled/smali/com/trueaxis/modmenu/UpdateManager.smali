@@ -824,7 +824,7 @@
 
     long-to-double p0, p0
 
-    const-wide/high16 v1, 0x4090000000000000L    # 1024.0
+    const-wide/high16 v1, 0x4090000000000000L
 
     invoke-static {p0, p1}, Ljava/lang/Double;->isNaN(D)Z
 

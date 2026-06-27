@@ -90,4 +90,21 @@ $Dest = Join-Path $Root "decompiled\smali\com\trueaxis\modmenu"
 Remove-Item $Dest -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $Dest -Force | Out-Null
 Copy-Item (Join-Path $SmaliOut "com\trueaxis\modmenu\*") $Dest -Force
+
+# Strip baksmali's numeric value comments (e.g. "const v6, 0x3e75c28f    # 0.24f")
+# on const instructions. Whether baksmali emits these depends on how complete its
+# register analysis is, which varies between environments (e.g. local vs CI),
+# making the output non-reproducible. Removing them keeps the generated smali
+# byte-identical everywhere so the CI "verify generated outputs" check is stable.
+# Only const* instructions with a numeric (0x...) operand are touched, so
+# const-string/const-class operands are never altered. Newlines are preserved.
+$ValueComment = [regex]'(?m)^([ \t]+const\S* [vp]\d+, -?0x[0-9a-fA-F]+[Lst]?)[ \t]+#[^\r\n]*'
+$Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+Get-ChildItem -Path $Dest -Recurse -Filter *.smali | ForEach-Object {
+    $raw = [System.IO.File]::ReadAllText($_.FullName)
+    $new = $ValueComment.Replace($raw, '$1')
+    if ($new -ne $raw) {
+        [System.IO.File]::WriteAllText($_.FullName, $new, $Utf8NoBom)
+    }
+}
 Write-Host "Copied smali to $Dest"
