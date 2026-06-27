@@ -13,6 +13,10 @@
 keystore.properties
 key.properties
 
+# Committed stable self-signed signing key (intentional, not a secret).
+# Every release is self-signed with this key so in-place updates keep working.
+!jcs2.keystore
+
 # Android package outputs
 *.apk
 *.aab
