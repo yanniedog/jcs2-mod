@@ -590,7 +590,7 @@
 
     const/4 v4, -0x2
 
-    const/high16 v5, 0x3f800000    # 1.0f
+    const/high16 v5, 0x3f800000
 
     invoke-direct {v2, v1, v4, v5}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
@@ -667,7 +667,7 @@
     .line 188
     iget-object v3, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
-    const/high16 v4, 0x41200000    # 10.0f
+    const/high16 v4, 0x41200000
 
     invoke-virtual {v3, v4}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->setStrokeWidth(F)V
 
@@ -683,7 +683,7 @@
 
     const/4 v4, -0x2
 
-    const/high16 v5, 0x3f800000    # 1.0f
+    const/high16 v5, 0x3f800000
 
     invoke-direct {v3, v1, v4, v5}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
@@ -949,7 +949,7 @@
 
     mul-float p1, p1, v0
 
-    const/high16 v0, 0x3f000000    # 0.5f
+    const/high16 v0, 0x3f000000
 
     add-float/2addr p1, v0
 
@@ -966,7 +966,7 @@
 
     const/4 v1, -0x2
 
-    const/high16 v2, 0x3f800000    # 1.0f
+    const/high16 v2, 0x3f800000
 
     const/4 v3, 0x0
 
@@ -997,7 +997,7 @@
     invoke-virtual {v0, p0}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
 
     .line 395
-    const/high16 p0, 0x41400000    # 12.0f
+    const/high16 p0, 0x41400000
 
     invoke-virtual {v0, p0}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
 
@@ -1449,7 +1449,7 @@
 
     const/4 v12, -0x2
 
-    const/high16 v13, 0x3f800000    # 1.0f
+    const/high16 v13, 0x3f800000
 
     invoke-direct {v11, v7, v12, v13}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
@@ -1558,7 +1558,7 @@
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setAllCaps(Z)V
 
     .line 370
-    const/high16 v1, 0x41400000    # 12.0f
+    const/high16 v1, 0x41400000
 
     invoke-virtual {v0, v1}, Landroid/widget/Button;->setTextSize(F)V
 
@@ -1907,7 +1907,7 @@
     .line 90
     new-instance v2, Landroid/widget/LinearLayout$LayoutParams;
 
-    const/high16 v3, 0x3f800000    # 1.0f
+    const/high16 v3, 0x3f800000
 
     invoke-direct {v2, v4, v1, v3}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 

@@ -63,7 +63,7 @@
 
     sub-float/2addr v3, v1
 
-    const/high16 v4, 0x40000000    # 2.0f
+    const/high16 v4, 0x40000000
 
     div-float/2addr v3, v4
 
@@ -87,7 +87,7 @@
     add-float/2addr v3, v0
 
     .line 991
-    const/high16 v0, 0x3f000000    # 0.5f
+    const/high16 v0, 0x3f000000
 
     mul-float v0, v0, v1
 

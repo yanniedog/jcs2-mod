@@ -125,7 +125,7 @@
 
     mul-float p1, p1, p0
 
-    const/high16 p0, 0x3f000000    # 0.5f
+    const/high16 p0, 0x3f000000
 
     add-float/2addr p1, p0
 
@@ -158,7 +158,7 @@
     invoke-direct {v1, p0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
 
     .line 49
-    const/high16 v2, 0x41800000    # 16.0f
+    const/high16 v2, 0x41800000
 
     invoke-virtual {v1, v2}, Landroid/widget/TextView;->setTextSize(F)V
 
@@ -184,11 +184,11 @@
     invoke-virtual {v1, v2}, Landroid/widget/TextView;->setIncludeFontPadding(Z)V
 
     .line 53
-    const/high16 v2, 0x40000000    # 2.0f
+    const/high16 v2, 0x40000000
 
     const/high16 v3, -0x1000000
 
-    const/high16 v4, 0x3f800000    # 1.0f
+    const/high16 v4, 0x3f800000
 
     invoke-virtual {v1, v2, v4, v4, v3}, Landroid/widget/TextView;->setShadowLayer(FFFI)V
 
@@ -244,7 +244,7 @@
 
     int-to-float v0, v0
 
-    const/high16 v2, 0x42c80000    # 100.0f
+    const/high16 v2, 0x42c80000
 
     div-float/2addr v0, v2
 
@@ -258,7 +258,7 @@
     if-lt v0, v2, :cond_70
 
     .line 65
-    const/high16 v0, 0x447a0000    # 1000.0f
+    const/high16 v0, 0x447a0000
 
     invoke-virtual {v1, v0}, Landroid/widget/TextView;->setTranslationZ(F)V
 

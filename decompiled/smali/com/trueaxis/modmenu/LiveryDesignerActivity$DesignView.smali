@@ -155,7 +155,7 @@
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->color:I
 
     .line 421
-    const/high16 p1, 0x41200000    # 10.0f
+    const/high16 p1, 0x41200000
 
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->strokeWidth:F
 
@@ -167,7 +167,7 @@
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->dst:Landroid/graphics/RectF;
 
     .line 424
-    const/high16 p1, 0x3f800000    # 1.0f
+    const/high16 p1, 0x3f800000
 
     iput p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->scale:F
 
@@ -1558,7 +1558,7 @@
 
     sub-float/2addr p1, p3
 
-    const/high16 p4, 0x40000000    # 2.0f
+    const/high16 p4, 0x40000000
 
     div-float/2addr p1, p4
 

@@ -79,36 +79,39 @@ Write-Host "Aligning..."
 & $Zipalign -f 4 $Unsigned $Aligned
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-$StorePass = $env:JCS2_KEYSTORE_PASS
-if (-not $StorePass -and (Test-Path (Join-Path $Root "keystore.properties"))) {
-    Get-Content (Join-Path $Root "keystore.properties") | ForEach-Object {
-        if ($_ -match '^\s*storePassword\s*=\s*(.+)\s*$') { $StorePass = $Matches[1] }
-    }
-}
-
-$Keystore = Join-Path $Root "jcs2.keystore"
+# Every release is self-signed with the committed stable keystore so that
+# in-place updates keep working (a fresh random key per build would change the
+# signature each release and block updates). Path/alias/password may be
+# overridden via env for local experiments, but default to the committed key.
+$Keystore = $env:JCS2_KEYSTORE
+if (-not $Keystore) { $Keystore = Join-Path $Root "jcs2.keystore" }
+$KeyAlias = $env:JCS2_KEY_ALIAS
+if (-not $KeyAlias) { $KeyAlias = "jcs2" }
+$StorePass = "android"
+if ($env:JCS2_KEYSTORE_PASS) { $StorePass = $env:JCS2_KEYSTORE_PASS }
 $KeyPass = $StorePass
-$KeyAlias = $null
-if ((Test-Path $Keystore) -and $StorePass) {
-    Write-Host "Using release keystore."
-} else {
-    $Keystore = Join-Path $Root "_apk_build\jcs2-local.keystore"
-    $StorePass = "android"
-    $KeyPass = "android"
-    $KeyAlias = "jcs2local"
-    if (-not (Test-Path $Keystore)) {
-        $Keytool = Join-Path $JdkHome "bin\keytool.exe"
-        if (-not (Test-Path $Keytool)) {
-            Write-Error "keytool not found at $Keytool; cannot create local signing key."
-        }
-        Write-Host "Creating local signing key..."
-        & $Keytool -genkeypair -keystore $Keystore -storepass $StorePass -keypass $KeyPass `
-            -alias $KeyAlias -keyalg RSA -keysize 2048 -validity 10000 `
-            -dname "CN=YCS2 Local,O=YCS2,C=US"
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+if (-not (Test-Path $Keystore)) {
+    # The stable keystore is committed to the repo. A missing keystore in CI
+    # means a broken checkout: fail loudly rather than silently minting a new
+    # throwaway key that would change the signing certificate and break in-place
+    # updates. Local builds may regenerate it for convenience.
+    if ($env:GITHUB_ACTIONS -eq "true") {
+        Write-Error "Signing keystore '$Keystore' is missing in CI; refusing to generate a throwaway key that would change the release signature."
+        exit 1
     }
-    Write-Host "Using local signing key."
+    $Keytool = Join-Path $JdkHome "bin\keytool.exe"
+    if (-not (Test-Path $Keytool)) {
+        Write-Error "keytool not found at $Keytool; cannot create self-signed signing key."
+        exit 1
+    }
+    Write-Host "Committed keystore missing; creating self-signed signing key for local build..."
+    & $Keytool -genkeypair -keystore $Keystore -storepass $StorePass -keypass $KeyPass `
+        -alias $KeyAlias -keyalg RSA -keysize 2048 -validity 36500 `
+        -dname "CN=JCS2 Community Mod,O=JCS2 Community Mod,C=US"
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
+Write-Host "Using self-signed signing key (alias $KeyAlias)."
 
 Write-Host "Signing..."
 Remove-Item $Output -Force -ErrorAction SilentlyContinue

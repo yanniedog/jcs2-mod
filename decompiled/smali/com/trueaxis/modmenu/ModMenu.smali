@@ -262,7 +262,7 @@
     invoke-virtual {v0, p2}, Landroid/widget/CheckBox;->setTextColor(I)V
 
     .line 567
-    const/high16 p2, 0x41300000    # 11.0f
+    const/high16 p2, 0x41300000
 
     invoke-virtual {v0, p2}, Landroid/widget/CheckBox;->setTextSize(F)V
 
@@ -795,7 +795,7 @@
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
 
     .line 104
-    const/high16 p1, 0x41300000    # 11.0f
+    const/high16 p1, 0x41300000
 
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setTextSize(F)V
 
@@ -1367,7 +1367,7 @@
 
     mul-float p1, p1, p0
 
-    const/high16 p0, 0x3f000000    # 0.5f
+    const/high16 p0, 0x3f000000
 
     add-float/2addr p1, p0
 
@@ -2229,7 +2229,7 @@
     invoke-virtual {p1, v0}, Landroid/widget/Button;->setTextColor(I)V
 
     .line 116
-    const/high16 v0, 0x41400000    # 12.0f
+    const/high16 v0, 0x41400000
 
     invoke-virtual {p1, v0}, Landroid/widget/Button;->setTextSize(F)V
 
@@ -3440,7 +3440,7 @@
     move-result-object v4
 
     .line 654
-    const/high16 v6, 0x41500000    # 13.0f
+    const/high16 v6, 0x41500000
 
     invoke-virtual {v4, v6}, Landroid/widget/Button;->setTextSize(F)V
 
@@ -3522,7 +3522,7 @@
     .line 679
     new-instance v10, Landroid/widget/LinearLayout$LayoutParams;
 
-    const/high16 v11, 0x3f800000    # 1.0f
+    const/high16 v11, 0x3f800000
 
     invoke-direct {v10, v7, v9, v11}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
@@ -3854,7 +3854,7 @@
     .line 411
     new-instance v12, Landroid/widget/LinearLayout$LayoutParams;
 
-    const/high16 v13, 0x3f800000    # 1.0f
+    const/high16 v13, 0x3f800000
 
     const/4 v8, -0x2
 
@@ -4324,7 +4324,7 @@
     .line 500
     new-instance v1, Landroid/widget/LinearLayout$LayoutParams;
 
-    const/high16 v2, 0x3f800000    # 1.0f
+    const/high16 v2, 0x3f800000
 
     const/4 v3, 0x0
 
@@ -4340,7 +4340,7 @@
     move-result-object v1
 
     .line 504
-    const/high16 v2, 0x41600000    # 14.0f
+    const/high16 v2, 0x41600000
 
     invoke-virtual {v1, v2}, Landroid/widget/Button;->setTextSize(F)V
 

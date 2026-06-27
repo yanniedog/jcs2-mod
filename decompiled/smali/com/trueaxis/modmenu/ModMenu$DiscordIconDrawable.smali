@@ -67,7 +67,7 @@
 
     sub-float/2addr v5, v3
 
-    const/high16 v6, 0x40000000    # 2.0f
+    const/high16 v6, 0x40000000
 
     div-float/2addr v5, v6
 
@@ -321,7 +321,7 @@
 
     add-float/2addr v2, v4
 
-    const/high16 v6, 0x3f000000    # 0.5f
+    const/high16 v6, 0x3f000000
 
     mul-float v6, v6, v3
 

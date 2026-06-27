@@ -149,11 +149,11 @@
 
     move-result v0
 
-    const/high16 v1, 0x40400000    # 3.0f
+    const/high16 v1, 0x40400000
 
     mul-float v0, v0, v1
 
-    const/high16 v1, 0x41800000    # 16.0f
+    const/high16 v1, 0x41800000
 
     invoke-static {v1, v0}, Ljava/lang/Math;->max(FF)F
 

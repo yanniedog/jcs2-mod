@@ -21,8 +21,6 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       JCS2_BASE_APK_URL: ${{ vars.JCS2_BASE_APK_URL || secrets.JCS2_BASE_APK_URL }}
-      JCS2_KEYSTORE_BASE64: ${{ secrets.JCS2_KEYSTORE_BASE64 }}
-      JCS2_KEYSTORE_PASS: ${{ secrets.JCS2_KEYSTORE_PASS }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,7 +41,7 @@ jobs:
 
       - name: Install Android SDK packages
         shell: pwsh
-        run: sdkmanager "platforms;android-28" "build-tools;36.1.0"
+        run: sdkmanager "platforms;android-34" "build-tools;36.1.0"
 
       - name: Install CI tools
         shell: pwsh
@@ -56,20 +54,6 @@ jobs:
       - name: Restore ignored game assets
         shell: pwsh
         run: .\scripts\ci_restore_assets.ps1
-
-      - name: Materialize signing keystore
-        shell: pwsh
-        run: |
-          if (-not $env:JCS2_KEYSTORE_BASE64) {
-            throw "Missing required secret JCS2_KEYSTORE_BASE64"
-          }
-          if (-not $env:JCS2_KEYSTORE_PASS) {
-            throw "Missing required secret JCS2_KEYSTORE_PASS"
-          }
-          [System.IO.File]::WriteAllBytes(
-            (Join-Path $PWD "jcs2.keystore"),
-            [Convert]::FromBase64String($env:JCS2_KEYSTORE_BASE64)
-          )
 
       - name: Prepare iterative release version
         id: version
