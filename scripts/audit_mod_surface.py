@@ -13,6 +13,17 @@ EXPECTED_LIVERY_SHA1 = "718XOktjbUHjlNXZXRC0xgDF0+U="
 LIVERY_PATH = Path("decompiled/assets/cars/original/rocketcar1.png")
 APK_LIVERY_PATH = "assets/cars/original/rocketcar1.png"
 TRUEAXIS_PATH = Path("decompiled/lib/arm64-v8a/libtrueaxis.so")
+TRUEAXIS_OPTION_DEFAULT_PATCHES = {
+    # UiFormSettings constructor: call the helper instead of directly clearing
+    # the 0x120 flag group.
+    0x1CD384: bytes.fromhex("84470094"),
+    # Initial Settings labels: ACCELERATE WITH JET and RESTART ON RESET point
+    # at their ON strings on clean app data.
+    0x1CD39C: bytes.fromhex("21003d91"),
+    0x1CD420: bytes.fromhex("21ec3d91"),
+    # Helper cave: clear 0x120..0x123, then set restart and accelerate bytes.
+    0x1DF194: bytes.fromhex("df2201b9ca860439ca8a0439c0035fd6"),
+}
 FORBIDDEN = (
     b"NativeMods",
     b"MODS & CHEATS",
@@ -55,6 +66,19 @@ def check_blob(name, data):
     for marker in FORBIDDEN:
         if marker in data:
             ok = fail(f"{name} contains forbidden marker {marker.decode('ascii')}") and ok
+    return ok
+
+
+def check_trueaxis_option_defaults():
+    data = (ROOT / TRUEAXIS_PATH).read_bytes()
+    ok = True
+    for offset, expected in TRUEAXIS_OPTION_DEFAULT_PATCHES.items():
+        actual = data[offset : offset + len(expected)]
+        if actual != expected:
+            ok = fail(
+                "stock options no longer default restart-on-reset and "
+                f"accelerate-with-jet to ON at libtrueaxis.so offset {offset:#x}"
+            ) and ok
     return ok
 
 
@@ -115,6 +139,7 @@ def check_marker_invariants():
 
 def check_sources(skip_local_assets=False):
     ok = True
+    ok = check_trueaxis_option_defaults() and ok
     for target in SOURCE_TARGETS:
         path = ROOT / target
         if not path.exists():
@@ -208,6 +233,14 @@ def check_sources(skip_local_assets=False):
         ok = fail("checkpoint split reader no longer keeps stock live checkpoint-time diagnostics") and ok
     if "ghost_checkpoint_ms(checkpoint)" not in bridge or "fn live_checkpoint_ms(checkpoint: c_int)" not in bridge:
         ok = fail("checkpoint split reader no longer compares live checkpoint time against the clean ghost checkpoint snapshot") and ok
+    if "fn appended_live_checkpoint_ms(checkpoint: c_int, ghost_count: c_int)" not in bridge:
+        ok = fail("checkpoint split reader no longer separates appended live checkpoint times from ghost baseline times") and ok
+    if "if last_ms > 0 && scanned == checkpoint" not in bridge:
+        ok = fail("checkpoint split reader can reuse stale previous checkpoint time for a newer regular-level checkpoint") and ok
+    if "checkpoint_time_ms(checkpoint - 1)" in bridge and "unsafe fn live_checkpoint_ms(checkpoint: c_int)" in bridge:
+        live_ms_body = bridge.split("unsafe fn live_checkpoint_ms(checkpoint: c_int)", 1)[1].split("\n}\n", 1)[0]
+        if "checkpoint_time_ms(checkpoint - 1)" in live_ms_body:
+            ok = fail("checkpoint split reader can treat ghost baseline checkpoint times as live regular-level times") and ok
     if "effective_ghost_checkpoint_count()" not in bridge or "FALLBACK_GHOST_CHECKPOINT_COUNT" not in bridge:
         ok = fail("checkpoint split reader no longer supports normal-level ghost checkpoint fallback state") and ok
     if "FALLBACK_GHOST_FINISH_MS" not in bridge or "final_finish_split" not in bridge:
@@ -267,6 +300,41 @@ def check_sources(skip_local_assets=False):
         ok = fail("checkpoint split HUD no longer uses configurable transparency") and ok
     if "SpannableStringBuilder" not in split_hud or "ForegroundColorSpan" not in split_hud:
         ok = fail("checkpoint split HUD no longer keeps per-line split colours persistent") and ok
+    if "logGhostCheckpoints(RequiredPatches.readSplitGhostCheckpointCount())" not in split_hud:
+        ok = fail("checkpoint split HUD no longer records the full raced ghost checkpoint table when armed") and ok
+
+    straight_runtime = (ROOT / "scripts/runtime_straight_level_split_test.ps1").read_text(
+        encoding="utf-8"
+    )
+    if '[string]$LevelMode = "RegularStraightOn"' not in straight_runtime:
+        ok = fail("straight-level runtime harness no longer defaults to the regular Straight On route") and ok
+    if '"9.80665:0:0"' not in straight_runtime or "Open-RegularStraightOnReplayRace" not in straight_runtime:
+        ok = fail("straight-level runtime harness no longer records the verified straight sensor posture or regular route") and ok
+    if (
+        "[bool]$EnableAccelerateWithJet = $true" not in straight_runtime
+        or "Enable-AccelerateWithJetOption" not in straight_runtime
+        or "Enabling stock Accelerate with jet from clean OFF default" not in straight_runtime
+    ):
+        ok = fail("straight-level runtime harness no longer explicitly enables stock Accelerate with jet") and ok
+    if (
+        "boost only with Accelerate with jet" not in straight_runtime
+        or 'Start-TouchHold "boost-hold" $BoostX $BoostY $DriveHoldMs' not in straight_runtime
+    ):
+        ok = fail("straight-level runtime harness no longer defaults to boost-only driving") and ok
+    if (
+        "straight_on_split_proof.txt" not in straight_runtime
+        or "expected_checkpoint_count" not in straight_runtime
+        or "Straight On did not record every checkpoint split" not in straight_runtime
+        or "ghost_checkpoint_analysis.csv" not in straight_runtime
+        or "Straight On did not record every stock ghost checkpoint time" not in straight_runtime
+    ):
+        ok = fail("straight-level runtime harness no longer proves every stock Straight On checkpoint was recorded") and ok
+    if (
+        "$row.delta_ms -ne ($row.current_ms - $row.ghost_ms)" not in straight_runtime
+        or "$row.current_ms -ne $row.live_appended_ms" not in straight_runtime
+        or "reused ghost baseline time as live checkpoint time" not in straight_runtime
+    ):
+        ok = fail("straight-level runtime harness no longer checks split timing consistency against live appended checkpoint times") and ok
     if "split.bringToFront()" not in split_hud or "split.setTranslationZ(1000.0f)" not in split_hud:
         ok = fail("checkpoint split HUD is not forced above the native SurfaceView") and ok
     if "K_EXPERIMENTAL_ACK" in mod_menu or "Show buggy experimental features" in mod_menu:

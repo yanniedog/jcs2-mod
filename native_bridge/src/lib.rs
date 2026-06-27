@@ -562,24 +562,35 @@ unsafe fn engine_checkpoint_candidate(ghost_count: c_int) -> c_int {
     decoded
 }
 
+unsafe fn appended_live_checkpoint_ms(checkpoint: c_int, ghost_count: c_int) -> i32 {
+    if checkpoint < 1 || ghost_count < 1 {
+        return -1;
+    }
+    let count = live_checkpoint_count();
+    if count < ghost_count + checkpoint {
+        return -1;
+    }
+    let millis = checkpoint_time_ms(ghost_count + checkpoint - 1);
+    if millis > 0 {
+        millis
+    } else {
+        -1
+    }
+}
+
 unsafe fn live_checkpoint_ms(checkpoint: c_int) -> i32 {
     if checkpoint < 1 {
         return -1;
     }
     let last_ms = last_checkpoint_ms();
-    if last_ms > 0
-        && (decoded_live_checkpoint_index() == checkpoint
-            || scan_live_checkpoint_from_last_time() == checkpoint)
-    {
+    let scanned = scan_live_checkpoint_from_last_time();
+    if last_ms > 0 && scanned == checkpoint {
         return last_ms;
     }
-    let count = live_checkpoint_count();
     let ghost_count = effective_ghost_checkpoint_count();
-    if ghost_count > 0 && count >= ghost_count + checkpoint {
-        let millis = checkpoint_time_ms(ghost_count + checkpoint - 1);
-        if millis > 0 {
-            return millis;
-        }
+    let appended_ms = appended_live_checkpoint_ms(checkpoint, ghost_count);
+    if appended_ms > 0 {
+        return appended_ms;
     }
     if engine_checkpoint_candidate(ghost_count) == checkpoint {
         let visual_ms = replay_visual_ms();
@@ -587,11 +598,10 @@ unsafe fn live_checkpoint_ms(checkpoint: c_int) -> i32 {
             return visual_ms;
         }
     }
-    let millis = checkpoint_time_ms(checkpoint - 1);
-    if millis > 0 {
-        return millis;
+    if last_ms > 0 && scanned < 1 && decoded_live_checkpoint_index() == checkpoint {
+        return last_ms;
     }
-    last_checkpoint_ms()
+    -1
 }
 
 unsafe fn scan_live_checkpoint_from_last_time() -> c_int {
@@ -681,14 +691,23 @@ unsafe fn latest_live_checkpoint() -> c_int {
     let decoded = decoded_live_checkpoint_index();
     let scanned = scan_live_checkpoint_from_last_time();
     let engine = engine_checkpoint_candidate(ghost_count);
-    let candidate = if last_checkpoint_ms() > 0 && decoded >= 1 {
-        decoded
+    let appended = if count > ghost_count {
+        count - ghost_count
+    } else {
+        -1
+    };
+    let candidate = if appended >= 1 {
+        appended
+    } else if engine >= 1 {
+        if scanned > engine {
+            scanned
+        } else {
+            engine
+        }
     } else if scanned >= 1 {
         scanned
-    } else if count > ghost_count {
-        count - ghost_count
-    } else if engine >= 1 {
-        engine
+    } else if last_checkpoint_ms() > 0 && decoded >= 1 {
+        decoded
     } else {
         -1
     };

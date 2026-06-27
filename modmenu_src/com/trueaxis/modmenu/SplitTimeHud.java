@@ -108,6 +108,7 @@ final class SplitTimeHud {
                     split.bringToFront();
                     split.setVisibility(TextView.VISIBLE);
                     logArmedDiagnostics("armed");
+                    logGhostCheckpoints(RequiredPatches.readSplitGhostCheckpointCount());
                     ModDebugLog.log("split HUD armed for raced replay ghost");
                 }
 

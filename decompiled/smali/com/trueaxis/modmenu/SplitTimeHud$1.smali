@@ -76,7 +76,7 @@
 .method private applyLayoutOptions(Landroid/widget/TextView;)V
     .registers 6
 
-    .line 248
+    .line 249
     iget-object v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$activity:Landroid/app/Activity;
 
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->splitAlphaPercent(Landroid/content/Context;)I
@@ -91,20 +91,20 @@
 
     invoke-virtual {p1, v0}, Landroid/widget/TextView;->setAlpha(F)V
 
-    .line 249
+    .line 250
     invoke-virtual {p1}, Landroid/widget/TextView;->getLayoutParams()Landroid/view/ViewGroup$LayoutParams;
 
     move-result-object v0
 
-    .line 250
+    .line 251
     instance-of v1, v0, Landroid/widget/FrameLayout$LayoutParams;
 
     if-eqz v1, :cond_3e
 
-    .line 251
+    .line 252
     check-cast v0, Landroid/widget/FrameLayout$LayoutParams;
 
-    .line 252
+    .line 253
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$activity:Landroid/app/Activity;
 
     iget-object v2, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$activity:Landroid/app/Activity;
@@ -118,7 +118,7 @@
 
     move-result v1
 
-    .line 253
+    .line 254
     iget-object v2, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$activity:Landroid/app/Activity;
 
     iget-object v3, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$activity:Landroid/app/Activity;
@@ -132,7 +132,7 @@
 
     move-result v2
 
-    .line 254
+    .line 255
     iget v3, v0, Landroid/widget/FrameLayout$LayoutParams;->leftMargin:I
 
     if-ne v3, v1, :cond_37
@@ -141,17 +141,17 @@
 
     if-eq v3, v2, :cond_3e
 
-    .line 255
+    .line 256
     :cond_37
     iput v1, v0, Landroid/widget/FrameLayout$LayoutParams;->leftMargin:I
 
-    .line 256
+    .line 257
     iput v2, v0, Landroid/widget/FrameLayout$LayoutParams;->topMargin:I
 
-    .line 257
+    .line 258
     invoke-virtual {p1, v0}, Landroid/widget/TextView;->setLayoutParams(Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 260
+    .line 261
     :cond_3e
     return-void
 .end method
@@ -159,7 +159,7 @@
 .method private displayText(Ljava/lang/String;)Ljava/lang/CharSequence;
     .registers 7
 
-    .line 232
+    .line 233
     iget-object v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$activity:Landroid/app/Activity;
 
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->splitListEnabled(Landroid/content/Context;)Z
@@ -178,7 +178,7 @@
 
     goto :goto_4b
 
-    .line 235
+    .line 236
     :cond_11
     new-instance p1, Landroid/text/SpannableStringBuilder;
 
@@ -186,7 +186,7 @@
 
     invoke-direct {p1, v0}, Landroid/text/SpannableStringBuilder;-><init>(Ljava/lang/CharSequence;)V
 
-    .line 236
+    .line 237
     const/4 v0, 0x0
 
     :goto_19
@@ -198,7 +198,7 @@
 
     if-ge v0, v1, :cond_4a
 
-    .line 237
+    .line 238
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->splitHistory:Ljava/util/ArrayList;
 
     invoke-virtual {v1, v0}, Ljava/util/ArrayList;->get(I)Ljava/lang/Object;
@@ -207,22 +207,22 @@
 
     check-cast v1, Lcom/trueaxis/modmenu/SplitTimeHud$SplitEntry;
 
-    .line 238
+    .line 239
     const/16 v2, 0xa
 
     invoke-virtual {p1, v2}, Landroid/text/SpannableStringBuilder;->append(C)Landroid/text/SpannableStringBuilder;
 
-    .line 239
+    .line 240
     invoke-virtual {p1}, Landroid/text/SpannableStringBuilder;->length()I
 
     move-result v2
 
-    .line 240
+    .line 241
     iget-object v3, v1, Lcom/trueaxis/modmenu/SplitTimeHud$SplitEntry;->line:Ljava/lang/String;
 
     invoke-virtual {p1, v3}, Landroid/text/SpannableStringBuilder;->append(Ljava/lang/CharSequence;)Landroid/text/SpannableStringBuilder;
 
-    .line 241
+    .line 242
     new-instance v3, Landroid/text/style/ForegroundColorSpan;
 
     iget v1, v1, Lcom/trueaxis/modmenu/SplitTimeHud$SplitEntry;->color:I
@@ -237,16 +237,16 @@
 
     invoke-virtual {p1, v3, v2, v1, v4}, Landroid/text/SpannableStringBuilder;->setSpan(Ljava/lang/Object;III)V
 
-    .line 236
+    .line 237
     add-int/lit8 v0, v0, 0x1
 
     goto :goto_19
 
-    .line 244
+    .line 245
     :cond_4a
     return-object p1
 
-    .line 233
+    .line 234
     :cond_4b
     :goto_4b
     const-string v0, "SPLIT"
@@ -285,7 +285,7 @@
 .method private liveArrayTrace(I)Ljava/lang/String;
     .registers 8
 
-    .line 306
+    .line 307
     const/4 v0, 0x0
 
     invoke-static {p1, v0}, Ljava/lang/Math;->max(II)I
@@ -298,27 +298,27 @@
 
     move-result v1
 
-    .line 307
+    .line 308
     new-instance v2, Ljava/lang/StringBuilder;
 
     const-string v3, "["
 
     invoke-direct {v2, v3}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
 
-    .line 308
+    .line 309
     nop
 
     :goto_13
     if-ge v0, v1, :cond_31
 
-    .line 309
+    .line 310
     if-lez v0, :cond_1c
 
     const/16 v3, 0x2c
 
     invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    .line 310
+    .line 311
     :cond_1c
     add-int/lit8 v3, v0, 0x1
 
@@ -332,19 +332,19 @@
 
     move-result-object v4
 
-    .line 311
+    .line 312
     invoke-static {v0}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLiveArrayMillis(I)I
 
     move-result v0
 
     invoke-virtual {v4, v0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
-    .line 308
+    .line 309
     move v0, v3
 
     goto :goto_13
 
-    .line 313
+    .line 314
     :cond_31
     if-le p1, v1, :cond_38
 
@@ -352,13 +352,13 @@
 
     invoke-virtual {v2, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    .line 314
+    .line 315
     :cond_38
     const/16 p1, 0x5d
 
     invoke-virtual {v2, p1}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    .line 315
+    .line 316
     invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object p1
@@ -369,12 +369,12 @@
 .method private logArmedDiagnostics(Ljava/lang/String;)V
     .registers 16
 
-    .line 275
+    .line 276
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
 
     move-result-wide v0
 
-    .line 276
+    .line 277
     iget-wide v2, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->nextArmedDiagnosticAt:J
 
     cmp-long v4, v0, v2
@@ -383,7 +383,7 @@
 
     return-void
 
-    .line 277
+    .line 278
     :cond_b
     const-string v2, "waiting"
 
@@ -405,10 +405,10 @@
 
     iput-wide v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->nextArmedDiagnosticAt:J
 
-    .line 278
+    .line 279
     sget-object v0, Ljava/util/Locale;->US:Ljava/util/Locale;
 
-    .line 281
+    .line 282
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLiveCheckpointCount()I
 
     move-result v1
@@ -417,7 +417,7 @@
 
     move-result-object v1
 
-    .line 282
+    .line 283
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitGhostCheckpointCount()I
 
     move-result v2
@@ -426,7 +426,7 @@
 
     move-result-object v2
 
-    .line 283
+    .line 284
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitGhostSize()I
 
     move-result v3
@@ -435,7 +435,7 @@
 
     move-result-object v3
 
-    .line 284
+    .line 285
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitShowReplayFlag()I
 
     move-result v4
@@ -444,7 +444,7 @@
 
     move-result-object v4
 
-    .line 285
+    .line 286
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitScannedCheckpointIndex()I
 
     move-result v5
@@ -453,7 +453,7 @@
 
     move-result-object v5
 
-    .line 286
+    .line 287
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitDecodedEngineCheckpointIndex()I
 
     move-result v6
@@ -462,7 +462,7 @@
 
     move-result-object v6
 
-    .line 287
+    .line 288
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitEngineLastCheckpointIndex()I
 
     move-result v7
@@ -471,7 +471,7 @@
 
     move-result-object v7
 
-    .line 288
+    .line 289
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitResolvedCheckpoint()I
 
     move-result v8
@@ -480,7 +480,7 @@
 
     move-result-object v8
 
-    .line 289
+    .line 290
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLastCheckpointMillis()I
 
     move-result v9
@@ -489,7 +489,7 @@
 
     move-result-object v9
 
-    .line 290
+    .line 291
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLastReplaySize()I
 
     move-result v10
@@ -498,7 +498,7 @@
 
     move-result-object v10
 
-    .line 291
+    .line 292
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitReplayVisualMillis()I
 
     move-result v11
@@ -559,7 +559,7 @@
 
     aput-object v11, v12, p1
 
-    .line 278
+    .line 279
     const-string p1, "split armed reason=%s live_count=%d ghost_count=%d ghost_size=%d show_replay=%d scanned_checkpoint=%d decoded_engine_checkpoint=%d engine_checkpoint=%d selected_checkpoint=%d last_checkpoint_ms=%d last_replay_size=%d replay_visual_ms=%d"
 
     invoke-static {v0, p1, v12}, Ljava/lang/String;->format(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
@@ -568,21 +568,21 @@
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 292
+    .line 293
     return-void
 .end method
 
 .method private logGhostCheckpoints(I)V
     .registers 9
 
-    .line 295
+    .line 296
     iget v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->loggedGhostCheckpointCount:I
 
     if-gt p1, v0, :cond_5
 
     return-void
 
-    .line 296
+    .line 297
     :cond_5
     iget v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->loggedGhostCheckpointCount:I
 
@@ -590,14 +590,14 @@
 
     add-int/2addr v0, v1
 
-    .line 297
+    .line 298
     :goto_9
     if-gt v0, p1, :cond_2d
 
-    .line 298
+    .line 299
     sget-object v2, Ljava/util/Locale;->US:Ljava/util/Locale;
 
-    .line 300
+    .line 301
     invoke-static {v0}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 
     move-result-object v3
@@ -620,7 +620,7 @@
 
     aput-object v4, v5, v1
 
-    .line 298
+    .line 299
     const-string v3, "ghost checkpoint=%d ghost_ms=%d"
 
     invoke-static {v2, v3, v5}, Ljava/lang/String;->format(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
@@ -629,23 +629,23 @@
 
     invoke-static {v2}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 297
+    .line 298
     add-int/lit8 v0, v0, 0x1
 
     goto :goto_9
 
-    .line 302
+    .line 303
     :cond_2d
     iput p1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->loggedGhostCheckpointCount:I
 
-    .line 303
+    .line 304
     return-void
 .end method
 
 .method private officialGhostArrayTrace(I)Ljava/lang/String;
     .registers 8
 
-    .line 319
+    .line 320
     const/4 v0, 0x0
 
     invoke-static {p1, v0}, Ljava/lang/Math;->max(II)I
@@ -658,27 +658,27 @@
 
     move-result v1
 
-    .line 320
+    .line 321
     new-instance v2, Ljava/lang/StringBuilder;
 
     const-string v3, "["
 
     invoke-direct {v2, v3}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
 
-    .line 321
+    .line 322
     nop
 
     :goto_13
     if-ge v0, v1, :cond_31
 
-    .line 322
+    .line 323
     if-lez v0, :cond_1c
 
     const/16 v3, 0x2c
 
     invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    .line 323
+    .line 324
     :cond_1c
     add-int/lit8 v3, v0, 0x1
 
@@ -692,19 +692,19 @@
 
     move-result-object v4
 
-    .line 324
+    .line 325
     invoke-static {v0}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitOfficialGhostArrayMillis(I)I
 
     move-result v0
 
     invoke-virtual {v4, v0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
-    .line 321
+    .line 322
     move v0, v3
 
     goto :goto_13
 
-    .line 326
+    .line 327
     :cond_31
     if-le p1, v1, :cond_38
 
@@ -712,13 +712,13 @@
 
     invoke-virtual {v2, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    .line 327
+    .line 328
     :cond_38
     const/16 p1, 0x5d
 
     invoke-virtual {v2, p1}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    .line 328
+    .line 329
     invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object p1
@@ -792,7 +792,7 @@
     .line 105
     const-string v2, "SPLIT --"
 
-    if-nez v3, :cond_60
+    if-nez v3, :cond_67
 
     iget-object v6, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
@@ -800,7 +800,7 @@
 
     move-result v6
 
-    if-eqz v6, :cond_60
+    if-eqz v6, :cond_67
 
     .line 106
     iget-object v6, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
@@ -837,32 +837,39 @@
     invoke-direct {p0, v6}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->logArmedDiagnostics(Ljava/lang/String;)V
 
     .line 111
+    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitGhostCheckpointCount()I
+
+    move-result v6
+
+    invoke-direct {p0, v6}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->logGhostCheckpoints(I)V
+
+    .line 112
     const-string v6, "split HUD armed for raced replay ghost"
 
     invoke-static {v6}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 114
-    :cond_60
+    .line 115
+    :cond_67
     iget v6, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
 
-    if-ge v3, v6, :cond_a8
-
-    .line 115
-    iput v3, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
+    if-ge v3, v6, :cond_af
 
     .line 116
+    iput v3, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
+
+    .line 117
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->splitHistory:Ljava/util/ArrayList;
 
     invoke-virtual {v1}, Ljava/util/ArrayList;->clear()V
 
-    .line 117
-    if-nez v3, :cond_6f
-
     .line 118
+    if-nez v3, :cond_76
+
+    .line 119
     iput v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->loggedGhostCheckpointCount:I
 
-    .line 120
-    :cond_6f
+    .line 121
+    :cond_76
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
     invoke-direct {p0, v2}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->displayText(Ljava/lang/String;)Ljava/lang/CharSequence;
@@ -871,7 +878,7 @@
 
     invoke-virtual {v1, v2}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    .line 121
+    .line 122
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
     # getter for: Lcom/trueaxis/modmenu/SplitTimeHud;->SPLIT_READY:I
@@ -881,22 +888,22 @@
 
     invoke-virtual {v1, v2}, Landroid/widget/TextView;->setTextColor(I)V
 
-    .line 122
+    .line 123
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
     invoke-virtual {v1}, Landroid/widget/TextView;->bringToFront()V
 
-    .line 123
+    .line 124
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
     invoke-virtual {v1, v0}, Landroid/widget/TextView;->setVisibility(I)V
 
-    .line 124
+    .line 125
     const-string v0, "reset"
 
     invoke-direct {p0, v0}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->logArmedDiagnostics(Ljava/lang/String;)V
 
-    .line 125
+    .line 126
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -917,29 +924,29 @@
 
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    goto/16 :goto_140
+    goto/16 :goto_147
 
-    .line 126
-    :cond_a8
+    .line 127
+    :cond_af
     iget v6, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
 
     add-int/lit8 v6, v6, 0x1
 
-    if-le v3, v6, :cond_123
+    if-le v3, v6, :cond_12a
 
-    .line 127
+    .line 128
     iget-object v6, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->splitHistory:Ljava/util/ArrayList;
 
     invoke-virtual {v6}, Ljava/util/ArrayList;->isEmpty()Z
 
     move-result v6
 
-    if-eqz v6, :cond_f9
-
-    .line 130
-    iput v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
+    if-eqz v6, :cond_100
 
     .line 131
+    iput v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
+
+    .line 132
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
     invoke-direct {p0, v2}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->displayText(Ljava/lang/String;)Ljava/lang/CharSequence;
@@ -948,7 +955,7 @@
 
     invoke-virtual {v1, v2}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    .line 132
+    .line 133
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
     # getter for: Lcom/trueaxis/modmenu/SplitTimeHud;->SPLIT_READY:I
@@ -958,30 +965,30 @@
 
     invoke-virtual {v1, v2}, Landroid/widget/TextView;->setTextColor(I)V
 
-    .line 133
+    .line 134
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
     invoke-virtual {v1}, Landroid/widget/TextView;->bringToFront()V
 
-    .line 134
+    .line 135
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
     invoke-virtual {v1, v0}, Landroid/widget/TextView;->setVisibility(I)V
 
-    .line 135
+    .line 136
     const-string v0, "jump"
 
     invoke-direct {p0, v0}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->logArmedDiagnostics(Ljava/lang/String;)V
 
-    .line 136
+    .line 137
     iget v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->loggedReplayLoadCount:I
 
-    if-eq v0, v3, :cond_140
-
-    .line 137
-    iput v3, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->loggedReplayLoadCount:I
+    if-eq v0, v3, :cond_147
 
     .line 138
+    iput v3, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->loggedReplayLoadCount:I
+
+    .line 139
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -1002,13 +1009,13 @@
 
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 139
+    .line 140
     invoke-direct {p0, v3}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->logGhostCheckpoints(I)V
 
-    goto :goto_140
+    goto :goto_147
 
-    .line 142
-    :cond_f9
+    .line 143
+    :cond_100
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -1041,38 +1048,38 @@
 
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 144
+    .line 145
     iput v3, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
 
-    .line 145
+    .line 146
     iget-object v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
     invoke-direct {p0, v0, v3, v1}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->showSplit(Landroid/widget/TextView;II)V
 
-    goto :goto_140
-
-    .line 147
-    :cond_123
-    iget v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
-
-    if-le v3, v0, :cond_131
+    goto :goto_147
 
     .line 148
-    iput v3, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
+    :cond_12a
+    iget v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
+
+    if-le v3, v0, :cond_138
 
     .line 149
-    if-lez v3, :cond_140
+    iput v3, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->lastCheckpointCount:I
 
     .line 150
+    if-lez v3, :cond_147
+
+    .line 151
     iget-object v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
     invoke-direct {p0, v0, v3, v1}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->showSplit(Landroid/widget/TextView;II)V
 
-    goto :goto_140
+    goto :goto_147
 
-    .line 152
-    :cond_131
-    if-nez v3, :cond_140
+    .line 153
+    :cond_138
+    if-nez v3, :cond_147
 
     iget-object v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$split:Landroid/widget/TextView;
 
@@ -1080,28 +1087,28 @@
 
     move-result v0
 
-    if-nez v0, :cond_140
+    if-nez v0, :cond_147
 
-    .line 153
+    .line 154
     const-string v0, "waiting"
 
     invoke-direct {p0, v0}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->logArmedDiagnostics(Ljava/lang/String;)V
 
-    .line 155
-    :cond_140
-    :goto_140
+    .line 156
+    :cond_147
+    :goto_147
     iget-object v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$handler:Landroid/os/Handler;
 
     invoke-virtual {v0, p0, v4, v5}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
 
-    .line 156
+    .line 157
     return-void
 .end method
 
 .method private previousCumulativeSplitMillis(I)I
     .registers 5
 
-    .line 217
+    .line 218
     iget-object v0, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->splitHistory:Ljava/util/ArrayList;
 
     invoke-virtual {v0}, Ljava/util/ArrayList;->size()I
@@ -1113,7 +1120,7 @@
     :goto_8
     if-ltz v0, :cond_1c
 
-    .line 218
+    .line 219
     iget-object v1, p0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->splitHistory:Ljava/util/ArrayList;
 
     invoke-virtual {v1, v0}, Ljava/util/ArrayList;->get(I)Ljava/lang/Object;
@@ -1122,7 +1129,7 @@
 
     check-cast v1, Lcom/trueaxis/modmenu/SplitTimeHud$SplitEntry;
 
-    .line 219
+    .line 220
     iget v2, v1, Lcom/trueaxis/modmenu/SplitTimeHud$SplitEntry;->checkpoint:I
 
     if-ne v2, p1, :cond_19
@@ -1131,13 +1138,13 @@
 
     return p1
 
-    .line 217
+    .line 218
     :cond_19
     add-int/lit8 v0, v0, -0x1
 
     goto :goto_8
 
-    .line 221
+    .line 222
     :cond_1c
     const/high16 p1, -0x80000000
 
@@ -1147,26 +1154,26 @@
 .method private sectorSplitMillis(II)I
     .registers 4
 
-    .line 210
+    .line 211
     add-int/lit8 p1, p1, -0x1
 
     invoke-direct {p0, p1}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->previousCumulativeSplitMillis(I)I
 
     move-result p1
 
-    .line 211
+    .line 212
     const/high16 v0, -0x80000000
 
     if-ne p1, v0, :cond_b
 
-    .line 212
+    .line 213
     goto :goto_c
 
-    .line 213
+    .line 214
     :cond_b
     sub-int/2addr p2, p1
 
-    .line 211
+    .line 212
     :goto_c
     return p2
 .end method
@@ -1174,7 +1181,7 @@
 .method private showSplit(Landroid/widget/TextView;II)V
     .registers 44
 
-    .line 159
+    .line 160
     move-object/from16 v0, p0
 
     move-object/from16 v1, p1
@@ -1189,32 +1196,32 @@
 
     move-result v4
 
-    .line 160
+    .line 161
     if-eqz v4, :cond_15
 
-    .line 161
+    .line 162
     invoke-direct {v0, v2, v3}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->sectorSplitMillis(II)I
 
     move-result v5
 
     goto :goto_16
 
-    .line 162
+    .line 163
     :cond_15
     move v5, v3
 
-    .line 163
+    .line 164
     :goto_16
     invoke-direct {v0, v2, v5, v4}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->splitLine(IIZ)Ljava/lang/String;
 
     move-result-object v6
 
-    .line 164
+    .line 165
     invoke-direct {v0, v5}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->splitColor(I)I
 
     move-result v7
 
-    .line 165
+    .line 166
     iget-object v8, v0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->splitHistory:Ljava/util/ArrayList;
 
     new-instance v9, Lcom/trueaxis/modmenu/SplitTimeHud$SplitEntry;
@@ -1223,7 +1230,7 @@
 
     invoke-virtual {v8, v9}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
 
-    .line 166
+    .line 167
     :goto_28
     iget-object v8, v0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->splitHistory:Ljava/util/ArrayList;
 
@@ -1243,7 +1250,7 @@
 
     goto :goto_28
 
-    .line 167
+    .line 168
     :cond_39
     invoke-direct {v0, v6}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->displayText(Ljava/lang/String;)Ljava/lang/CharSequence;
 
@@ -1251,7 +1258,7 @@
 
     invoke-virtual {v1, v6}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    .line 168
+    .line 169
     iget-object v6, v0, Lcom/trueaxis/modmenu/SplitTimeHud$1;->val$activity:Landroid/app/Activity;
 
     invoke-static {v6}, Lcom/trueaxis/modmenu/ModMenu;->splitListEnabled(Landroid/content/Context;)Z
@@ -1268,51 +1275,51 @@
     :cond_4c
     invoke-virtual {v1, v7}, Landroid/widget/TextView;->setTextColor(I)V
 
-    .line 169
+    .line 170
     invoke-virtual/range {p1 .. p1}, Landroid/widget/TextView;->bringToFront()V
 
-    .line 170
+    .line 171
     invoke-virtual {v1, v10}, Landroid/widget/TextView;->setVisibility(I)V
 
-    .line 171
+    .line 172
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readLatestCheckpointCurrentMillis()I
 
     move-result v1
 
-    .line 172
+    .line 173
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readLatestCheckpointGhostMillis()I
 
     move-result v6
 
-    .line 173
+    .line 174
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLastCheckpointMillis()I
 
     move-result v7
 
-    .line 174
+    .line 175
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitEngineLastCheckpointIndex()I
 
     move-result v8
 
-    .line 175
+    .line 176
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLiveCheckpointCount()I
 
     move-result v11
 
-    .line 176
+    .line 177
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitGhostCheckpointCount()I
 
     move-result v12
 
-    .line 177
+    .line 178
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitOfficialGhostCheckpointCount()I
 
     move-result v13
 
-    .line 178
+    .line 179
     sget-object v14, Ljava/util/Locale;->US:Ljava/util/Locale;
 
-    .line 180
+    .line 181
     invoke-static/range {p2 .. p2}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 
     move-result-object v15
@@ -1333,7 +1340,7 @@
 
     move-result-object v3
 
-    .line 181
+    .line 182
     if-eqz v4, :cond_8c
 
     const-string v4, "sector"
@@ -1343,7 +1350,7 @@
     :cond_8c
     const-string v4, "checkpoint"
 
-    .line 182
+    .line 183
     :goto_8e
     invoke-static {v7}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 
@@ -1357,7 +1364,7 @@
 
     move-result-object v17
 
-    .line 183
+    .line 184
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitDecodedEngineCheckpointIndex()I
 
     move-result v18
@@ -1366,7 +1373,7 @@
 
     move-result-object v18
 
-    .line 184
+    .line 185
     invoke-static {v8}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 
     move-result-object v8
@@ -1379,7 +1386,7 @@
 
     move-result-object v19
 
-    .line 185
+    .line 186
     invoke-static {v11}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 
     move-result-object v20
@@ -1394,7 +1401,7 @@
 
     add-int/lit8 v23, v2, -0x1
 
-    .line 186
+    .line 187
     invoke-static/range {v23 .. v23}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLiveArrayMillis(I)I
 
     move-result v24
@@ -1409,7 +1416,7 @@
 
     sub-int/2addr v12, v2
 
-    .line 187
+    .line 188
     invoke-static {v12}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLiveArrayMillis(I)I
 
     move-result v12
@@ -1418,7 +1425,7 @@
 
     move-result-object v12
 
-    .line 189
+    .line 190
     invoke-static/range {v23 .. v23}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitOfficialGhostArrayMillis(I)I
 
     move-result v23
@@ -1427,7 +1434,7 @@
 
     move-result-object v23
 
-    .line 190
+    .line 191
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitReplayHeaderSize()I
 
     move-result v25
@@ -1436,7 +1443,7 @@
 
     move-result-object v25
 
-    .line 191
+    .line 192
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitReplayHeaderCheckpointCount()I
 
     move-result v26
@@ -1445,7 +1452,7 @@
 
     move-result-object v26
 
-    .line 192
+    .line 193
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitReplayHeaderFinishMillis()I
 
     move-result v27
@@ -1454,7 +1461,7 @@
 
     move-result-object v27
 
-    .line 193
+    .line 194
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitGhostPos()I
 
     move-result v28
@@ -1463,7 +1470,7 @@
 
     move-result-object v28
 
-    .line 194
+    .line 195
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLastGhostPos()I
 
     move-result v29
@@ -1472,7 +1479,7 @@
 
     move-result-object v29
 
-    .line 195
+    .line 196
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLastReplaySize()I
 
     move-result v30
@@ -1481,7 +1488,7 @@
 
     move-result-object v30
 
-    .line 196
+    .line 197
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitReplayVisualMillis()I
 
     move-result v31
@@ -1490,7 +1497,7 @@
 
     move-result-object v31
 
-    .line 197
+    .line 198
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitGhostVisualMillis()I
 
     move-result v32
@@ -1499,7 +1506,7 @@
 
     move-result-object v32
 
-    .line 198
+    .line 199
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitVisualDeltaMillis()I
 
     move-result v33
@@ -1508,7 +1515,7 @@
 
     move-result-object v33
 
-    .line 199
+    .line 200
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitGhostCheckpointDistanceSq1000()I
 
     move-result v34
@@ -1517,7 +1524,7 @@
 
     move-result-object v34
 
-    .line 200
+    .line 201
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitGhostRetrySkipIndex()I
 
     move-result v35
@@ -1526,7 +1533,7 @@
 
     move-result-object v35
 
-    .line 201
+    .line 202
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLastGhostRetrySkipIndex()I
 
     move-result v36
@@ -1535,7 +1542,7 @@
 
     move-result-object v36
 
-    .line 202
+    .line 203
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitGhostRetryPauseTime()I
 
     move-result v37
@@ -1544,7 +1551,7 @@
 
     move-result-object v37
 
-    .line 203
+    .line 204
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitLastGhostRetryPauseTime()I
 
     move-result v38
@@ -1553,7 +1560,7 @@
 
     move-result-object v38
 
-    .line 204
+    .line 205
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readSplitGhostRetrySkipCount()I
 
     move-result v39
@@ -1562,7 +1569,7 @@
 
     move-result-object v39
 
-    .line 205
+    .line 206
     invoke-direct {v0, v11}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->liveArrayTrace(I)Ljava/lang/String;
 
     move-result-object v11
@@ -1571,7 +1578,7 @@
 
     move-result-object v13
 
-    .line 206
+    .line 207
     invoke-direct {v0, v5}, Lcom/trueaxis/modmenu/SplitTimeHud$1;->splitColorName(I)Ljava/lang/String;
 
     move-result-object v5
@@ -1732,7 +1739,7 @@
 
     aput-object v9, v2, v1
 
-    .line 178
+    .line 179
     const-string v1, "split checkpoint=%d current_ms=%d ghost_ms=%d delta_ms=%d cumulative_delta_ms=%d mode=%s last_checkpoint_ms=%d scanned_checkpoint=%d decoded_engine_checkpoint=%d engine_checkpoint=%d selected_checkpoint=%d live_count=%d effective_ghost_count=%d official_ghost_count=%d live_cp_ms=%d live_appended_ms=%d official_ghost_cp_ms=%d replay_header_size=%d replay_header_checkpoints=%d replay_header_finish_ms=%d ghost_pos=%d last_ghost_pos=%d last_replay_size=%d replay_visual_ms=%d ghost_visual_ms=%d visual_delta_ms=%d ghost_checkpoint_dist_sq1000=%d ghost_retry_index=%d last_ghost_retry_index=%d ghost_retry_pause=%d last_ghost_retry_pause=%d ghost_retry_count=%d live_array=%s official_ghost_array=%s color=%s list=%s"
 
     invoke-static {v14, v1, v2}, Ljava/lang/String;->format(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
@@ -1741,14 +1748,14 @@
 
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 207
+    .line 208
     return-void
 .end method
 
 .method private splitColor(I)I
     .registers 2
 
-    .line 263
+    .line 264
     if-gez p1, :cond_7
 
     # getter for: Lcom/trueaxis/modmenu/SplitTimeHud;->SPLIT_FAST:I
@@ -1758,7 +1765,7 @@
 
     return p1
 
-    .line 264
+    .line 265
     :cond_7
     if-lez p1, :cond_e
 
@@ -1769,7 +1776,7 @@
 
     return p1
 
-    .line 265
+    .line 266
     :cond_e
     # getter for: Lcom/trueaxis/modmenu/SplitTimeHud;->SPLIT_READY:I
     invoke-static {}, Lcom/trueaxis/modmenu/SplitTimeHud;->access$000()I
@@ -1782,14 +1789,14 @@
 .method private splitColorName(I)Ljava/lang/String;
     .registers 2
 
-    .line 269
+    .line 270
     if-gez p1, :cond_5
 
     const-string p1, "green"
 
     return-object p1
 
-    .line 270
+    .line 271
     :cond_5
     if-lez p1, :cond_a
 
@@ -1797,7 +1804,7 @@
 
     return-object p1
 
-    .line 271
+    .line 272
     :cond_a
     const-string p1, "yellow"
 
@@ -1807,7 +1814,7 @@
 .method private splitLine(IIZ)Ljava/lang/String;
     .registers 9
 
-    .line 225
+    .line 226
     const/4 v0, 0x1
 
     const/4 v1, 0x0
@@ -1821,11 +1828,11 @@
     :cond_6
     const/4 v2, 0x0
 
-    .line 226
+    .line 227
     :goto_7
     sget-object v3, Ljava/util/Locale;->US:Ljava/util/Locale;
 
-    .line 227
+    .line 228
     if-eqz p3, :cond_e
 
     const-string p3, "S"
@@ -1835,7 +1842,7 @@
     :cond_e
     const-string p3, "CP"
 
-    .line 228
+    .line 229
     :goto_10
     invoke-static {p1}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 
@@ -1881,7 +1888,7 @@
 
     aput-object p2, v4, p1
 
-    .line 226
+    .line 227
     const-string p1, "%s%d %s%.2f"
 
     invoke-static {v3, p1, v4}, Ljava/lang/String;->format(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
