@@ -10,8 +10,24 @@ $Java = Join-Path $JdkHome "bin\java.exe"
 
 $AndroidJar = Join-Path $Root "tools\android.jar"
 if (-not (Test-Path $AndroidJar)) {
-    Write-Host "Downloading android.jar stub..."
-    Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/com/google/android/android/4.1.1.4/android-4.1.1.4.jar" -OutFile $AndroidJar
+    # UpdateManager imports org.json, which the old android-4.1.1.4 stub jar does
+    # not ship. Prefer the installed SDK platform android.jar (includes org.json
+    # and matches the jar used for local builds); fall back to the stub only if
+    # no SDK platform is available.
+    $SdkRoot = $env:ANDROID_HOME
+    if (-not $SdkRoot) { $SdkRoot = $env:ANDROID_SDK_ROOT }
+    $PlatformJar = $null
+    if ($SdkRoot -and (Test-Path (Join-Path $SdkRoot "platforms"))) {
+        $PlatformJar = Get-ChildItem (Join-Path $SdkRoot "platforms") -Filter android.jar -Recurse -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending | Select-Object -First 1
+    }
+    if ($PlatformJar) {
+        Write-Host "Using SDK platform android.jar: $($PlatformJar.FullName)"
+        Copy-Item $PlatformJar.FullName $AndroidJar -Force
+    } else {
+        Write-Host "Downloading android.jar stub..."
+        Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/com/google/android/android/4.1.1.4/android-4.1.1.4.jar" -OutFile $AndroidJar
+    }
 }
 
 $R8Jar = Join-Path $Root "tools\r8.jar"

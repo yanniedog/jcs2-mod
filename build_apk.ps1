@@ -81,20 +81,31 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 # Every release is self-signed with the committed stable keystore so that
 # in-place updates keep working (a fresh random key per build would change the
-# signature each release and block updates). Password/alias may be overridden
-# via env for local experiments, but default to the committed key.
-$Keystore = Join-Path $Root "jcs2.keystore"
-$KeyAlias = "jcs2"
+# signature each release and block updates). Path/alias/password may be
+# overridden via env for local experiments, but default to the committed key.
+$Keystore = $env:JCS2_KEYSTORE
+if (-not $Keystore) { $Keystore = Join-Path $Root "jcs2.keystore" }
+$KeyAlias = $env:JCS2_KEY_ALIAS
+if (-not $KeyAlias) { $KeyAlias = "jcs2" }
 $StorePass = "android"
 if ($env:JCS2_KEYSTORE_PASS) { $StorePass = $env:JCS2_KEYSTORE_PASS }
 $KeyPass = $StorePass
 
 if (-not (Test-Path $Keystore)) {
+    # The stable keystore is committed to the repo. A missing keystore in CI
+    # means a broken checkout: fail loudly rather than silently minting a new
+    # throwaway key that would change the signing certificate and break in-place
+    # updates. Local builds may regenerate it for convenience.
+    if ($env:GITHUB_ACTIONS -eq "true") {
+        Write-Error "Signing keystore '$Keystore' is missing in CI; refusing to generate a throwaway key that would change the release signature."
+        exit 1
+    }
     $Keytool = Join-Path $JdkHome "bin\keytool.exe"
     if (-not (Test-Path $Keytool)) {
         Write-Error "keytool not found at $Keytool; cannot create self-signed signing key."
+        exit 1
     }
-    Write-Host "Committed keystore missing; creating self-signed signing key..."
+    Write-Host "Committed keystore missing; creating self-signed signing key for local build..."
     & $Keytool -genkeypair -keystore $Keystore -storepass $StorePass -keypass $KeyPass `
         -alias $KeyAlias -keyalg RSA -keysize 2048 -validity 36500 `
         -dname "CN=JCS2 Community Mod,O=JCS2 Community Mod,C=US"
