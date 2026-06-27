@@ -3,7 +3,7 @@
 .source "UpdateManager.java"
 
 # interfaces
-.implements Landroid/content/DialogInterface$OnClickListener;
+.implements Landroid/content/DialogInterface$OnCancelListener;
 
 
 # annotations
@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 126
+    .line 145
     iput-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$2;->val$activity:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/UpdateManager$2;->val$latest:Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;
@@ -44,17 +44,17 @@
 
 
 # virtual methods
-.method public onClick(Landroid/content/DialogInterface;I)V
+.method public onCancel(Landroid/content/DialogInterface;)V
     .registers 3
 
-    .line 128
+    .line 147
     iget-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$2;->val$activity:Landroid/app/Activity;
 
-    iget-object p2, p0, Lcom/trueaxis/modmenu/UpdateManager$2;->val$latest:Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;
+    iget-object v0, p0, Lcom/trueaxis/modmenu/UpdateManager$2;->val$latest:Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;
 
-    # invokes: Lcom/trueaxis/modmenu/UpdateManager;->startDownload(Landroid/app/Activity;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;)V
-    invoke-static {p1, p2}, Lcom/trueaxis/modmenu/UpdateManager;->access$600(Landroid/app/Activity;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;)V
+    # invokes: Lcom/trueaxis/modmenu/UpdateManager;->recordUpdateDismissed(Landroid/content/Context;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;)V
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/UpdateManager;->access$700(Landroid/content/Context;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;)V
 
-    .line 129
+    .line 148
     return-void
 .end method

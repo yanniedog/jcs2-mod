@@ -34,7 +34,7 @@
 .method private constructor <init>()V
     .registers 1
 
-    .line 406
+    .line 492
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
     return-void
@@ -43,7 +43,7 @@
 .method synthetic constructor <init>(Lcom/trueaxis/modmenu/UpdateManager$1;)V
     .registers 2
 
-    .line 406
+    .line 492
     invoke-direct {p0}, Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;-><init>()V
 
     return-void

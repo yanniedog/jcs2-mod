@@ -33,7 +33,7 @@
         }
     .end annotation
 
-    .line 94
+    .line 103
     iput-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$1$2;->this$0:Lcom/trueaxis/modmenu/UpdateManager$1;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -46,7 +46,7 @@
 .method public run()V
     .registers 3
 
-    .line 96
+    .line 105
     iget-object v0, p0, Lcom/trueaxis/modmenu/UpdateManager$1$2;->this$0:Lcom/trueaxis/modmenu/UpdateManager$1;
 
     iget-object v0, v0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$activity:Landroid/app/Activity;
@@ -54,8 +54,8 @@
     const-string v1, "You are already on the latest version."
 
     # invokes: Lcom/trueaxis/modmenu/UpdateManager;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/UpdateManager;->access$300(Landroid/content/Context;Ljava/lang/String;)V
+    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/UpdateManager;->access$400(Landroid/content/Context;Ljava/lang/String;)V
 
-    .line 97
+    .line 106
     return-void
 .end method

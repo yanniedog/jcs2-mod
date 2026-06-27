@@ -47,7 +47,7 @@
         }
     .end annotation
 
-    .line 88
+    .line 97
     iput-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$1$1;->this$0:Lcom/trueaxis/modmenu/UpdateManager$1;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/UpdateManager$1$1;->val$latest:Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;
@@ -64,7 +64,7 @@
 .method public run()V
     .registers 4
 
-    .line 90
+    .line 99
     iget-object v0, p0, Lcom/trueaxis/modmenu/UpdateManager$1$1;->this$0:Lcom/trueaxis/modmenu/UpdateManager$1;
 
     iget-object v0, v0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$activity:Landroid/app/Activity;
@@ -74,8 +74,8 @@
     iget-object v2, p0, Lcom/trueaxis/modmenu/UpdateManager$1$1;->val$current:Landroid/content/pm/PackageInfo;
 
     # invokes: Lcom/trueaxis/modmenu/UpdateManager;->showUpdateAvailable(Landroid/app/Activity;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;Landroid/content/pm/PackageInfo;)V
-    invoke-static {v0, v1, v2}, Lcom/trueaxis/modmenu/UpdateManager;->access$100(Landroid/app/Activity;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;Landroid/content/pm/PackageInfo;)V
+    invoke-static {v0, v1, v2}, Lcom/trueaxis/modmenu/UpdateManager;->access$200(Landroid/app/Activity;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;Landroid/content/pm/PackageInfo;)V
 
-    .line 91
+    .line 100
     return-void
 .end method

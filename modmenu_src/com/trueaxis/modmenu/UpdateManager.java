@@ -43,6 +43,10 @@ public final class UpdateManager {
     private static final String K_DOWNLOAD_ID = "download_id";
     private static final String K_DOWNLOAD_SHA256 = "download_sha256";
     private static final String K_DOWNLOAD_VERSION_CODE = "download_version_code";
+    private static final String K_DISMISSED_VERSION_CODE = "dismissed_version_code";
+    private static final String K_INSTALL_PROMPTED_DOWNLOAD_ID = "install_prompted_download_id";
+    private static final String K_INSTALL_PERMISSION_PROMPTED_VERSION_CODE =
+            "install_permission_prompted_version_code";
     private static final String UPDATE_MANIFEST_URL =
             "https://github.com/yanniedog/jcs2-mod/releases/latest/download/jcs2-update.json";
     private static final String APK_MIME = "application/vnd.android.package-archive";
@@ -54,7 +58,7 @@ public final class UpdateManager {
     }
 
     public static void checkSilently(final Activity activity) {
-        resumePendingInstall(activity, false);
+        if (resumePendingInstall(activity, false)) return;
         long now = System.currentTimeMillis();
         long last = prefs(activity).getLong(K_LAST_CHECK_MS, 0L);
         if (now - last < CHECK_INTERVAL_MS) return;
@@ -62,7 +66,7 @@ public final class UpdateManager {
     }
 
     public static void checkNow(final Activity activity) {
-        resumePendingInstall(activity, true);
+        if (resumePendingInstall(activity, true)) return;
         checkForUpdates(activity, true);
     }
 
@@ -85,6 +89,11 @@ public final class UpdateManager {
                                 + latest.packageName);
                     }
                     if (latest.versionCode > current.versionCode) {
+                        if (!interactive && shouldSuppressUpdatePrompt(activity, latest)) {
+                            ModDebugLog.module("update", "silent update prompt suppressed version="
+                                    + latest.versionName + " code=" + latest.versionCode);
+                            return;
+                        }
                         runOnUi(activity, new Runnable() {
                             public void run() {
                                 showUpdateAvailable(activity, latest, current);
@@ -128,8 +137,35 @@ public final class UpdateManager {
                         startDownload(activity, latest);
                     }
                 })
-                .setNegativeButton("Later", null)
+                .setNegativeButton("Later", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        recordUpdateDismissed(activity, latest);
+                    }
+                })
+                .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    public void onCancel(DialogInterface dialog) {
+                        recordUpdateDismissed(activity, latest);
+                    }
+                })
                 .show();
+    }
+
+    private static boolean shouldSuppressUpdatePrompt(Context context, UpdateInfo latest) {
+        SharedPreferences preferences = prefs(context);
+        if (preferences.getInt(K_DISMISSED_VERSION_CODE, 0) == latest.versionCode) {
+            return true;
+        }
+        long downloadId = preferences.getLong(K_DOWNLOAD_ID, -1L);
+        int downloadVersion = preferences.getInt(K_DOWNLOAD_VERSION_CODE, 0);
+        return downloadId >= 0L && downloadVersion >= latest.versionCode;
+    }
+
+    private static void recordUpdateDismissed(Context context, UpdateInfo latest) {
+        prefs(context).edit()
+                .putInt(K_DISMISSED_VERSION_CODE, latest.versionCode)
+                .apply();
+        ModDebugLog.module("update", "update prompt dismissed version="
+                + latest.versionName + " code=" + latest.versionCode);
     }
 
     private static UpdateInfo fetchUpdateInfo() throws Exception {
@@ -188,6 +224,9 @@ public final class UpdateManager {
                     .putLong(K_DOWNLOAD_ID, id)
                     .putString(K_DOWNLOAD_SHA256, info.apkSha256)
                     .putInt(K_DOWNLOAD_VERSION_CODE, info.versionCode)
+                    .remove(K_DISMISSED_VERSION_CODE)
+                    .remove(K_INSTALL_PROMPTED_DOWNLOAD_ID)
+                    .remove(K_INSTALL_PERMISSION_PROMPTED_VERSION_CODE)
                     .apply();
             ModDebugLog.module("update", "download started id=" + id
                     + " version=" + info.versionName + " url=" + info.apkUrl);
@@ -220,35 +259,39 @@ public final class UpdateManager {
         }
     }
 
-    private static void resumePendingInstall(Activity activity, boolean interactive) {
+    private static boolean resumePendingInstall(Activity activity, boolean interactive) {
         long id = prefs(activity).getLong(K_DOWNLOAD_ID, -1L);
-        if (id < 0L) return;
-        installDownloadedApk(activity, id, interactive);
+        if (id < 0L) return false;
+        return installDownloadedApk(activity, id, interactive);
     }
 
-    private static void installDownloadedApk(final Activity activity,
-                                             final long id,
-                                             boolean interactive) {
+    private static boolean installDownloadedApk(final Activity activity,
+                                                final long id,
+                                                boolean interactive) {
+        if (downloadAlreadyInstalled(activity)) {
+            clearDownload(activity);
+            return false;
+        }
         DownloadManager manager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
-        if (manager == null) return;
+        if (manager == null) return false;
         Cursor cursor = null;
         try {
             cursor = manager.query(new DownloadManager.Query().setFilterById(id));
             if (cursor == null || !cursor.moveToFirst()) {
                 clearDownload(activity);
-                return;
+                return false;
             }
             int status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
             if (status == DownloadManager.STATUS_PENDING
                     || status == DownloadManager.STATUS_PAUSED
                     || status == DownloadManager.STATUS_RUNNING) {
                 if (interactive) toast(activity, "Update download is still in progress.");
-                return;
+                return true;
             }
             if (status != DownloadManager.STATUS_SUCCESSFUL) {
                 clearDownload(activity);
                 if (interactive) toast(activity, "Update download failed. Please try again.");
-                return;
+                return false;
             }
             String expectedSha = prefs(activity).getString(K_DOWNLOAD_SHA256, "");
             if (expectedSha.length() > 0) {
@@ -259,12 +302,17 @@ public final class UpdateManager {
                     toast(activity, "Downloaded update did not match its checksum.");
                     ModDebugLog.module("update", "checksum mismatch expected="
                             + expectedSha + " actual=" + actualSha);
-                    return;
+                    return false;
                 }
             }
             if (!canInstallPackages(activity)) {
-                promptInstallPermission(activity);
-                return;
+                maybePromptInstallPermission(activity, interactive);
+                return true;
+            }
+            long promptedId = prefs(activity).getLong(K_INSTALL_PROMPTED_DOWNLOAD_ID, -1L);
+            if (!interactive && promptedId == id) {
+                ModDebugLog.module("update", "pending installer already opened id=" + id);
+                return true;
             }
             Uri apk = manager.getUriForDownloadedFile(id);
             if (apk == null) throw new IllegalStateException("Downloaded APK URI unavailable");
@@ -273,13 +321,49 @@ public final class UpdateManager {
             install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             activity.startActivity(install);
+            prefs(activity).edit().putLong(K_INSTALL_PROMPTED_DOWNLOAD_ID, id).apply();
             ModDebugLog.module("update", "installer opened for download id=" + id);
+            return true;
         } catch (Throwable error) {
             ModDebugLog.module("update", "install downloaded apk failed", error);
             if (interactive) toast(activity, "Could not open installer: " + readable(error));
+            return false;
         } finally {
             if (cursor != null) cursor.close();
         }
+    }
+
+    private static boolean downloadAlreadyInstalled(Context context) {
+        int downloadVersion = prefs(context).getInt(K_DOWNLOAD_VERSION_CODE, 0);
+        if (downloadVersion <= 0) return false;
+        int currentVersion = currentVersionCode(context);
+        return currentVersion >= downloadVersion;
+    }
+
+    private static int currentVersionCode(Context context) {
+        try {
+            PackageInfo info = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0);
+            return info.versionCode;
+        } catch (Throwable error) {
+            ModDebugLog.module("update", "could not read current version", error);
+            return 0;
+        }
+    }
+
+    private static void maybePromptInstallPermission(Activity activity, boolean interactive) {
+        SharedPreferences preferences = prefs(activity);
+        int version = preferences.getInt(K_DOWNLOAD_VERSION_CODE, 0);
+        int promptedVersion = preferences.getInt(K_INSTALL_PERMISSION_PROMPTED_VERSION_CODE, 0);
+        if (!interactive && version > 0 && promptedVersion == version) {
+            ModDebugLog.module("update", "install permission prompt already shown version="
+                    + version);
+            return;
+        }
+        preferences.edit()
+                .putInt(K_INSTALL_PERMISSION_PROMPTED_VERSION_CODE, version)
+                .apply();
+        promptInstallPermission(activity);
     }
 
     private static boolean canInstallPackages(Context context) {
@@ -383,6 +467,8 @@ public final class UpdateManager {
                 .remove(K_DOWNLOAD_ID)
                 .remove(K_DOWNLOAD_SHA256)
                 .remove(K_DOWNLOAD_VERSION_CODE)
+                .remove(K_INSTALL_PROMPTED_DOWNLOAD_ID)
+                .remove(K_INSTALL_PERMISSION_PROMPTED_VERSION_CODE)
                 .apply();
     }
 

@@ -235,6 +235,9 @@ def check_sources(skip_local_assets=False):
     mod_menu = (ROOT / "modmenu_src/com/trueaxis/modmenu/ModMenu.java").read_text(
         encoding="utf-8"
     )
+    update_manager = (ROOT / "modmenu_src/com/trueaxis/modmenu/UpdateManager.java").read_text(
+        encoding="utf-8"
+    )
     if "checkpointCount > lastCheckpointCount + 1" not in split_hud:
         ok = fail("checkpoint split HUD no longer suppresses replay-load checkpoint jumps") and ok
     if '"split checkpoint jump accepted from="' not in split_hud:
@@ -290,6 +293,16 @@ def check_sources(skip_local_assets=False):
         ok = fail("mod menu still contains letter-numbered option labels") and ok
     if "validateCustomLiveriesForGame" not in mod_menu or "quarantineLivery" not in mod_menu:
         ok = fail("custom livery validation/quarantine is missing from startup safety checks") and ok
+    if "if (resumePendingInstall(activity, false)) return;" not in update_manager:
+        ok = fail("silent updater no longer treats pending install/download state as handled") and ok
+    if "K_DISMISSED_VERSION_CODE" not in update_manager or "recordUpdateDismissed" not in update_manager:
+        ok = fail("silent updater can nag for the same dismissed update version") and ok
+    if "K_INSTALL_PROMPTED_DOWNLOAD_ID" not in update_manager or "pending installer already opened" not in update_manager:
+        ok = fail("silent updater can reopen the same downloaded installer repeatedly") and ok
+    if "downloadAlreadyInstalled(activity)" not in update_manager or "clearDownload(activity)" not in update_manager:
+        ok = fail("updater no longer clears stale download state after the downloaded version is installed") and ok
+    if "shouldSuppressUpdatePrompt(activity, latest)" not in update_manager:
+        ok = fail("silent updater no longer suppresses already-handled update prompts") and ok
     if bridge.count("ptr::write_volatile(") != 2:
         ok = fail("native bridge must have exactly two value writes: IAP ownership and checkpoint capacity only") and ok
     if "DLC_PURCHASED_OFFSET: usize = 0x5c" not in bridge or "DLC_ITEM_COUNT: usize = 0x200" not in bridge:
