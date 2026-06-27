@@ -1,0 +1,6 @@
+# Pin the Rust toolchain so libjcs2mod.so is byte-reproducible between local
+# builds and CI (the verify-generated-outputs check compares the committed .so
+# against a fresh build). Bump deliberately and recommit the .so when updating.
+[toolchain]
+channel = "1.91.1"
+targets = ["aarch64-linux-android"]

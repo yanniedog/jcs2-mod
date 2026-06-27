@@ -41,7 +41,7 @@ jobs:
 
       - name: Install Android SDK packages
         shell: pwsh
-        run: sdkmanager "platforms;android-28" "build-tools;36.1.0"
+        run: sdkmanager "platforms;android-34" "build-tools;36.1.0"
 
       - name: Install CI tools
         shell: pwsh

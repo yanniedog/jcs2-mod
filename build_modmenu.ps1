@@ -8,26 +8,24 @@ $Javac = Join-Path $JdkHome "bin\javac.exe"
 $Jar = Join-Path $JdkHome "bin\jar.exe"
 $Java = Join-Path $JdkHome "bin\java.exe"
 
-$AndroidJar = Join-Path $Root "tools\android.jar"
+# Compile against a pinned platform android.jar so generated smali is
+# byte-identical between local and CI. The API level is fixed (the workflows
+# install the same one) and the SDK android.jar ships org.json, which
+# UpdateManager imports. The cache filename is version-specific so a stale
+# generic android.jar from a different API level can't silently be reused.
+$AndroidApi = 34
+$AndroidJar = Join-Path $Root "tools\android-$AndroidApi.jar"
 if (-not (Test-Path $AndroidJar)) {
-    # UpdateManager imports org.json, which the old android-4.1.1.4 stub jar does
-    # not ship. Prefer the installed SDK platform android.jar (includes org.json
-    # and matches the jar used for local builds); fall back to the stub only if
-    # no SDK platform is available.
     $SdkRoot = $env:ANDROID_HOME
     if (-not $SdkRoot) { $SdkRoot = $env:ANDROID_SDK_ROOT }
-    $PlatformJar = $null
-    if ($SdkRoot -and (Test-Path (Join-Path $SdkRoot "platforms"))) {
-        $PlatformJar = Get-ChildItem (Join-Path $SdkRoot "platforms") -Filter android.jar -Recurse -ErrorAction SilentlyContinue |
-            Sort-Object FullName -Descending | Select-Object -First 1
+    if (-not $SdkRoot) { $SdkRoot = Join-Path $env:LOCALAPPDATA "Android\Sdk" }
+    $PlatformJar = Join-Path $SdkRoot "platforms\android-$AndroidApi\android.jar"
+    if (-not (Test-Path $PlatformJar)) {
+        throw "android-$AndroidApi platform jar not found at $PlatformJar. Install it with: sdkmanager `"platforms;android-$AndroidApi`""
     }
-    if ($PlatformJar) {
-        Write-Host "Using SDK platform android.jar: $($PlatformJar.FullName)"
-        Copy-Item $PlatformJar.FullName $AndroidJar -Force
-    } else {
-        Write-Host "Downloading android.jar stub..."
-        Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/com/google/android/android/4.1.1.4/android-4.1.1.4.jar" -OutFile $AndroidJar
-    }
+    Write-Host "Using SDK platform android.jar: $PlatformJar"
+    New-Item -ItemType Directory -Path (Split-Path $AndroidJar) -Force | Out-Null
+    Copy-Item $PlatformJar $AndroidJar -Force
 }
 
 $R8Jar = Join-Path $Root "tools\r8.jar"
