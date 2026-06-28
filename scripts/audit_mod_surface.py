@@ -40,6 +40,7 @@ FORBIDDEN = (
     b"g_nInAirStuntCounter",
     b"g_bIAPCrack",
     b"Java_com_trueaxis_modmenu_NativeMods_",
+    b"__clear_cache",
 )
 
 SOURCE_TARGETS = (
@@ -175,6 +176,22 @@ def check_sources(skip_local_assets=False):
         "g_ghostTransform",
         "g_ghostTransformLast",
         "g_checkPointTransfrom",
+        "_Z19Levels_GetUserLevelj",
+        "_Z27Levels_GetUserLevelFileNamej",
+        "_Znwm",
+        "_ZN7WStringC1EPKc",
+        "_ZN7WStringD1Ev",
+        "_ZN15UiControlButtonC1ERK11UiRectangleRKN14UiControlLabel22ConstructionPropertiesEPFvPS_E",
+        "_ZN15UiControlButton8SetLabelERKN14UiControlLabel22ConstructionPropertiesE",
+        "_ZN9UiControl10AddControlERS_",
+        "_ZN9UiControl27SetRenderBackgroundFunctionEPFvPS_RK11UiRectangleE",
+        "_ZN14UiControlPanel16SetScrollExtentsEiiii",
+        "_ZN12UiFormCreate28OnRenderButtonBackgroundStubEP9UiControlRK11UiRectangle",
+        "_ZN17InGameLevelEditor4SaveEPc",
+        "_ZN12UiFormCreateC1Ev",
+        "_ZN5World4LoadEPKcbj",
+        "_ZN4Game9LoadLevelEjNS_10DifficultyE",
+        "_ZN4Game12OnCheckPointERKN2TA4Vec3Ei",
     )
     for line in bridge.splitlines():
         if 'resolve(b"' in line and not any(symbol in line for symbol in allowed_native_symbols):
@@ -199,6 +216,8 @@ def check_sources(skip_local_assets=False):
     for marker in forbidden_replay_writers:
         if marker in bridge:
             ok = fail(f"native bridge still contains replay-data mutation marker: {marker}") and ok
+    if "__clear_cache" in bridge:
+        ok = fail("native bridge must not import __clear_cache; it is not exported on Android 16") and ok
     if "RequiredPatches_readLatestCheckpointSplit" not in bridge:
         ok = fail("read-only checkpoint split JNI entry point is missing") and ok
     if (
@@ -315,6 +334,44 @@ def check_sources(skip_local_assets=False):
     if "logGhostCheckpoints(RequiredPatches.readSplitGhostCheckpointCount())" not in split_hud:
         ok = fail("checkpoint split HUD no longer records the full raced ghost checkpoint table when armed") and ok
 
+    if (
+        "USER_TRACK_FLAGS_MAGIC" not in bridge
+        or "YCS2TRACKFLAGS:1:" not in bridge
+        or "append_user_track_flags_marker" not in bridge
+        or "parse_user_track_flags" not in bridge
+    ):
+        ok = fail("user-track laps/boost choices are no longer hardcoded into saved user-track data") and ok
+    if (
+        "USER_TRACK_FLAG_LAPS" not in bridge
+        or "USER_TRACK_FLAG_BOOST_REGEN" not in bridge
+        or "LEVEL_TYPE_LAPS: c_int = 3" not in bridge
+        or "refill_current_car_boost" not in bridge
+    ):
+        ok = fail("user-track laps or stock-style checkpoint boost regeneration handling is missing") and ok
+    if (
+        "hooked_uiform_create_ctor" not in bridge
+        or "add_user_track_create_switches" not in bridge
+        or "b\"LAPS: OFF\\0\"" not in bridge
+        or "b\"BOOST REGEN: OFF\\0\"" not in bridge
+    ):
+        ok = fail("native Create menu switches for user-track laps/boost no longer default to OFF") and ok
+    if (
+        "_ZN12UiFormCreateC1Ev" not in bridge
+        or "_ZN15UiControlButtonC1ERK11UiRectangleRKN14UiControlLabel22ConstructionPropertiesEPFvPS_E" not in bridge
+        or "_ZN12UiFormCreate28OnRenderButtonBackgroundStubEP9UiControlRK11UiRectangle" not in bridge
+        or "UIFORM_CREATE_CAR_PANEL_OFFSET" not in bridge
+    ):
+        ok = fail("user-track switches are no longer built into the native flat Create menu") and ok
+    required_patches_for_user_tracks = (
+        ROOT / "modmenu_src/com/trueaxis/modmenu/RequiredPatches.java"
+    ).read_text(encoding="utf-8")
+    if (
+        "WindowManager" in required_patches_for_user_tracks
+        or "TYPE_APPLICATION_OVERLAY" in required_patches_for_user_tracks
+        or (ROOT / "modmenu_src/com/trueaxis/modmenu/UserTrackCreateOverlay.java").exists()
+    ):
+        ok = fail("user-track creation flags must not use an Android overlay") and ok
+
     straight_runtime = (ROOT / "scripts/runtime_straight_level_split_test.ps1").read_text(
         encoding="utf-8"
     )
@@ -384,8 +441,15 @@ def check_sources(skip_local_assets=False):
         ok = fail("updater no longer clears stale download state after the downloaded version is installed") and ok
     if "shouldSuppressUpdatePrompt(activity, latest)" not in update_manager:
         ok = fail("silent updater no longer suppresses already-handled update prompts") and ok
-    if bridge.count("ptr::write_volatile(") != 2:
-        ok = fail("native bridge must have exactly two value writes: IAP ownership and checkpoint capacity only") and ok
+    if bridge.count("ptr::write_volatile(") != 4:
+        ok = fail("native bridge must only write retained values, user-level lap type, and boost refill") and ok
+    if (
+        "ptr::write_volatile(CHECKPOINT_LIMIT_ADDRESS, CHECKPOINT_LIMIT)" not in bridge
+        or "DLC_CONNECTIONS.add(index * DLC_ITEM_SIZE + DLC_PURCHASED_OFFSET)" not in bridge
+        or "ptr::write_volatile(level.add(LEVEL_TYPE_OFFSET) as *mut c_int, LEVEL_TYPE_LAPS)" not in bridge
+        or "ptr::write_volatile(car.add(CAR_FUEL_OFFSET) as *mut f32, 1.0f32)" not in bridge
+    ):
+        ok = fail("native bridge value writes no longer match the approved retained/user-track patch set") and ok
     if "DLC_PURCHASED_OFFSET: usize = 0x5c" not in bridge or "DLC_ITEM_COUNT: usize = 0x200" not in bridge:
         ok = fail("retained IAP ownership patch no longer targets stock DLC purchase flags") and ok
     if "pthread_create(" not in bridge or "retained_patch_worker" not in bridge:

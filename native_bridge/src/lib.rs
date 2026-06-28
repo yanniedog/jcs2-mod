@@ -1,9 +1,12 @@
 #![no_std]
 
-use core::ffi::{c_char, c_int, c_uint, c_void};
+#[cfg(target_arch = "aarch64")]
+use core::arch::asm;
+use core::ffi::{c_char, c_int, c_long, c_uint, c_void};
+use core::mem;
 use core::panic::PanicInfo;
 use core::ptr;
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
 const RTLD_DEFAULT: *mut c_void = 0usize as *mut c_void;
 const RTLD_NOW: c_int = 2;
@@ -18,17 +21,107 @@ const GHOST_TRANSFORM_POS_FLOAT: usize = 12;
 const REPLAY_HEADER_REPLAY_SIZE_OFFSET: usize = 0x00;
 const REPLAY_HEADER_CHECKPOINT_COUNT_OFFSET: usize = 0x08;
 const REPLAY_HEADER_FINISH_SECONDS_OFFSET: usize = 0x14;
+const USER_TRACK_FLAG_LAPS: u8 = 0x01;
+const USER_TRACK_FLAG_BOOST_REGEN: u8 = 0x02;
+const USER_TRACK_FLAGS_MAGIC: &[u8] = b"YCS2TRACKFLAGS:1:";
+const USER_TRACK_FLAGS_MAX_SCAN: usize = 256;
+const LEVEL_TYPE_OFFSET: usize = 0x50;
+const LEVEL_TYPE_LAPS: c_int = 3;
+const GAME_CURRENT_CAR_OFFSET: usize = 0xb0;
+const CAR_FUEL_OFFSET: usize = 0x128;
+const INGAME_LEVEL_EDITOR_SAVE_HOOK_BYTES: usize = 16;
+const UIFORM_CREATE_CTOR_HOOK_BYTES: usize = 16;
+const WORLD_LOAD_HOOK_BYTES: usize = 16;
+const GAME_LOAD_LEVEL_HOOK_BYTES: usize = 16;
+const GAME_ON_CHECKPOINT_HOOK_BYTES: usize = 16;
+const HOOK_STUB_BYTES: usize = 16;
+const TRAMPOLINE_BYTES: usize = 32;
+const PAGE_SIZE: usize = 4096;
+const UI_CONTROL_BUTTON_SIZE: usize = 0x130;
+const UIFORM_CREATE_CAR_PANEL_OFFSET: usize = 0x2d68;
+const USER_TRACK_LAPS_BUTTON_X: c_int = 0x2cc;
+const USER_TRACK_LAPS_BUTTON_Y: c_int = 0x2a;
+const USER_TRACK_BOOST_BUTTON_X: c_int = 0x2cc;
+const USER_TRACK_BOOST_BUTTON_Y: c_int = 0x7f;
+const USER_TRACK_SWITCH_BUTTON_WIDTH: c_int = 0x1b8;
+const USER_TRACK_SWITCH_BUTTON_HEIGHT: c_int = 0x48;
+const USER_TRACK_CREATE_SCROLL_HEIGHT: c_int = 0x330;
+const UI_LABEL_FLAG_DEFAULT: c_int = 0x101;
 
 type ThreadStart = unsafe extern "C" fn(*mut c_void) -> *mut c_void;
+type InGameLevelEditorSaveFn = unsafe extern "C" fn(*mut c_void, *mut c_char) -> c_int;
+type UiFormCreateCtorFn = unsafe extern "C" fn(*mut c_void);
+type WorldLoadFn = unsafe extern "C" fn(*mut c_void, *const c_char, u8, c_uint) -> c_int;
+type GameLoadLevelFn = unsafe extern "C" fn(*mut c_void, c_uint, c_int) -> c_int;
+type GameOnCheckpointFn = unsafe extern "C" fn(*mut c_void, *const c_void, c_int);
+type LevelsGetUserLevelFn = unsafe extern "C" fn(c_uint) -> *mut u8;
+type LevelsGetUserLevelFileNameFn = unsafe extern "C" fn(c_uint) -> *const c_char;
+type OperatorNewFn = unsafe extern "C" fn(usize) -> *mut c_void;
+type WStringCtorCharFn = unsafe extern "C" fn(*mut WString, *const c_char);
+type WStringDtorFn = unsafe extern "C" fn(*mut WString);
+type UiControlButtonCtorLabelFn = unsafe extern "C" fn(
+    *mut c_void,
+    *const UiRectangle,
+    *const UiControlLabelConstructionProperties,
+    unsafe extern "C" fn(*mut c_void),
+);
+type UiControlButtonSetLabelFn =
+    unsafe extern "C" fn(*mut c_void, *const UiControlLabelConstructionProperties);
+type UiControlAddControlFn = unsafe extern "C" fn(*mut c_void, *mut c_void);
+type UiControlSetRenderBackgroundFn = unsafe extern "C" fn(*mut c_void, *const c_void);
+type UiControlPanelSetScrollExtentsFn =
+    unsafe extern "C" fn(*mut c_void, c_int, c_int, c_int, c_int);
+
+#[repr(C)]
+struct UiPoint {
+    x: c_int,
+    y: c_int,
+}
+
+#[repr(C)]
+struct UiRectangle {
+    x: c_int,
+    y: c_int,
+    width: c_int,
+    height: c_int,
+}
+
+#[repr(C)]
+struct WString {
+    words: [usize; 2],
+}
+
+#[repr(C)]
+struct UiControlLabelConstructionProperties {
+    position: UiPoint,
+    text: WString,
+    scale_x: f32,
+    scale_y: f32,
+    font: *mut c_void,
+    colour: [f32; 4],
+    flags: c_int,
+    padding: c_int,
+}
 
 extern "C" {
     fn signal(signum: c_int, handler: usize) -> usize;
     fn raise(signum: c_int) -> c_int;
     fn open(pathname: *const c_char, flags: c_int, mode: c_int) -> c_int;
+    fn read(fd: c_int, buf: *mut c_void, count: usize) -> isize;
     fn write(fd: c_int, buf: *const c_void, count: usize) -> isize;
+    fn lseek(fd: c_int, offset: c_long, whence: c_int) -> c_long;
     fn close(fd: c_int) -> c_int;
     fn dlopen(filename: *const c_char, flags: c_int) -> *mut c_void;
     fn dlsym(handle: *mut c_void, symbol: *const c_char) -> *mut c_void;
+    fn mmap(
+        address: *mut c_void,
+        length: usize,
+        protection: c_int,
+        flags: c_int,
+        fd: c_int,
+        offset: c_long,
+    ) -> *mut c_void;
+    fn mprotect(address: *mut c_void, length: usize, protection: c_int) -> c_int;
     fn pthread_create(
         thread: *mut usize,
         attributes: *const c_void,
@@ -61,6 +154,24 @@ static mut LAST_GHOST_RETRY_PAUSE_TIME: *mut c_int = ptr::null_mut();
 static mut NUM_GHOST_RETRY_SKIP_TIMES: *mut c_int = ptr::null_mut();
 static mut CHECKPOINT_TRANSFORM: *mut f32 = ptr::null_mut();
 static mut LAST_GHOST_TRANSFORM: *mut f32 = ptr::null_mut();
+static mut LEVELS_GET_USER_LEVEL: *mut c_void = ptr::null_mut();
+static mut LEVELS_GET_USER_LEVEL_FILE_NAME: *mut c_void = ptr::null_mut();
+static mut OPERATOR_NEW: *mut c_void = ptr::null_mut();
+static mut WSTRING_CTOR_CHAR: *mut c_void = ptr::null_mut();
+static mut WSTRING_DTOR: *mut c_void = ptr::null_mut();
+static mut UI_CONTROL_BUTTON_CTOR_LABEL: *mut c_void = ptr::null_mut();
+static mut UI_CONTROL_BUTTON_SET_LABEL: *mut c_void = ptr::null_mut();
+static mut UI_CONTROL_ADD_CONTROL: *mut c_void = ptr::null_mut();
+static mut UI_CONTROL_SET_RENDER_BACKGROUND: *mut c_void = ptr::null_mut();
+static mut UI_CONTROL_PANEL_SET_SCROLL_EXTENTS: *mut c_void = ptr::null_mut();
+static mut UIFORM_CREATE_RENDER_BUTTON_BACKGROUND_STUB: *mut c_void = ptr::null_mut();
+static mut UIFORM_CREATE_CTOR_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut INGAME_LEVEL_EDITOR_SAVE_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut WORLD_LOAD_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut GAME_LOAD_LEVEL_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut GAME_ON_CHECKPOINT_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut USER_TRACK_LAPS_BUTTON: *mut c_void = ptr::null_mut();
+static mut USER_TRACK_BOOST_REGEN_BUTTON: *mut c_void = ptr::null_mut();
 static mut LAST_SPLIT_CHECKPOINT: c_int = 0;
 static mut LAST_SPLIT_CURRENT_MS: i32 = -1;
 static mut FALLBACK_GHOST_CHECKPOINT_COUNT: c_int = 0;
@@ -69,6 +180,10 @@ static mut FALLBACK_GHOST_CHECKPOINT_MS: [i32; CHECKPOINT_LIMIT_USIZE] =
     [-1; CHECKPOINT_LIMIT_USIZE];
 static RETAINED_PATCH_WORKER_STARTED: AtomicBool = AtomicBool::new(false);
 static NATIVE_SIGNAL_HANDLER_STARTED: AtomicBool = AtomicBool::new(false);
+static USER_TRACK_HOOKS_INSTALLED: AtomicBool = AtomicBool::new(false);
+static USER_TRACK_CREATE_FLAGS_ARMED: AtomicBool = AtomicBool::new(false);
+static USER_TRACK_PENDING_FLAGS: AtomicU8 = AtomicU8::new(0);
+static CURRENT_USER_TRACK_FLAGS: AtomicU8 = AtomicU8::new(0);
 
 const SIGABRT: c_int = 6;
 const SIGBUS: c_int = 7;
@@ -76,8 +191,17 @@ const SIGFPE: c_int = 8;
 const SIGILL: c_int = 4;
 const SIGSEGV: c_int = 11;
 const O_WRONLY: c_int = 1;
+const O_RDONLY: c_int = 0;
 const O_CREAT: c_int = 0o100;
 const O_APPEND: c_int = 0o2000;
+const SEEK_SET: c_int = 0;
+const SEEK_END: c_int = 2;
+const PROT_READ: c_int = 1;
+const PROT_WRITE: c_int = 2;
+const PROT_EXEC: c_int = 4;
+const MAP_PRIVATE: c_int = 2;
+const MAP_ANONYMOUS: c_int = 0x20;
+const MAP_FAILED: *mut c_void = usize::MAX as *mut c_void;
 const NATIVE_CRASH_LOG_PUBLIC: &[u8] =
     b"/storage/emulated/0/YCS2CommunityMod/logs/ycs2_mod_native_crash.log\0";
 const NATIVE_CRASH_LOG_APP_EXTERNAL: &[u8] =
@@ -112,6 +236,102 @@ unsafe fn resolve(name: &'static [u8]) -> *mut c_void {
         address = dlsym(RTLD_DEFAULT, name.as_ptr() as *const c_char);
     }
     address
+}
+
+unsafe fn page_start(address: *mut u8) -> *mut c_void {
+    ((address as usize) & !(PAGE_SIZE - 1)) as *mut c_void
+}
+
+#[cfg(target_arch = "aarch64")]
+unsafe fn clear_instruction_cache(address: *mut u8, length: usize) {
+    if address.is_null() || length == 0 {
+        return;
+    }
+
+    let mut ctr_el0: usize;
+    asm!("mrs {0}, ctr_el0", out(reg) ctr_el0, options(nomem, nostack, preserves_flags));
+    let cache_line_size = 1usize << (((ctr_el0 >> 16) & 0x0f) + 2);
+    let start = (address as usize) & !(cache_line_size - 1);
+    let end = (address as usize).saturating_add(length);
+
+    let mut current = start;
+    while current < end {
+        asm!("dc cvau, {0}", in(reg) current, options(nostack, preserves_flags));
+        current = current.saturating_add(cache_line_size);
+    }
+    asm!("dsb ish", options(nostack, preserves_flags));
+
+    current = start;
+    while current < end {
+        asm!("ic ivau, {0}", in(reg) current, options(nostack, preserves_flags));
+        current = current.saturating_add(cache_line_size);
+    }
+    asm!("dsb ish", options(nostack, preserves_flags));
+    asm!("isb", options(nostack, preserves_flags));
+}
+
+#[cfg(not(target_arch = "aarch64"))]
+unsafe fn clear_instruction_cache(_address: *mut u8, _length: usize) {
+    core::sync::atomic::compiler_fence(Ordering::SeqCst);
+}
+
+unsafe fn write_u32(address: *mut u8, value: u32) {
+    ptr::write_unaligned(address as *mut u32, value);
+}
+
+unsafe fn write_u64(address: *mut u8, value: u64) {
+    ptr::write_unaligned(address as *mut u64, value);
+}
+
+unsafe fn write_absolute_branch_stub(address: *mut u8, destination: *const c_void) {
+    // ldr x16, #8; br x16; .quad destination
+    write_u32(address, 0x5800_0050);
+    write_u32(address.add(4), 0xd61f_0200);
+    write_u64(address.add(8), destination as u64);
+}
+
+unsafe fn install_inline_hook(
+    target: *mut c_void,
+    hook: *const c_void,
+    patch_len: usize,
+) -> *mut c_void {
+    if target.is_null() || hook.is_null() || patch_len < HOOK_STUB_BYTES {
+        return ptr::null_mut();
+    }
+
+    let trampoline = mmap(
+        ptr::null_mut(),
+        TRAMPOLINE_BYTES,
+        PROT_READ | PROT_WRITE | PROT_EXEC,
+        MAP_PRIVATE | MAP_ANONYMOUS,
+        -1,
+        0,
+    ) as *mut u8;
+    if trampoline as *mut c_void == MAP_FAILED || trampoline.is_null() {
+        return ptr::null_mut();
+    }
+
+    let target_u8 = target as *mut u8;
+    ptr::copy_nonoverlapping(target_u8, trampoline, patch_len);
+    write_absolute_branch_stub(
+        trampoline.add(patch_len),
+        target_u8.add(patch_len) as *const c_void,
+    );
+    clear_instruction_cache(trampoline, patch_len + HOOK_STUB_BYTES);
+
+    let page = page_start(target_u8);
+    if mprotect(page, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC) != 0 {
+        return ptr::null_mut();
+    }
+    write_absolute_branch_stub(target_u8, hook);
+    let mut fill = HOOK_STUB_BYTES;
+    while fill < patch_len {
+        write_u32(target_u8.add(fill), 0xd503_201f);
+        fill += 4;
+    }
+    clear_instruction_cache(target_u8, patch_len);
+    let _ = mprotect(page, PAGE_SIZE, PROT_READ | PROT_EXEC);
+    trampoline as *mut c_void
 }
 
 unsafe fn write_signal_log(fd: c_int, bytes: &'static [u8]) {
@@ -239,6 +459,471 @@ unsafe fn install_retained_patch_worker() -> bool {
     }
     pthread_detach(thread);
     true
+}
+
+unsafe fn ensure_user_track_symbols() {
+    if LEVELS_GET_USER_LEVEL.is_null() {
+        LEVELS_GET_USER_LEVEL = resolve(b"_Z19Levels_GetUserLevelj\0");
+    }
+    if LEVELS_GET_USER_LEVEL_FILE_NAME.is_null() {
+        LEVELS_GET_USER_LEVEL_FILE_NAME = resolve(b"_Z27Levels_GetUserLevelFileNamej\0");
+    }
+    if OPERATOR_NEW.is_null() {
+        OPERATOR_NEW = resolve(b"_Znwm\0");
+    }
+    if WSTRING_CTOR_CHAR.is_null() {
+        WSTRING_CTOR_CHAR = resolve(b"_ZN7WStringC1EPKc\0");
+    }
+    if WSTRING_DTOR.is_null() {
+        WSTRING_DTOR = resolve(b"_ZN7WStringD1Ev\0");
+    }
+    if UI_CONTROL_BUTTON_CTOR_LABEL.is_null() {
+        UI_CONTROL_BUTTON_CTOR_LABEL =
+            resolve(b"_ZN15UiControlButtonC1ERK11UiRectangleRKN14UiControlLabel22ConstructionPropertiesEPFvPS_E\0");
+    }
+    if UI_CONTROL_BUTTON_SET_LABEL.is_null() {
+        UI_CONTROL_BUTTON_SET_LABEL = resolve(
+            b"_ZN15UiControlButton8SetLabelERKN14UiControlLabel22ConstructionPropertiesE\0",
+        );
+    }
+    if UI_CONTROL_ADD_CONTROL.is_null() {
+        UI_CONTROL_ADD_CONTROL = resolve(b"_ZN9UiControl10AddControlERS_\0");
+    }
+    if UI_CONTROL_SET_RENDER_BACKGROUND.is_null() {
+        UI_CONTROL_SET_RENDER_BACKGROUND =
+            resolve(b"_ZN9UiControl27SetRenderBackgroundFunctionEPFvPS_RK11UiRectangleE\0");
+    }
+    if UI_CONTROL_PANEL_SET_SCROLL_EXTENTS.is_null() {
+        UI_CONTROL_PANEL_SET_SCROLL_EXTENTS =
+            resolve(b"_ZN14UiControlPanel16SetScrollExtentsEiiii\0");
+    }
+    if UIFORM_CREATE_RENDER_BUTTON_BACKGROUND_STUB.is_null() {
+        UIFORM_CREATE_RENDER_BUTTON_BACKGROUND_STUB = resolve(
+            b"_ZN12UiFormCreate28OnRenderButtonBackgroundStubEP9UiControlRK11UiRectangle\0",
+        );
+    }
+}
+
+unsafe fn create_form_ui_symbols_ready() -> bool {
+    ensure_user_track_symbols();
+    !(OPERATOR_NEW.is_null()
+        || WSTRING_CTOR_CHAR.is_null()
+        || WSTRING_DTOR.is_null()
+        || UI_CONTROL_BUTTON_CTOR_LABEL.is_null()
+        || UI_CONTROL_BUTTON_SET_LABEL.is_null()
+        || UI_CONTROL_ADD_CONTROL.is_null()
+        || UI_CONTROL_SET_RENDER_BACKGROUND.is_null()
+        || UI_CONTROL_PANEL_SET_SCROLL_EXTENTS.is_null()
+        || UIFORM_CREATE_RENDER_BUTTON_BACKGROUND_STUB.is_null())
+}
+
+unsafe fn label_props(text: *const c_char) -> UiControlLabelConstructionProperties {
+    let mut props = UiControlLabelConstructionProperties {
+        position: UiPoint { x: 0x14, y: 0x26 },
+        text: WString { words: [0; 2] },
+        scale_x: 0.58,
+        scale_y: 0.58,
+        font: ptr::null_mut(),
+        colour: [1.0, 1.0, 1.0, 1.0],
+        flags: UI_LABEL_FLAG_DEFAULT,
+        padding: 0,
+    };
+    let ctor: WStringCtorCharFn = mem::transmute(WSTRING_CTOR_CHAR);
+    ctor(&mut props.text, text);
+    props
+}
+
+unsafe fn destroy_label_props(props: &mut UiControlLabelConstructionProperties) {
+    let dtor: WStringDtorFn = mem::transmute(WSTRING_DTOR);
+    dtor(&mut props.text);
+}
+
+unsafe fn label_for_switch(flag: u8, on: *const c_char, off: *const c_char) -> *const c_char {
+    if (USER_TRACK_PENDING_FLAGS.load(Ordering::Acquire) & flag) != 0 {
+        on
+    } else {
+        off
+    }
+}
+
+unsafe fn set_switch_button_label(button: *mut c_void, text: *const c_char) {
+    if button.is_null() || UI_CONTROL_BUTTON_SET_LABEL.is_null() || WSTRING_CTOR_CHAR.is_null() {
+        return;
+    }
+    let mut props = label_props(text);
+    let set_label: UiControlButtonSetLabelFn = mem::transmute(UI_CONTROL_BUTTON_SET_LABEL);
+    set_label(button, &props);
+    destroy_label_props(&mut props);
+}
+
+unsafe fn refresh_user_track_create_switch_labels() {
+    set_switch_button_label(
+        USER_TRACK_LAPS_BUTTON,
+        label_for_switch(
+            USER_TRACK_FLAG_LAPS,
+            b"LAPS: ON\0".as_ptr() as *const c_char,
+            b"LAPS: OFF\0".as_ptr() as *const c_char,
+        ),
+    );
+    set_switch_button_label(
+        USER_TRACK_BOOST_REGEN_BUTTON,
+        label_for_switch(
+            USER_TRACK_FLAG_BOOST_REGEN,
+            b"BOOST REGEN: ON\0".as_ptr() as *const c_char,
+            b"BOOST REGEN: OFF\0".as_ptr() as *const c_char,
+        ),
+    );
+}
+
+unsafe fn toggle_user_track_create_flag(flag: u8) {
+    let current = USER_TRACK_PENDING_FLAGS.load(Ordering::Acquire);
+    USER_TRACK_PENDING_FLAGS.store(current ^ flag, Ordering::Release);
+    USER_TRACK_CREATE_FLAGS_ARMED.store(true, Ordering::Release);
+    refresh_user_track_create_switch_labels();
+}
+
+unsafe extern "C" fn on_laps_create_switch_clicked(_button: *mut c_void) {
+    toggle_user_track_create_flag(USER_TRACK_FLAG_LAPS);
+}
+
+unsafe extern "C" fn on_boost_regen_create_switch_clicked(_button: *mut c_void) {
+    toggle_user_track_create_flag(USER_TRACK_FLAG_BOOST_REGEN);
+}
+
+unsafe fn add_create_switch_button(
+    panel: *mut c_void,
+    x: c_int,
+    y: c_int,
+    text: *const c_char,
+    callback: unsafe extern "C" fn(*mut c_void),
+) -> *mut c_void {
+    if panel.is_null() || !create_form_ui_symbols_ready() {
+        return ptr::null_mut();
+    }
+
+    let new_object: OperatorNewFn = mem::transmute(OPERATOR_NEW);
+    let button = new_object(UI_CONTROL_BUTTON_SIZE);
+    if button.is_null() {
+        return ptr::null_mut();
+    }
+
+    let rect = UiRectangle {
+        x,
+        y,
+        width: USER_TRACK_SWITCH_BUTTON_WIDTH,
+        height: USER_TRACK_SWITCH_BUTTON_HEIGHT,
+    };
+    let mut props = label_props(text);
+    let ctor: UiControlButtonCtorLabelFn = mem::transmute(UI_CONTROL_BUTTON_CTOR_LABEL);
+    ctor(button, &rect, &props, callback);
+    destroy_label_props(&mut props);
+
+    let set_background: UiControlSetRenderBackgroundFn =
+        mem::transmute(UI_CONTROL_SET_RENDER_BACKGROUND);
+    set_background(button, UIFORM_CREATE_RENDER_BUTTON_BACKGROUND_STUB);
+
+    let add_control: UiControlAddControlFn = mem::transmute(UI_CONTROL_ADD_CONTROL);
+    add_control(panel, button);
+    button
+}
+
+unsafe fn add_user_track_create_switches(form: *mut c_void) {
+    if form.is_null() {
+        return;
+    }
+    begin_user_track_create_flags();
+    let panel = (form as *mut u8).add(UIFORM_CREATE_CAR_PANEL_OFFSET) as *mut c_void;
+    USER_TRACK_LAPS_BUTTON = add_create_switch_button(
+        panel,
+        USER_TRACK_LAPS_BUTTON_X,
+        USER_TRACK_LAPS_BUTTON_Y,
+        b"LAPS: OFF\0".as_ptr() as *const c_char,
+        on_laps_create_switch_clicked,
+    );
+    USER_TRACK_BOOST_REGEN_BUTTON = add_create_switch_button(
+        panel,
+        USER_TRACK_BOOST_BUTTON_X,
+        USER_TRACK_BOOST_BUTTON_Y,
+        b"BOOST REGEN: OFF\0".as_ptr() as *const c_char,
+        on_boost_regen_create_switch_clicked,
+    );
+    if !UI_CONTROL_PANEL_SET_SCROLL_EXTENTS.is_null() {
+        let set_scroll_extents: UiControlPanelSetScrollExtentsFn =
+            mem::transmute(UI_CONTROL_PANEL_SET_SCROLL_EXTENTS);
+        set_scroll_extents(panel, 0, 0, 0, USER_TRACK_CREATE_SCROLL_HEIGHT);
+    }
+}
+
+unsafe fn begin_user_track_create_flags() {
+    USER_TRACK_PENDING_FLAGS.store(0, Ordering::Release);
+    USER_TRACK_CREATE_FLAGS_ARMED.store(true, Ordering::Release);
+}
+
+unsafe fn cancel_user_track_create_flags() {
+    USER_TRACK_PENDING_FLAGS.store(0, Ordering::Release);
+    USER_TRACK_CREATE_FLAGS_ARMED.store(false, Ordering::Release);
+}
+
+unsafe fn marker_flags_byte(flags: u8) -> u8 {
+    b'0' + (flags & (USER_TRACK_FLAG_LAPS | USER_TRACK_FLAG_BOOST_REGEN))
+}
+
+unsafe fn append_user_track_flags_marker(path: *const c_char, flags: u8) -> bool {
+    if path.is_null() || flags == 0 {
+        return false;
+    }
+    let fd = open(path, O_WRONLY | O_APPEND, 0o600);
+    if fd < 0 {
+        return false;
+    }
+    let prefix = b"\n";
+    let suffix = b"\n";
+    let value = [marker_flags_byte(flags)];
+    let mut ok = write(fd, prefix.as_ptr() as *const c_void, prefix.len()) == prefix.len() as isize;
+    ok = write(
+        fd,
+        USER_TRACK_FLAGS_MAGIC.as_ptr() as *const c_void,
+        USER_TRACK_FLAGS_MAGIC.len(),
+    ) == USER_TRACK_FLAGS_MAGIC.len() as isize
+        && ok;
+    ok = write(fd, value.as_ptr() as *const c_void, value.len()) == value.len() as isize && ok;
+    ok = write(fd, suffix.as_ptr() as *const c_void, suffix.len()) == suffix.len() as isize && ok;
+    let _ = close(fd);
+    ok
+}
+
+unsafe fn parse_user_track_flags(buffer: &[u8], len: usize) -> u8 {
+    if len <= USER_TRACK_FLAGS_MAGIC.len() {
+        return 0;
+    }
+    let mut index = len - USER_TRACK_FLAGS_MAGIC.len();
+    loop {
+        let mut matched = true;
+        let mut marker_index = 0usize;
+        while marker_index < USER_TRACK_FLAGS_MAGIC.len() {
+            if buffer[index + marker_index] != USER_TRACK_FLAGS_MAGIC[marker_index] {
+                matched = false;
+                break;
+            }
+            marker_index += 1;
+        }
+        if matched {
+            let value_index = index + USER_TRACK_FLAGS_MAGIC.len();
+            if value_index < len {
+                let value = buffer[value_index];
+                if value >= b'0' && value <= b'3' {
+                    return value - b'0';
+                }
+            }
+        }
+        if index == 0 {
+            break;
+        }
+        index -= 1;
+    }
+    0
+}
+
+unsafe fn read_user_track_flags_marker(path: *const c_char) -> u8 {
+    if path.is_null() {
+        return 0;
+    }
+    let fd = open(path, O_RDONLY, 0);
+    if fd < 0 {
+        return 0;
+    }
+    let end = lseek(fd, 0, SEEK_END);
+    if end <= 0 {
+        let _ = close(fd);
+        return 0;
+    }
+    let read_len = if end as usize > USER_TRACK_FLAGS_MAX_SCAN {
+        USER_TRACK_FLAGS_MAX_SCAN
+    } else {
+        end as usize
+    };
+    let start = end - read_len as c_long;
+    if lseek(fd, start, SEEK_SET) < 0 {
+        let _ = close(fd);
+        return 0;
+    }
+    let mut buffer = [0u8; USER_TRACK_FLAGS_MAX_SCAN];
+    let count = read(fd, buffer.as_mut_ptr() as *mut c_void, read_len);
+    let _ = close(fd);
+    if count <= 0 {
+        return 0;
+    }
+    parse_user_track_flags(&buffer, count as usize)
+}
+
+unsafe fn level_for_id(level_id: c_uint) -> *mut u8 {
+    ensure_user_track_symbols();
+    if LEVELS_GET_USER_LEVEL.is_null() {
+        return ptr::null_mut();
+    }
+    let get_level: LevelsGetUserLevelFn = mem::transmute(LEVELS_GET_USER_LEVEL);
+    get_level(level_id)
+}
+
+unsafe fn file_name_for_level_id(level_id: c_uint) -> *const c_char {
+    ensure_user_track_symbols();
+    if LEVELS_GET_USER_LEVEL_FILE_NAME.is_null() {
+        return ptr::null();
+    }
+    let get_name: LevelsGetUserLevelFileNameFn = mem::transmute(LEVELS_GET_USER_LEVEL_FILE_NAME);
+    get_name(level_id)
+}
+
+unsafe fn flags_for_level_id(level_id: c_uint) -> u8 {
+    if (level_id & 0x8000_0000) == 0 {
+        return 0;
+    }
+    read_user_track_flags_marker(file_name_for_level_id(level_id))
+}
+
+unsafe fn apply_lap_type_for_level(level_id: c_uint, flags: u8) {
+    if (flags & USER_TRACK_FLAG_LAPS) == 0 {
+        return;
+    }
+    let level = level_for_id(level_id);
+    if level.is_null() {
+        return;
+    }
+    ptr::write_volatile(level.add(LEVEL_TYPE_OFFSET) as *mut c_int, LEVEL_TYPE_LAPS);
+}
+
+unsafe fn refill_current_car_boost(game: *mut c_void) {
+    if game.is_null()
+        || (CURRENT_USER_TRACK_FLAGS.load(Ordering::Acquire) & USER_TRACK_FLAG_BOOST_REGEN) == 0
+    {
+        return;
+    }
+    let car = ptr::read_volatile((game as *mut u8).add(GAME_CURRENT_CAR_OFFSET) as *mut *mut u8);
+    if car.is_null() {
+        return;
+    }
+    ptr::write_volatile(car.add(CAR_FUEL_OFFSET) as *mut f32, 1.0f32);
+}
+
+unsafe extern "C" fn hooked_ingame_level_editor_save(
+    editor: *mut c_void,
+    path: *mut c_char,
+) -> c_int {
+    let original: InGameLevelEditorSaveFn = mem::transmute(INGAME_LEVEL_EDITOR_SAVE_TRAMPOLINE);
+    let result = original(editor, path);
+    if USER_TRACK_CREATE_FLAGS_ARMED.load(Ordering::Acquire) {
+        let flags = USER_TRACK_PENDING_FLAGS.load(Ordering::Acquire);
+        if flags != 0 {
+            append_user_track_flags_marker(path, flags);
+        }
+        cancel_user_track_create_flags();
+    }
+    result
+}
+
+unsafe extern "C" fn hooked_uiform_create_ctor(form: *mut c_void) {
+    let original: UiFormCreateCtorFn = mem::transmute(UIFORM_CREATE_CTOR_TRAMPOLINE);
+    original(form);
+    add_user_track_create_switches(form);
+}
+
+unsafe extern "C" fn hooked_world_load(
+    world: *mut c_void,
+    path: *const c_char,
+    flag: u8,
+    value: c_uint,
+) -> c_int {
+    let flags = read_user_track_flags_marker(path);
+    CURRENT_USER_TRACK_FLAGS.store(flags, Ordering::Release);
+    let original: WorldLoadFn = mem::transmute(WORLD_LOAD_TRAMPOLINE);
+    let result = original(world, path, flag, value);
+    CURRENT_USER_TRACK_FLAGS.store(flags, Ordering::Release);
+    result
+}
+
+unsafe extern "C" fn hooked_game_load_level(
+    game: *mut c_void,
+    level_id: c_uint,
+    difficulty: c_int,
+) -> c_int {
+    let flags = flags_for_level_id(level_id);
+    CURRENT_USER_TRACK_FLAGS.store(flags, Ordering::Release);
+    apply_lap_type_for_level(level_id, flags);
+    let original: GameLoadLevelFn = mem::transmute(GAME_LOAD_LEVEL_TRAMPOLINE);
+    let result = original(game, level_id, difficulty);
+    apply_lap_type_for_level(level_id, CURRENT_USER_TRACK_FLAGS.load(Ordering::Acquire));
+    result
+}
+
+unsafe extern "C" fn hooked_game_on_checkpoint(
+    game: *mut c_void,
+    position: *const c_void,
+    checkpoint: c_int,
+) {
+    let original: GameOnCheckpointFn = mem::transmute(GAME_ON_CHECKPOINT_TRAMPOLINE);
+    original(game, position, checkpoint);
+    refill_current_car_boost(game);
+}
+
+unsafe fn install_user_track_hooks() -> bool {
+    if USER_TRACK_HOOKS_INSTALLED.load(Ordering::Acquire) {
+        return true;
+    }
+    if USER_TRACK_HOOKS_INSTALLED.swap(true, Ordering::AcqRel) {
+        return true;
+    }
+
+    let save = resolve(b"_ZN17InGameLevelEditor4SaveEPc\0");
+    let create_ctor = resolve(b"_ZN12UiFormCreateC1Ev\0");
+    let world_load = resolve(b"_ZN5World4LoadEPKcbj\0");
+    let game_load_level = resolve(b"_ZN4Game9LoadLevelEjNS_10DifficultyE\0");
+    let game_on_checkpoint = resolve(b"_ZN4Game12OnCheckPointERKN2TA4Vec3Ei\0");
+    if save.is_null()
+        || create_ctor.is_null()
+        || world_load.is_null()
+        || game_load_level.is_null()
+        || game_on_checkpoint.is_null()
+        || !create_form_ui_symbols_ready()
+    {
+        USER_TRACK_HOOKS_INSTALLED.store(false, Ordering::Release);
+        return false;
+    }
+
+    INGAME_LEVEL_EDITOR_SAVE_TRAMPOLINE = install_inline_hook(
+        save,
+        hooked_ingame_level_editor_save as *const c_void,
+        INGAME_LEVEL_EDITOR_SAVE_HOOK_BYTES,
+    );
+    UIFORM_CREATE_CTOR_TRAMPOLINE = install_inline_hook(
+        create_ctor,
+        hooked_uiform_create_ctor as *const c_void,
+        UIFORM_CREATE_CTOR_HOOK_BYTES,
+    );
+    WORLD_LOAD_TRAMPOLINE = install_inline_hook(
+        world_load,
+        hooked_world_load as *const c_void,
+        WORLD_LOAD_HOOK_BYTES,
+    );
+    GAME_LOAD_LEVEL_TRAMPOLINE = install_inline_hook(
+        game_load_level,
+        hooked_game_load_level as *const c_void,
+        GAME_LOAD_LEVEL_HOOK_BYTES,
+    );
+    GAME_ON_CHECKPOINT_TRAMPOLINE = install_inline_hook(
+        game_on_checkpoint,
+        hooked_game_on_checkpoint as *const c_void,
+        GAME_ON_CHECKPOINT_HOOK_BYTES,
+    );
+
+    let ok = !(INGAME_LEVEL_EDITOR_SAVE_TRAMPOLINE.is_null()
+        || UIFORM_CREATE_CTOR_TRAMPOLINE.is_null()
+        || WORLD_LOAD_TRAMPOLINE.is_null()
+        || GAME_LOAD_LEVEL_TRAMPOLINE.is_null()
+        || GAME_ON_CHECKPOINT_TRAMPOLINE.is_null());
+    if !ok {
+        USER_TRACK_HOOKS_INSTALLED.store(false, Ordering::Release);
+    }
+    ok
 }
 
 unsafe fn ensure_split_symbols() -> bool {
@@ -775,6 +1460,14 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_applyUnlimite
     let iap = force_iap_ownership();
     let worker = install_retained_patch_worker();
     (checkpoints && iap && worker) as u8
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_installUserTrackFeatureHooks(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> u8 {
+    install_user_track_hooks() as u8
 }
 
 #[no_mangle]

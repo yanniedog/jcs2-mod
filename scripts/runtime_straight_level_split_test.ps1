@@ -143,6 +143,31 @@ function DismissPermissionDialogIfPresent {
     return $false
 }
 
+function Grant-StoragePermissions {
+    foreach ($permission in @(
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+    )) {
+        try { & $Adb shell pm grant $Package $permission 1>$null 2>$null } catch {}
+    }
+    foreach ($operation in @(
+        "LEGACY_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "READ_MEDIA_AUDIO",
+        "READ_MEDIA_VISUAL_USER_SELECTED",
+        "ACCESS_MEDIA_LOCATION",
+        "MANAGE_EXTERNAL_STORAGE"
+    )) {
+        try { & $Adb shell appops set $Package $operation allow 1>$null 2>$null } catch {}
+    }
+}
+
 function DismissUpdatePromptIfPresent {
     $xml = Dump-WindowXml
     if ($xml -like "*Update available*" -and $xml -like "*Later*") {
@@ -163,6 +188,10 @@ function Tap-WindowText {
 function Set-LandscapeNeutralSensors {
     # Positive X gravity is the verified straight/neutral posture for the
     # emulator JCS2 runtime: acceleration = 9.80665:0:0.
+    $rotation = if ($LandscapeSide -eq "LandscapeLeft") { 1 } else { 3 }
+    Invoke-Adb shell wm size 480x320
+    Invoke-Adb shell settings put system accelerometer_rotation 0
+    Invoke-Adb shell settings put system user_rotation $rotation
     Invoke-Adb emu sensor set acceleration $StraightAcceleration
     Invoke-Adb emu sensor set gyroscope "0:0:0"
     Invoke-Adb emu sensor set orientation $StraightOrientation
@@ -398,9 +427,11 @@ function Assert-NoCrashEvidence {
 
 Write-Host "Installing $ApkPath"
 Invoke-Adb install -r $ApkPath | Out-Host
+Grant-StoragePermissions
 if ($ClearAppDataBeforeRun) {
     Write-Host "Clearing app data for deterministic regular-level startup"
     Invoke-Adb shell pm clear $Package | Out-Host
+    Grant-StoragePermissions
 }
 Invoke-Adb shell am force-stop $Package
 Invoke-Adb shell am force-stop com.android.chrome

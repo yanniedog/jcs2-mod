@@ -47,6 +47,13 @@ public final class RequiredPatches {
             Log.e(TAG, "Could not apply unlimited checkpoints", error);
             ModDebugLog.log("Could not apply unlimited checkpoints", error);
         }
+        try {
+            boolean installed = installUserTrackFeatureHooks();
+            ModDebugLog.log("user track creation feature hooks installed=" + installed);
+        } catch (Throwable error) {
+            Log.e(TAG, "Could not install user track feature hooks", error);
+            ModDebugLog.log("Could not install user track feature hooks", error);
+        }
         ModDebugLog.log("replay visual marker disabled; replay data is not modified");
         if (ModMenu.checkpointSplitsEnabled(activity)) {
             ModDebugLog.log("checkpoint split HUD enabled");
@@ -64,6 +71,7 @@ public final class RequiredPatches {
 
     private static native boolean installNativeCrashLogger();
     private static native boolean applyUnlimitedCheckpoints();
+    private static native boolean installUserTrackFeatureHooks();
     static native long readLatestCheckpointSplit();
     static native int readLatestCheckpointCurrentMillis();
     static native int readLatestCheckpointGhostMillis();
