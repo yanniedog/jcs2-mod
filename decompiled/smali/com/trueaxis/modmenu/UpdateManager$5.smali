@@ -24,7 +24,7 @@
 .method constructor <init>(JLandroid/app/Activity;)V
     .registers 4
 
-    .line 242
+    .line 249
     iput-wide p1, p0, Lcom/trueaxis/modmenu/UpdateManager$5;->val$id:J
 
     iput-object p3, p0, Lcom/trueaxis/modmenu/UpdateManager$5;->val$activity:Landroid/app/Activity;
@@ -39,14 +39,14 @@
 .method public onReceive(Landroid/content/Context;Landroid/content/Intent;)V
     .registers 6
 
-    .line 244
+    .line 251
     const-wide/16 v0, -0x1
 
     if-nez p2, :cond_5
 
     goto :goto_b
 
-    .line 245
+    .line 252
     :cond_5
     const-string p1, "extra_download_id"
 
@@ -54,7 +54,7 @@
 
     move-result-wide v0
 
-    .line 246
+    .line 253
     :goto_b
     iget-wide p1, p0, Lcom/trueaxis/modmenu/UpdateManager$5;->val$id:J
 
@@ -64,7 +64,7 @@
 
     return-void
 
-    .line 248
+    .line 255
     :cond_12
     :try_start_12
     iget-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$5;->val$activity:Landroid/app/Activity;
@@ -73,24 +73,24 @@
     :try_end_17
     .catchall {:try_start_12 .. :try_end_17} :catchall_18
 
-    .line 250
+    .line 257
     goto :goto_19
 
-    .line 249
+    .line 256
     :catchall_18
     move-exception p1
 
-    .line 251
+    .line 258
     :goto_19
     iget-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$5;->val$activity:Landroid/app/Activity;
 
     iget-wide v0, p0, Lcom/trueaxis/modmenu/UpdateManager$5;->val$id:J
 
-    const/4 p2, 0x1
+    const/4 p2, 0x0
 
     # invokes: Lcom/trueaxis/modmenu/UpdateManager;->installDownloadedApk(Landroid/app/Activity;JZ)Z
     invoke-static {p1, v0, v1, p2}, Lcom/trueaxis/modmenu/UpdateManager;->access$1000(Landroid/app/Activity;JZ)Z
 
-    .line 252
+    .line 259
     return-void
 .end method

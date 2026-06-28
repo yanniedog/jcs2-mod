@@ -185,7 +185,6 @@ def check_sources(skip_local_assets=False):
         "_ZN15UiControlButton8SetLabelERKN14UiControlLabel22ConstructionPropertiesE",
         "_ZN9UiControl10AddControlERS_",
         "_ZN9UiControl27SetRenderBackgroundFunctionEPFvPS_RK11UiRectangleE",
-        "_ZN14UiControlPanel16SetScrollExtentsEiiii",
         "_ZN12UiFormCreate28OnRenderButtonBackgroundStubEP9UiControlRK11UiRectangle",
         "_ZN17InGameLevelEditor4SaveEPc",
         "_ZN12UiFormCreateC1Ev",
@@ -300,6 +299,14 @@ def check_sources(skip_local_assets=False):
     update_manager = (ROOT / "modmenu_src/com/trueaxis/modmenu/UpdateManager.java").read_text(
         encoding="utf-8"
     )
+    if (
+        "showDownloadProgress(activity, id)" not in update_manager
+        or "new ProgressBar(" not in update_manager
+        or "readDownloadProgress(manager, id)" not in update_manager
+        or "Downloading update" not in update_manager
+        or "Cancel download" not in update_manager
+    ):
+        ok = fail("in-app updater no longer shows a download progress dialog") and ok
     if "checkpointCount > lastCheckpointCount + 1" not in split_hud:
         ok = fail("checkpoint split HUD no longer suppresses replay-load checkpoint jumps") and ok
     if '"split checkpoint jump accepted from="' not in split_hud:
@@ -359,7 +366,8 @@ def check_sources(skip_local_assets=False):
         "_ZN12UiFormCreateC1Ev" not in bridge
         or "_ZN15UiControlButtonC1ERK11UiRectangleRKN14UiControlLabel22ConstructionPropertiesEPFvPS_E" not in bridge
         or "_ZN12UiFormCreate28OnRenderButtonBackgroundStubEP9UiControlRK11UiRectangle" not in bridge
-        or "UIFORM_CREATE_CAR_PANEL_OFFSET" not in bridge
+        or "UIFORM_CREATE_CAR_PANEL_X" not in bridge
+        or "A later stock sibling covers the car panel in hit-testing" not in bridge
     ):
         ok = fail("user-track switches are no longer built into the native flat Create menu") and ok
     required_patches_for_user_tracks = (

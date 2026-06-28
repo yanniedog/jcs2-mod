@@ -15,7 +15,12 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelFileDescriptor;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONObject;
@@ -51,7 +56,9 @@ public final class UpdateManager {
             "https://github.com/yanniedog/jcs2-mod/releases/latest/download/jcs2-update.json";
     private static final String APK_MIME = "application/vnd.android.package-archive";
     private static final long CHECK_INTERVAL_MS = 12L * 60L * 60L * 1000L;
+    private static final long PROGRESS_POLL_MS = 500L;
     private static final int MAX_MANIFEST_CHARS = 65536;
+    private static final int PROGRESS_MAX = 1000;
     private static boolean checking;
 
     private UpdateManager() {
@@ -230,8 +237,8 @@ public final class UpdateManager {
                     .apply();
             ModDebugLog.module("update", "download started id=" + id
                     + " version=" + info.versionName + " url=" + info.apkUrl);
-            toast(activity, "Downloading update. The installer will open when it finishes.");
             registerDownloadReceiver(activity, id);
+            showDownloadProgress(activity, id);
         } catch (Throwable error) {
             ModDebugLog.module("update", "download start failed", error);
             toast(activity, "Could not start update download: " + readable(error));
@@ -248,7 +255,7 @@ public final class UpdateManager {
                     activity.unregisterReceiver(this);
                 } catch (Throwable ignored) {
                 }
-                installDownloadedApk(activity, id, true);
+                installDownloadedApk(activity, id, false);
             }
         };
         try {
@@ -285,7 +292,8 @@ public final class UpdateManager {
             if (status == DownloadManager.STATUS_PENDING
                     || status == DownloadManager.STATUS_PAUSED
                     || status == DownloadManager.STATUS_RUNNING) {
-                if (interactive) toast(activity, "Update download is still in progress.");
+                registerDownloadReceiver(activity, id);
+                if (interactive) showDownloadProgress(activity, id);
                 return true;
             }
             if (status != DownloadManager.STATUS_SUCCESSFUL) {
@@ -310,7 +318,7 @@ public final class UpdateManager {
                 return true;
             }
             long promptedId = prefs(activity).getLong(K_INSTALL_PROMPTED_DOWNLOAD_ID, -1L);
-            if (!interactive && promptedId == id) {
+            if (promptedId == id) {
                 ModDebugLog.module("update", "pending installer already opened id=" + id);
                 return true;
             }
@@ -330,6 +338,149 @@ public final class UpdateManager {
             return false;
         } finally {
             if (cursor != null) cursor.close();
+        }
+    }
+
+    private static void showDownloadProgress(final Activity activity, final long id) {
+        final DownloadManager manager =
+                (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
+        if (manager == null) {
+            toast(activity, "Download manager is unavailable.");
+            return;
+        }
+
+        final TextView status = new TextView(activity);
+        status.setText("Starting download...");
+
+        final ProgressBar progress = new ProgressBar(
+                activity, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setMax(PROGRESS_MAX);
+        progress.setIndeterminate(true);
+
+        LinearLayout layout = new LinearLayout(activity);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        int padding = dp(activity, 20);
+        layout.setPadding(padding, padding, padding, 0);
+        layout.addView(status);
+        layout.addView(progress);
+
+        final Handler handler = new Handler(Looper.getMainLooper());
+        final boolean[] active = new boolean[]{true};
+        final Runnable[] poller = new Runnable[1];
+
+        final AlertDialog dialog = new AlertDialog.Builder(activity)
+                .setTitle("Downloading update")
+                .setView(layout)
+                .setNegativeButton("Hide", null)
+                .setNeutralButton("Cancel download", null)
+                .create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            public void onShow(DialogInterface unused) {
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+                        .setOnClickListener(new android.view.View.OnClickListener() {
+                            public void onClick(android.view.View view) {
+                                active[0] = false;
+                                handler.removeCallbacks(poller[0]);
+                                manager.remove(id);
+                                clearDownload(activity);
+                                dialog.dismiss();
+                                toast(activity, "Update download cancelled.");
+                                ModDebugLog.module("update", "download cancelled id=" + id);
+                            }
+                        });
+            }
+        });
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            public void onDismiss(DialogInterface unused) {
+                active[0] = false;
+                handler.removeCallbacks(poller[0]);
+            }
+        });
+
+        poller[0] = new Runnable() {
+            public void run() {
+                if (!active[0] || activity.isFinishing()) return;
+                DownloadProgress state = readDownloadProgress(manager, id);
+                if (!state.exists) {
+                    active[0] = false;
+                    clearDownload(activity);
+                    dialog.dismiss();
+                    toast(activity, "Update download was not found.");
+                    return;
+                }
+
+                updateProgressViews(status, progress, state);
+                if (state.status == DownloadManager.STATUS_SUCCESSFUL) {
+                    active[0] = false;
+                    handler.removeCallbacks(this);
+                    status.setText("Download complete. Opening installer...");
+                    dialog.dismiss();
+                    installDownloadedApk(activity, id, true);
+                } else if (state.status == DownloadManager.STATUS_FAILED) {
+                    active[0] = false;
+                    clearDownload(activity);
+                    dialog.dismiss();
+                    toast(activity, "Update download failed. Please try again.");
+                } else {
+                    handler.postDelayed(this, PROGRESS_POLL_MS);
+                }
+            }
+        };
+
+        dialog.show();
+        poller[0].run();
+    }
+
+    private static DownloadProgress readDownloadProgress(DownloadManager manager, long id) {
+        DownloadProgress progress = new DownloadProgress();
+        Cursor cursor = null;
+        try {
+            cursor = manager.query(new DownloadManager.Query().setFilterById(id));
+            if (cursor == null || !cursor.moveToFirst()) return progress;
+            progress.exists = true;
+            progress.status = cursor.getInt(
+                    cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+            progress.downloaded = readLongColumn(
+                    cursor, DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR);
+            progress.total = readLongColumn(cursor, DownloadManager.COLUMN_TOTAL_SIZE_BYTES);
+            progress.reason = readIntColumn(cursor, DownloadManager.COLUMN_REASON);
+            return progress;
+        } catch (Throwable error) {
+            ModDebugLog.module("update", "download progress query failed", error);
+            return progress;
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+    }
+
+    private static void updateProgressViews(TextView status,
+                                            ProgressBar progress,
+                                            DownloadProgress state) {
+        boolean hasTotal = state.total > 0L;
+        progress.setIndeterminate(!hasTotal
+                && state.status != DownloadManager.STATUS_SUCCESSFUL
+                && state.status != DownloadManager.STATUS_FAILED);
+        if (hasTotal) {
+            long clamped = Math.max(0L, Math.min(state.downloaded, state.total));
+            progress.setProgress((int) ((clamped * PROGRESS_MAX) / state.total));
+        }
+
+        String bytes = hasTotal
+                ? formatBytes(Math.max(0L, state.downloaded)) + " / " + formatBytes(state.total)
+                : formatBytes(Math.max(0L, state.downloaded));
+        if (state.status == DownloadManager.STATUS_PENDING) {
+            status.setText("Waiting to start... " + bytes);
+        } else if (state.status == DownloadManager.STATUS_PAUSED) {
+            status.setText("Paused... " + bytes);
+        } else if (state.status == DownloadManager.STATUS_SUCCESSFUL) {
+            progress.setIndeterminate(false);
+            progress.setProgress(PROGRESS_MAX);
+            status.setText("Download complete. Opening installer...");
+        } else if (state.status == DownloadManager.STATUS_FAILED) {
+            progress.setIndeterminate(false);
+            status.setText("Download failed.");
+        } else {
+            status.setText("Downloading... " + bytes);
         }
     }
 
@@ -458,6 +609,22 @@ public final class UpdateManager {
                 ? error.getClass().getSimpleName() : message;
     }
 
+    private static int dp(Context context, int value) {
+        return Math.round(value * context.getResources().getDisplayMetrics().density);
+    }
+
+    private static long readLongColumn(Cursor cursor, String column) {
+        int index = cursor.getColumnIndex(column);
+        if (index < 0 || cursor.isNull(index)) return -1L;
+        return cursor.getLong(index);
+    }
+
+    private static int readIntColumn(Cursor cursor, String column) {
+        int index = cursor.getColumnIndex(column);
+        if (index < 0 || cursor.isNull(index)) return 0;
+        return cursor.getInt(index);
+    }
+
     private static SharedPreferences prefs(Context context) {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
@@ -497,5 +664,13 @@ public final class UpdateManager {
         String apkUrl;
         String apkSha256;
         long apkSize;
+    }
+
+    private static final class DownloadProgress {
+        boolean exists;
+        int status;
+        long downloaded = -1L;
+        long total = -1L;
+        int reason;
     }
 }

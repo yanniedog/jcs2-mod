@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 81
+    .line 88
     iput-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$activity:Landroid/app/Activity;
 
     iput-boolean p2, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$interactive:Z
@@ -47,7 +47,7 @@
 .method public run()V
     .registers 7
 
-    .line 84
+    .line 91
     const-string v0, "update"
 
     const/4 v1, 0x0
@@ -58,7 +58,7 @@
 
     move-result-object v2
 
-    .line 85
+    .line 92
     iget-object v3, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$activity:Landroid/app/Activity;
 
     invoke-virtual {v3}, Landroid/app/Activity;->getPackageManager()Landroid/content/pm/PackageManager;
@@ -67,7 +67,7 @@
 
     iget-object v4, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$activity:Landroid/app/Activity;
 
-    .line 86
+    .line 93
     invoke-virtual {v4}, Landroid/app/Activity;->getPackageName()Ljava/lang/String;
 
     move-result-object v4
@@ -76,7 +76,7 @@
 
     move-result-object v3
 
-    .line 87
+    .line 94
     iget-object v4, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$activity:Landroid/app/Activity;
 
     invoke-virtual {v4}, Landroid/app/Activity;->getPackageName()Ljava/lang/String;
@@ -91,14 +91,14 @@
 
     if-eqz v4, :cond_79
 
-    .line 91
+    .line 98
     iget v4, v2, Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;->versionCode:I
 
     iget v5, v3, Landroid/content/pm/PackageInfo;->versionCode:I
 
     if-le v4, v5, :cond_6a
 
-    .line 92
+    .line 99
     iget-boolean v4, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$interactive:Z
 
     if-nez v4, :cond_5f
@@ -112,7 +112,7 @@
 
     if-eqz v4, :cond_5f
 
-    .line 93
+    .line 100
     new-instance v3, Ljava/lang/StringBuilder;
 
     invoke-direct {v3}, Ljava/lang/StringBuilder;-><init>()V
@@ -149,14 +149,14 @@
     :try_end_5b
     .catchall {:try_start_3 .. :try_end_5b} :catchall_94
 
-    .line 119
+    .line 126
     # setter for: Lcom/trueaxis/modmenu/UpdateManager;->checking:Z
     invoke-static {v1}, Lcom/trueaxis/modmenu/UpdateManager;->access$602(Z)Z
 
-    .line 95
+    .line 102
     return-void
 
-    .line 97
+    .line 104
     :cond_5f
     :try_start_5f
     iget-object v4, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$activity:Landroid/app/Activity;
@@ -170,13 +170,13 @@
 
     goto :goto_a8
 
-    .line 102
+    .line 109
     :cond_6a
     iget-boolean v2, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$interactive:Z
 
     if-eqz v2, :cond_a8
 
-    .line 103
+    .line 110
     iget-object v2, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$activity:Landroid/app/Activity;
 
     new-instance v3, Lcom/trueaxis/modmenu/UpdateManager$1$2;
@@ -188,7 +188,7 @@
 
     goto :goto_a8
 
-    .line 88
+    .line 95
     :cond_79
     new-instance v3, Ljava/lang/IllegalStateException;
 
@@ -218,22 +218,22 @@
     :try_end_94
     .catchall {:try_start_5f .. :try_end_94} :catchall_94
 
-    .line 109
+    .line 116
     :catchall_94
     move-exception v2
 
-    .line 110
+    .line 117
     :try_start_95
     const-string v3, "update check failed"
 
     invoke-static {v0, v3, v2}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 111
+    .line 118
     iget-boolean v0, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$interactive:Z
 
     if-eqz v0, :cond_a8
 
-    .line 112
+    .line 119
     iget-object v0, p0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$activity:Landroid/app/Activity;
 
     new-instance v3, Lcom/trueaxis/modmenu/UpdateManager$1$3;
@@ -245,25 +245,25 @@
     :try_end_a8
     .catchall {:try_start_95 .. :try_end_a8} :catchall_ad
 
-    .line 119
+    .line 126
     :cond_a8
     :goto_a8
     # setter for: Lcom/trueaxis/modmenu/UpdateManager;->checking:Z
     invoke-static {v1}, Lcom/trueaxis/modmenu/UpdateManager;->access$602(Z)Z
 
-    .line 120
+    .line 127
     nop
 
-    .line 121
+    .line 128
     return-void
 
-    .line 119
+    .line 126
     :catchall_ad
     move-exception v0
 
     # setter for: Lcom/trueaxis/modmenu/UpdateManager;->checking:Z
     invoke-static {v1}, Lcom/trueaxis/modmenu/UpdateManager;->access$602(Z)Z
 
-    .line 120
+    .line 127
     throw v0
 .end method

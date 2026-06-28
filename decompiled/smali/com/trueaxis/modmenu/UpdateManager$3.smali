@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 140
+    .line 147
     iput-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$3;->val$activity:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/UpdateManager$3;->val$latest:Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;
@@ -47,7 +47,7 @@
 .method public onClick(Landroid/content/DialogInterface;I)V
     .registers 3
 
-    .line 142
+    .line 149
     iget-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$3;->val$activity:Landroid/app/Activity;
 
     iget-object p2, p0, Lcom/trueaxis/modmenu/UpdateManager$3;->val$latest:Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;
@@ -55,6 +55,6 @@
     # invokes: Lcom/trueaxis/modmenu/UpdateManager;->recordUpdateDismissed(Landroid/content/Context;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;)V
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/UpdateManager;->access$700(Landroid/content/Context;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;)V
 
-    .line 143
+    .line 150
     return-void
 .end method

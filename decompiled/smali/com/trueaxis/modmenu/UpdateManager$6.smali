@@ -3,12 +3,12 @@
 .source "UpdateManager.java"
 
 # interfaces
-.implements Landroid/content/DialogInterface$OnClickListener;
+.implements Landroid/content/DialogInterface$OnShowListener;
 
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/UpdateManager;->promptInstallPermission(Landroid/app/Activity;)V
+    value = Lcom/trueaxis/modmenu/UpdateManager;->showDownloadProgress(Landroid/app/Activity;J)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -18,20 +18,44 @@
 
 
 # instance fields
+.field final synthetic val$active:[Z
+
 .field final synthetic val$activity:Landroid/app/Activity;
+
+.field final synthetic val$dialog:Landroid/app/AlertDialog;
+
+.field final synthetic val$handler:Landroid/os/Handler;
+
+.field final synthetic val$id:J
+
+.field final synthetic val$manager:Landroid/app/DownloadManager;
+
+.field final synthetic val$poller:[Ljava/lang/Runnable;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;)V
-    .registers 2
+.method constructor <init>(Landroid/app/AlertDialog;[ZLandroid/os/Handler;[Ljava/lang/Runnable;Landroid/app/DownloadManager;JLandroid/app/Activity;)V
+    .registers 9
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 385
-    iput-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$activity:Landroid/app/Activity;
+    .line 377
+    iput-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$dialog:Landroid/app/AlertDialog;
+
+    iput-object p2, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$active:[Z
+
+    iput-object p3, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$handler:Landroid/os/Handler;
+
+    iput-object p4, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$poller:[Ljava/lang/Runnable;
+
+    iput-object p5, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$manager:Landroid/app/DownloadManager;
+
+    iput-wide p6, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$id:J
+
+    iput-object p8, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$activity:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -40,76 +64,25 @@
 
 
 # virtual methods
-.method public onClick(Landroid/content/DialogInterface;I)V
-    .registers 5
+.method public onShow(Landroid/content/DialogInterface;)V
+    .registers 3
 
-    .line 388
-    :try_start_0
-    new-instance p1, Landroid/content/Intent;
+    .line 379
+    iget-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$dialog:Landroid/app/AlertDialog;
 
-    const-string p2, "android.settings.MANAGE_UNKNOWN_APP_SOURCES"
+    const/4 v0, -0x3
 
-    new-instance v0, Ljava/lang/StringBuilder;
+    invoke-virtual {p1, v0}, Landroid/app/AlertDialog;->getButton(I)Landroid/widget/Button;
 
-    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+    move-result-object p1
 
-    const-string v1, "package:"
+    new-instance v0, Lcom/trueaxis/modmenu/UpdateManager$6$1;
 
-    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-direct {v0, p0}, Lcom/trueaxis/modmenu/UpdateManager$6$1;-><init>(Lcom/trueaxis/modmenu/UpdateManager$6;)V
 
-    move-result-object v0
-
-    iget-object v1, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$activity:Landroid/app/Activity;
-
-    .line 390
-    invoke-virtual {v1}, Landroid/app/Activity;->getPackageName()Ljava/lang/String;
-
-    move-result-object v1
-
-    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v0
-
-    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object v0
-
-    invoke-static {v0}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
-
-    move-result-object v0
-
-    invoke-direct {p1, p2, v0}, Landroid/content/Intent;-><init>(Ljava/lang/String;Landroid/net/Uri;)V
+    .line 380
+    invoke-virtual {p1, v0}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
     .line 391
-    iget-object p2, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$activity:Landroid/app/Activity;
-
-    invoke-virtual {p2, p1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
-    :try_end_29
-    .catchall {:try_start_0 .. :try_end_29} :catchall_2a
-
-    .line 395
-    goto :goto_39
-
-    .line 392
-    :catchall_2a
-    move-exception p1
-
-    .line 393
-    const-string p2, "update"
-
-    const-string v0, "unknown sources settings failed"
-
-    invoke-static {p2, v0, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
-
-    .line 394
-    iget-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$6;->val$activity:Landroid/app/Activity;
-
-    const-string p2, "Open Android settings and allow installs for YCS2."
-
-    # invokes: Lcom/trueaxis/modmenu/UpdateManager;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {p1, p2}, Lcom/trueaxis/modmenu/UpdateManager;->access$400(Landroid/content/Context;Ljava/lang/String;)V
-
-    .line 396
-    :goto_39
     return-void
 .end method

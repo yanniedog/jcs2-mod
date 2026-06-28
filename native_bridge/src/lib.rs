@@ -38,14 +38,15 @@ const HOOK_STUB_BYTES: usize = 16;
 const TRAMPOLINE_BYTES: usize = 32;
 const PAGE_SIZE: usize = 4096;
 const UI_CONTROL_BUTTON_SIZE: usize = 0x130;
-const UIFORM_CREATE_CAR_PANEL_OFFSET: usize = 0x2d68;
-const USER_TRACK_LAPS_BUTTON_X: c_int = 0x2cc;
-const USER_TRACK_LAPS_BUTTON_Y: c_int = 0x2a;
-const USER_TRACK_BOOST_BUTTON_X: c_int = 0x2cc;
-const USER_TRACK_BOOST_BUTTON_Y: c_int = 0x7f;
+const UIFORM_CREATE_CAR_PANEL_X: c_int = 0x0d7;
+const UIFORM_CREATE_CAR_PANEL_Y: c_int = 0x07d;
+const USER_TRACK_SWITCH_LOCAL_X: c_int = 0x2cc;
+const USER_TRACK_LAPS_BUTTON_X: c_int = UIFORM_CREATE_CAR_PANEL_X + USER_TRACK_SWITCH_LOCAL_X;
+const USER_TRACK_LAPS_BUTTON_Y: c_int = UIFORM_CREATE_CAR_PANEL_Y + 0x2a;
+const USER_TRACK_BOOST_BUTTON_X: c_int = UIFORM_CREATE_CAR_PANEL_X + USER_TRACK_SWITCH_LOCAL_X;
+const USER_TRACK_BOOST_BUTTON_Y: c_int = UIFORM_CREATE_CAR_PANEL_Y + 0x7f;
 const USER_TRACK_SWITCH_BUTTON_WIDTH: c_int = 0x1b8;
 const USER_TRACK_SWITCH_BUTTON_HEIGHT: c_int = 0x48;
-const USER_TRACK_CREATE_SCROLL_HEIGHT: c_int = 0x330;
 const UI_LABEL_FLAG_DEFAULT: c_int = 0x101;
 
 type ThreadStart = unsafe extern "C" fn(*mut c_void) -> *mut c_void;
@@ -69,8 +70,6 @@ type UiControlButtonSetLabelFn =
     unsafe extern "C" fn(*mut c_void, *const UiControlLabelConstructionProperties);
 type UiControlAddControlFn = unsafe extern "C" fn(*mut c_void, *mut c_void);
 type UiControlSetRenderBackgroundFn = unsafe extern "C" fn(*mut c_void, *const c_void);
-type UiControlPanelSetScrollExtentsFn =
-    unsafe extern "C" fn(*mut c_void, c_int, c_int, c_int, c_int);
 
 #[repr(C)]
 struct UiPoint {
@@ -163,7 +162,6 @@ static mut UI_CONTROL_BUTTON_CTOR_LABEL: *mut c_void = ptr::null_mut();
 static mut UI_CONTROL_BUTTON_SET_LABEL: *mut c_void = ptr::null_mut();
 static mut UI_CONTROL_ADD_CONTROL: *mut c_void = ptr::null_mut();
 static mut UI_CONTROL_SET_RENDER_BACKGROUND: *mut c_void = ptr::null_mut();
-static mut UI_CONTROL_PANEL_SET_SCROLL_EXTENTS: *mut c_void = ptr::null_mut();
 static mut UIFORM_CREATE_RENDER_BUTTON_BACKGROUND_STUB: *mut c_void = ptr::null_mut();
 static mut UIFORM_CREATE_CTOR_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut INGAME_LEVEL_EDITOR_SAVE_TRAMPOLINE: *mut c_void = ptr::null_mut();
@@ -493,10 +491,6 @@ unsafe fn ensure_user_track_symbols() {
         UI_CONTROL_SET_RENDER_BACKGROUND =
             resolve(b"_ZN9UiControl27SetRenderBackgroundFunctionEPFvPS_RK11UiRectangleE\0");
     }
-    if UI_CONTROL_PANEL_SET_SCROLL_EXTENTS.is_null() {
-        UI_CONTROL_PANEL_SET_SCROLL_EXTENTS =
-            resolve(b"_ZN14UiControlPanel16SetScrollExtentsEiiii\0");
-    }
     if UIFORM_CREATE_RENDER_BUTTON_BACKGROUND_STUB.is_null() {
         UIFORM_CREATE_RENDER_BUTTON_BACKGROUND_STUB = resolve(
             b"_ZN12UiFormCreate28OnRenderButtonBackgroundStubEP9UiControlRK11UiRectangle\0",
@@ -513,7 +507,6 @@ unsafe fn create_form_ui_symbols_ready() -> bool {
         || UI_CONTROL_BUTTON_SET_LABEL.is_null()
         || UI_CONTROL_ADD_CONTROL.is_null()
         || UI_CONTROL_SET_RENDER_BACKGROUND.is_null()
-        || UI_CONTROL_PANEL_SET_SCROLL_EXTENTS.is_null()
         || UIFORM_CREATE_RENDER_BUTTON_BACKGROUND_STUB.is_null())
 }
 
@@ -632,26 +625,21 @@ unsafe fn add_user_track_create_switches(form: *mut c_void) {
         return;
     }
     begin_user_track_create_flags();
-    let panel = (form as *mut u8).add(UIFORM_CREATE_CAR_PANEL_OFFSET) as *mut c_void;
+    // These must be root children. A later stock sibling covers the car panel in hit-testing.
     USER_TRACK_LAPS_BUTTON = add_create_switch_button(
-        panel,
+        form,
         USER_TRACK_LAPS_BUTTON_X,
         USER_TRACK_LAPS_BUTTON_Y,
         b"LAPS: OFF\0".as_ptr() as *const c_char,
         on_laps_create_switch_clicked,
     );
     USER_TRACK_BOOST_REGEN_BUTTON = add_create_switch_button(
-        panel,
+        form,
         USER_TRACK_BOOST_BUTTON_X,
         USER_TRACK_BOOST_BUTTON_Y,
         b"BOOST REGEN: OFF\0".as_ptr() as *const c_char,
         on_boost_regen_create_switch_clicked,
     );
-    if !UI_CONTROL_PANEL_SET_SCROLL_EXTENTS.is_null() {
-        let set_scroll_extents: UiControlPanelSetScrollExtentsFn =
-            mem::transmute(UI_CONTROL_PANEL_SET_SCROLL_EXTENTS);
-        set_scroll_extents(panel, 0, 0, 0, USER_TRACK_CREATE_SCROLL_HEIGHT);
-    }
 }
 
 unsafe fn begin_user_track_create_flags() {

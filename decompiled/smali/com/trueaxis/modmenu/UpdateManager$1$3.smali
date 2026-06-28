@@ -43,7 +43,7 @@
         }
     .end annotation
 
-    .line 112
+    .line 119
     iput-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$1$3;->this$0:Lcom/trueaxis/modmenu/UpdateManager$1;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/UpdateManager$1$3;->val$error:Ljava/lang/Throwable;
@@ -58,7 +58,7 @@
 .method public run()V
     .registers 4
 
-    .line 114
+    .line 121
     iget-object v0, p0, Lcom/trueaxis/modmenu/UpdateManager$1$3;->this$0:Lcom/trueaxis/modmenu/UpdateManager$1;
 
     iget-object v0, v0, Lcom/trueaxis/modmenu/UpdateManager$1;->val$activity:Landroid/app/Activity;
@@ -91,6 +91,6 @@
     # invokes: Lcom/trueaxis/modmenu/UpdateManager;->toast(Landroid/content/Context;Ljava/lang/String;)V
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/UpdateManager;->access$400(Landroid/content/Context;Ljava/lang/String;)V
 
-    .line 115
+    .line 122
     return-void
 .end method

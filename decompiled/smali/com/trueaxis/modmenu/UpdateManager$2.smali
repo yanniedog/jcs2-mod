@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 145
+    .line 152
     iput-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$2;->val$activity:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/UpdateManager$2;->val$latest:Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;
@@ -47,7 +47,7 @@
 .method public onCancel(Landroid/content/DialogInterface;)V
     .registers 3
 
-    .line 147
+    .line 154
     iget-object p1, p0, Lcom/trueaxis/modmenu/UpdateManager$2;->val$activity:Landroid/app/Activity;
 
     iget-object v0, p0, Lcom/trueaxis/modmenu/UpdateManager$2;->val$latest:Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;
@@ -55,6 +55,6 @@
     # invokes: Lcom/trueaxis/modmenu/UpdateManager;->recordUpdateDismissed(Landroid/content/Context;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;)V
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/UpdateManager;->access$700(Landroid/content/Context;Lcom/trueaxis/modmenu/UpdateManager$UpdateInfo;)V
 
-    .line 148
+    .line 155
     return-void
 .end method
