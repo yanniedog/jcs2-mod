@@ -585,7 +585,11 @@ public final class UpdateManager {
                 throw new IllegalStateException("Update manifest is too large");
             }
         }
-        return out.toString();
+        String text = out.toString();
+        if (text.length() > 0 && text.charAt(0) == '\ufeff') {
+            return text.substring(1);
+        }
+        return text;
     }
 
     private static String hex(byte[] bytes) {

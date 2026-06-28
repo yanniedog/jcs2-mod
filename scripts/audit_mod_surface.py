@@ -307,6 +307,8 @@ def check_sources(skip_local_assets=False):
         or "Cancel download" not in update_manager
     ):
         ok = fail("in-app updater no longer shows a download progress dialog") and ok
+    if "'\\ufeff'" not in update_manager or "return text.substring(1)" not in update_manager:
+        ok = fail("in-app updater no longer tolerates UTF-8 BOMs in update manifests") and ok
     if "checkpointCount > lastCheckpointCount + 1" not in split_hud:
         ok = fail("checkpoint split HUD no longer suppresses replay-load checkpoint jumps") and ok
     if '"split checkpoint jump accepted from="' not in split_hud:

@@ -395,7 +395,7 @@
 .method private static clearDownload(Landroid/content/Context;)V
     .registers 2
 
-    .line 633
+    .line 637
     invoke-static {p0}, Lcom/trueaxis/modmenu/UpdateManager;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -404,71 +404,71 @@
 
     move-result-object p0
 
-    .line 634
+    .line 638
     const-string v0, "download_id"
 
     invoke-interface {p0, v0}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object p0
 
-    .line 635
+    .line 639
     const-string v0, "download_sha256"
 
     invoke-interface {p0, v0}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object p0
 
-    .line 636
+    .line 640
     const-string v0, "download_version_code"
 
     invoke-interface {p0, v0}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object p0
 
-    .line 637
+    .line 641
     const-string v0, "install_prompted_download_id"
 
     invoke-interface {p0, v0}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object p0
 
-    .line 638
+    .line 642
     const-string v0, "install_permission_prompted_version_code"
 
     invoke-interface {p0, v0}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object p0
 
-    .line 639
+    .line 643
     invoke-interface {p0}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 640
+    .line 644
     return-void
 .end method
 
 .method private static closeQuietly(Ljava/io/Closeable;)V
     .registers 1
 
-    .line 652
+    .line 656
     if-nez p0, :cond_3
 
     return-void
 
-    .line 654
+    .line 658
     :cond_3
     :try_start_3
     invoke-interface {p0}, Ljava/io/Closeable;->close()V
     :try_end_6
     .catchall {:try_start_3 .. :try_end_6} :catchall_7
 
-    .line 656
+    .line 660
     goto :goto_8
 
-    .line 655
+    .line 659
     :catchall_7
     move-exception p0
 
-    .line 657
+    .line 661
     :goto_8
     return-void
 .end method
@@ -554,7 +554,7 @@
 .method private static dp(Landroid/content/Context;I)I
     .registers 2
 
-    .line 613
+    .line 617
     int-to-float p1, p1
 
     invoke-virtual {p0}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
@@ -846,7 +846,7 @@
 .method private static formatBytes(J)Ljava/lang/String;
     .registers 5
 
-    .line 602
+    .line 606
     const-wide/32 v0, 0x100000
 
     cmp-long v2, p0, v0
@@ -877,7 +877,7 @@
 
     return-object p0
 
-    .line 603
+    .line 607
     :cond_1e
     sget-object v0, Ljava/util/Locale;->US:Ljava/util/Locale;
 
@@ -915,7 +915,7 @@
 .method private static hex([B)Ljava/lang/String;
     .registers 5
 
-    .line 592
+    .line 596
     new-instance v0, Ljava/lang/StringBuilder;
 
     array-length v1, p0
@@ -924,7 +924,7 @@
 
     invoke-direct {v0, v1}, Ljava/lang/StringBuilder;-><init>(I)V
 
-    .line 593
+    .line 597
     const/4 v1, 0x0
 
     :goto_9
@@ -932,12 +932,12 @@
 
     if-ge v1, v2, :cond_23
 
-    .line 594
+    .line 598
     aget-byte v2, p0, v1
 
     and-int/lit16 v2, v2, 0xff
 
-    .line 595
+    .line 599
     const/16 v3, 0x10
 
     if-ge v2, v3, :cond_19
@@ -946,7 +946,7 @@
 
     invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    .line 596
+    .line 600
     :cond_19
     invoke-static {v2}, Ljava/lang/Integer;->toHexString(I)Ljava/lang/String;
 
@@ -954,12 +954,12 @@
 
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    .line 593
+    .line 597
     add-int/lit8 v1, v1, 0x1
 
     goto :goto_9
 
-    .line 598
+    .line 602
     :cond_23
     invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
@@ -1556,7 +1556,7 @@
 .method private static prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
     .registers 3
 
-    .line 629
+    .line 633
     const-string v0, "jcs_mod_update"
 
     const/4 v1, 0x0
@@ -1776,12 +1776,12 @@
 .method private static readIntColumn(Landroid/database/Cursor;Ljava/lang/String;)I
     .registers 3
 
-    .line 623
+    .line 627
     invoke-interface {p0, p1}, Landroid/database/Cursor;->getColumnIndex(Ljava/lang/String;)I
 
     move-result p1
 
-    .line 624
+    .line 628
     if-ltz p1, :cond_12
 
     invoke-interface {p0, p1}, Landroid/database/Cursor;->isNull(I)Z
@@ -1792,7 +1792,7 @@
 
     goto :goto_12
 
-    .line 625
+    .line 629
     :cond_d
     invoke-interface {p0, p1}, Landroid/database/Cursor;->getInt(I)I
 
@@ -1800,7 +1800,7 @@
 
     return p0
 
-    .line 624
+    .line 628
     :cond_12
     :goto_12
     const/4 p0, 0x0
@@ -1811,12 +1811,12 @@
 .method private static readLongColumn(Landroid/database/Cursor;Ljava/lang/String;)J
     .registers 3
 
-    .line 617
+    .line 621
     invoke-interface {p0, p1}, Landroid/database/Cursor;->getColumnIndex(Ljava/lang/String;)I
 
     move-result p1
 
-    .line 618
+    .line 622
     if-ltz p1, :cond_12
 
     invoke-interface {p0, p1}, Landroid/database/Cursor;->isNull(I)Z
@@ -1827,7 +1827,7 @@
 
     goto :goto_12
 
-    .line 619
+    .line 623
     :cond_d
     invoke-interface {p0, p1}, Landroid/database/Cursor;->getLong(I)J
 
@@ -1835,7 +1835,7 @@
 
     return-wide p0
 
-    .line 618
+    .line 622
     :cond_12
     :goto_12
     const-wide/16 p0, -0x1
@@ -1844,7 +1844,7 @@
 .end method
 
 .method private static readString(Ljava/io/InputStream;)Ljava/lang/String;
-    .registers 5
+    .registers 6
     .annotation system Ldalvik/annotation/Throws;
         value = {
             Ljava/lang/Exception;
@@ -1880,12 +1880,12 @@
 
     const/4 v3, -0x1
 
+    const/4 v4, 0x0
+
     if-eq v2, v3, :cond_31
 
     .line 583
-    const/4 v3, 0x0
-
-    invoke-virtual {p0, v1, v3, v2}, Ljava/lang/StringBuilder;->append([CII)Ljava/lang/StringBuilder;
+    invoke-virtual {p0, v1, v4, v2}, Ljava/lang/StringBuilder;->append([CII)Ljava/lang/StringBuilder;
 
     .line 584
     invoke-virtual {p0}, Ljava/lang/StringBuilder;->length()I
@@ -1914,18 +1914,44 @@
 
     move-result-object p0
 
+    .line 589
+    invoke-virtual {p0}, Ljava/lang/String;->length()I
+
+    move-result v0
+
+    if-lez v0, :cond_4a
+
+    invoke-virtual {p0, v4}, Ljava/lang/String;->charAt(I)C
+
+    move-result v0
+
+    const v1, 0xfeff
+
+    if-ne v0, v1, :cond_4a
+
+    .line 590
+    const/4 v0, 0x1
+
+    invoke-virtual {p0, v0}, Ljava/lang/String;->substring(I)Ljava/lang/String;
+
+    move-result-object p0
+
+    return-object p0
+
+    .line 592
+    :cond_4a
     return-object p0
 .end method
 
 .method private static readable(Ljava/lang/Throwable;)Ljava/lang/String;
     .registers 3
 
-    .line 607
+    .line 611
     invoke-virtual {p0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
 
     move-result-object v0
 
-    .line 608
+    .line 612
     if-eqz v0, :cond_e
 
     invoke-virtual {v0}, Ljava/lang/String;->length()I
@@ -1936,7 +1962,7 @@
 
     goto :goto_e
 
-    .line 609
+    .line 613
     :cond_d
     goto :goto_16
 
@@ -1950,7 +1976,7 @@
 
     move-result-object v0
 
-    .line 608
+    .line 612
     :goto_16
     return-object v0
 .end method
@@ -2098,7 +2124,7 @@
 .method private static runOnUi(Landroid/app/Activity;Ljava/lang/Runnable;)V
     .registers 3
 
-    .line 643
+    .line 647
     invoke-virtual {p0}, Landroid/app/Activity;->isFinishing()Z
 
     move-result v0
@@ -2107,11 +2133,11 @@
 
     return-void
 
-    .line 644
+    .line 648
     :cond_7
     invoke-virtual {p0, p1}, Landroid/app/Activity;->runOnUiThread(Ljava/lang/Runnable;)V
 
-    .line 645
+    .line 649
     return-void
 .end method
 
@@ -2965,7 +2991,7 @@
 .method private static toast(Landroid/content/Context;Ljava/lang/String;)V
     .registers 3
 
-    .line 648
+    .line 652
     const/4 v0, 0x1
 
     invoke-static {p0, p1, v0}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
@@ -2974,7 +3000,7 @@
 
     invoke-virtual {p0}, Landroid/widget/Toast;->show()V
 
-    .line 649
+    .line 653
     return-void
 .end method
 
