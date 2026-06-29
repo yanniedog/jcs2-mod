@@ -34,7 +34,7 @@
         }
     .end annotation
 
-    .line 695
+    .line 707
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$cars:Landroid/widget/Spinner;
@@ -60,7 +60,7 @@
         }
     .end annotation
 
-    .line 698
+    .line 710
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
 
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$cars:Landroid/widget/Spinner;
@@ -68,7 +68,7 @@
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ModMenu;->access$200(Landroid/content/Context;Landroid/widget/Spinner;)V
 
-    .line 699
+    .line 711
     new-instance p1, Ljava/lang/StringBuilder;
 
     invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
@@ -95,7 +95,7 @@
 
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
 
-    .line 700
+    .line 712
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
     invoke-static {p2, p3}, Lcom/trueaxis/modmenu/ModMenu;->access$400(Landroid/content/Context;I)Ljava/io/File;
 
@@ -113,17 +113,17 @@
 
     move-result-object p1
 
-    .line 699
+    .line 711
     const-string p2, "livery"
 
     invoke-static {p2, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 701
+    .line 713
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$refresh:Ljava/lang/Runnable;
 
     invoke-interface {p1}, Ljava/lang/Runnable;->run()V
 
-    .line 702
+    .line 714
     return-void
 .end method
 
@@ -137,6 +137,6 @@
         }
     .end annotation
 
-    .line 705
+    .line 717
     return-void
 .end method

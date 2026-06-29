@@ -191,6 +191,9 @@ def check_sources(skip_local_assets=False):
         "_ZN5World4LoadEPKcbj",
         "_ZN4Game9LoadLevelEjNS_10DifficultyE",
         "_ZN4Game12OnCheckPointERKN2TA4Vec3Ei",
+        "g_pCamera",
+        "_ZN4Game12UpdateCameraEf",
+        "_ZN4Game15StartLevelIntroEi",
     )
     for line in bridge.splitlines():
         if 'resolve(b"' in line and not any(symbol in line for symbol in allowed_native_symbols):
@@ -381,6 +384,59 @@ def check_sources(skip_local_assets=False):
         or (ROOT / "modmenu_src/com/trueaxis/modmenu/UserTrackCreateOverlay.java").exists()
     ):
         ok = fail("user-track creation flags must not use an Android overlay") and ok
+
+    replay_free_camera = ROOT / "modmenu_src/com/trueaxis/modmenu/ReplayFreeCameraOverlay.java"
+    if not replay_free_camera.exists():
+        ok = fail("replay free camera overlay source is missing") and ok
+        replay_free_camera_text = ""
+    else:
+        replay_free_camera_text = replay_free_camera.read_text(encoding="utf-8")
+    if (
+        "install_free_camera_hooks" not in bridge
+        or "hooked_game_update_camera" not in bridge
+        or "hooked_game_start_level_intro" not in bridge
+        or 'resolve(b"_ZN4Game12UpdateCameraEf\\0")' not in bridge
+        or 'resolve(b"_ZN4Game15StartLevelIntroEi\\0")' not in bridge
+        or 'CAMERA_POINTER = resolve(b"g_pCamera\\0") as *mut *mut f32' not in bridge
+        or "GAME_LEVEL_INTRO_CAMERA_FLAG_OFFSET: usize = 0x1c5" not in bridge
+        or "FREE_CAMERA_LEVEL_INTRO_STARTED" not in bridge
+        or "FREE_CAMERA_IN_LEVEL_INTRO.store(in_level_intro" not in bridge
+    ):
+        ok = fail("native replay free camera hook is not gated to explicit level-intro sessions") and ok
+    if (
+        "write_free_camera_frame" not in bridge
+        or "ptr::copy_nonoverlapping" not in bridge
+        or "FREE_CAMERA_CAPTURE_REQUESTED" not in bridge
+        or "FREE_CAMERA_ACTIVE.store(false" not in bridge
+    ):
+        ok = fail("native replay free camera no longer captures/resets/writes the render camera safely") and ok
+    if (
+        "RequiredPatches_installReplayFreeCameraHooks" not in bridge
+        or "RequiredPatches_nudgeReplayFreeCamera" not in bridge
+        or "RequiredPatches_readReplayFreeCameraStatus" not in bridge
+    ):
+        ok = fail("replay free camera JNI entry points are missing") and ok
+    if (
+        "K_REPLAY_FREE_CAMERA" not in mod_menu
+        or "replayFreeCameraEnabled" not in mod_menu
+        or "Enable free camera controls for level fly-throughs" not in mod_menu
+        or 'prefs(c).getBoolean(K_REPLAY_FREE_CAMERA, true)' not in mod_menu
+    ):
+        ok = fail("mod menu no longer exposes replay free camera as an enabled-by-default option") and ok
+    if (
+        "installReplayFreeCameraHooks()" not in required_patches_for_user_tracks
+        or "ReplayFreeCameraOverlay.install(activity)" not in required_patches_for_user_tracks
+        or "setReplayFreeCameraEnabled(replayFreeCameraEnabled)" not in required_patches_for_user_tracks
+    ):
+        ok = fail("required patches no longer install the replay free camera hook/overlay") and ok
+    if (
+        "STATUS_IN_LEVEL_INTRO" not in replay_free_camera_text
+        or "RequiredPatches.nudgeReplayFreeCamera" not in replay_free_camera_text
+        or "RequiredPatches.setReplayFreeCameraLocked" not in replay_free_camera_text
+        or "RequiredPatches.resetReplayFreeCamera" not in replay_free_camera_text
+        or "DRAG_ROTATE_SCALE" not in replay_free_camera_text
+    ):
+        ok = fail("replay free camera overlay no longer exposes movement, look, lock, and reset controls") and ok
 
     straight_runtime = (ROOT / "scripts/runtime_straight_level_split_test.ps1").read_text(
         encoding="utf-8"

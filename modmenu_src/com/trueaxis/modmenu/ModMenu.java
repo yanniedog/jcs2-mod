@@ -52,6 +52,7 @@ public class ModMenu {
     private static final String K_CHECKPOINT_SPLITS = "checkpoint_splits";
     private static final String K_SPLIT_LIST = "split_list";
     private static final String K_SPLIT_SECTOR_DELTA = "split_sector_delta";
+    private static final String K_REPLAY_FREE_CAMERA = "replay_free_camera";
     private static final String K_SPLIT_ALPHA = "split_alpha";
     private static final String K_SPLIT_X = "split_x";
     private static final String K_SPLIT_Y = "split_y";
@@ -61,7 +62,7 @@ public class ModMenu {
     private static final int REQUEST_IMPORT = 7301;
     private static final int REQUEST_EXPORT = 7302;
     private static final int TEXTURE_SIZE = 512;
-    private static final int MENU_DEFAULTS_VERSION = 3;
+    private static final int MENU_DEFAULTS_VERSION = 4;
     private static final int DEFAULT_SPLIT_ALPHA = 90;
     private static final int DEFAULT_SPLIT_X = 88;
     private static final int DEFAULT_SPLIT_Y = 39;
@@ -261,6 +262,7 @@ public class ModMenu {
                 .putBoolean(K_CHECKPOINT_SPLITS, true)
                 .putBoolean(K_SPLIT_LIST, true)
                 .putBoolean(K_SPLIT_SECTOR_DELTA, false)
+                .putBoolean(K_REPLAY_FREE_CAMERA, true)
                 .remove("split_realtime")
                 .remove("ghost_route")
                 .remove("ghost_route_alpha")
@@ -294,6 +296,11 @@ public class ModMenu {
     public static boolean sectorSplitsEnabled(Context c) {
         applyMenuDefaults(c);
         return checkpointSplitsEnabled(c) && prefs(c).getBoolean(K_SPLIT_SECTOR_DELTA, false);
+    }
+
+    public static boolean replayFreeCameraEnabled(Context c) {
+        applyMenuDefaults(c);
+        return prefs(c).getBoolean(K_REPLAY_FREE_CAMERA, true);
     }
 
     public static int splitAlphaPercent(Context c) {
@@ -454,6 +461,11 @@ public class ModMenu {
                     10, Color.rgb(150, 158, 165));
             coreNote.setPadding(0, dp(a, 9), 0, dp(a, 2));
             card.addView(coreNote);
+
+            card.addView(sectionHeader(a, "Replay free camera"));
+            addCheckBox(a, card,
+                    "Enable free camera controls for level fly-throughs",
+                    K_REPLAY_FREE_CAMERA, true);
 
             card.addView(sectionHeader(a, "Replay split HUD"));
             TextView splitHelp = label(a,

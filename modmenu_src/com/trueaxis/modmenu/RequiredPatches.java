@@ -54,6 +54,19 @@ public final class RequiredPatches {
             Log.e(TAG, "Could not install user track feature hooks", error);
             ModDebugLog.log("Could not install user track feature hooks", error);
         }
+        boolean replayFreeCameraEnabled = ModMenu.replayFreeCameraEnabled(activity);
+        try {
+            boolean installed = installReplayFreeCameraHooks();
+            setReplayFreeCameraEnabled(replayFreeCameraEnabled);
+            ModDebugLog.log("replay free camera hooks installed=" + installed
+                    + " enabled=" + replayFreeCameraEnabled);
+            if (installed && replayFreeCameraEnabled) {
+                ReplayFreeCameraOverlay.install(activity);
+            }
+        } catch (Throwable error) {
+            Log.e(TAG, "Could not install replay free camera", error);
+            ModDebugLog.log("Could not install replay free camera", error);
+        }
         ModDebugLog.log("replay visual marker disabled; replay data is not modified");
         if (ModMenu.checkpointSplitsEnabled(activity)) {
             ModDebugLog.log("checkpoint split HUD enabled");
@@ -72,6 +85,13 @@ public final class RequiredPatches {
     private static native boolean installNativeCrashLogger();
     private static native boolean applyUnlimitedCheckpoints();
     private static native boolean installUserTrackFeatureHooks();
+    private static native boolean installReplayFreeCameraHooks();
+    static native void setReplayFreeCameraEnabled(boolean enabled);
+    static native void setReplayFreeCameraLocked(boolean locked);
+    static native void resetReplayFreeCamera();
+    static native void nudgeReplayFreeCamera(float right, float up, float forward,
+                                             float yaw, float pitch);
+    static native int readReplayFreeCameraStatus();
     static native long readLatestCheckpointSplit();
     static native int readLatestCheckpointCurrentMillis();
     static native int readLatestCheckpointGhostMillis();

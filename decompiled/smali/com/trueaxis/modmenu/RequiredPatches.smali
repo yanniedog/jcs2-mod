@@ -265,59 +265,131 @@
 
     .line 57
     :goto_a6
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->replayFreeCameraEnabled(Landroid/content/Context;)Z
+
+    move-result v1
+
+    .line 59
+    :try_start_aa
+    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->installReplayFreeCameraHooks()Z
+
+    move-result v2
+
+    .line 60
+    invoke-static {v1}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayFreeCameraEnabled(Z)V
+
+    .line 61
+    new-instance v3, Ljava/lang/StringBuilder;
+
+    invoke-direct {v3}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v4, "replay free camera hooks installed="
+
+    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v3
+
+    invoke-virtual {v3, v2}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+
+    move-result-object v3
+
+    const-string v4, " enabled="
+
+    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v3
+
+    invoke-virtual {v3, v1}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+
+    move-result-object v3
+
+    invoke-virtual {v3}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v3
+
+    invoke-static {v3}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
+
+    .line 63
+    if-eqz v2, :cond_d8
+
+    if-eqz v1, :cond_d8
+
+    .line 64
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay;->install(Landroid/app/Activity;)V
+    :try_end_d8
+    .catchall {:try_start_aa .. :try_end_d8} :catchall_d9
+
+    .line 69
+    :cond_d8
+    goto :goto_e2
+
+    .line 66
+    :catchall_d9
+    move-exception v1
+
+    .line 67
+    const-string v2, "Could not install replay free camera"
+
+    invoke-static {v0, v2, v1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+
+    .line 68
+    invoke-static {v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
+
+    .line 70
+    :goto_e2
     const-string v1, "replay visual marker disabled; replay data is not modified"
 
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 58
+    .line 71
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->checkpointSplitsEnabled(Landroid/content/Context;)Z
 
     move-result v1
 
-    if-eqz v1, :cond_c4
+    if-eqz v1, :cond_100
 
-    .line 59
+    .line 72
     const-string v1, "checkpoint split HUD enabled"
 
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 61
-    :try_start_b6
+    .line 74
+    :try_start_f2
     invoke-static {p0}, Lcom/trueaxis/modmenu/SplitTimeHud;->install(Landroid/app/Activity;)V
-    :try_end_b9
-    .catchall {:try_start_b6 .. :try_end_b9} :catchall_ba
+    :try_end_f5
+    .catchall {:try_start_f2 .. :try_end_f5} :catchall_f6
 
-    .line 65
-    :goto_b9
-    goto :goto_c9
+    .line 78
+    :goto_f5
+    goto :goto_105
 
-    .line 62
-    :catchall_ba
+    .line 75
+    :catchall_f6
     move-exception p0
 
-    .line 63
+    .line 76
     const-string v1, "Could not install checkpoint split HUD"
 
     invoke-static {v0, v1, p0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 64
+    .line 77
     invoke-static {v1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    goto :goto_b9
+    goto :goto_f5
 
-    .line 67
-    :cond_c4
+    .line 80
+    :cond_100
     const-string p0, "checkpoint split HUD disabled"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 69
-    :goto_c9
+    .line 82
+    :goto_105
     const-string p0, "after RequiredPatches.apply"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->logRuntime(Ljava/lang/String;)V
 
-    .line 70
+    .line 83
     return-void
 .end method
 
@@ -327,7 +399,13 @@
 .method private static native installNativeCrashLogger()Z
 .end method
 
+.method private static native installReplayFreeCameraHooks()Z
+.end method
+
 .method private static native installUserTrackFeatureHooks()Z
+.end method
+
+.method static native nudgeReplayFreeCamera(FFFFF)V
 .end method
 
 .method static native readGhostCheckpointMillis(I)I
@@ -340,6 +418,9 @@
 .end method
 
 .method static native readLatestCheckpointSplit()J
+.end method
+
+.method static native readReplayFreeCameraStatus()I
 .end method
 
 .method static native readSplitDecodedEngineCheckpointIndex()I
@@ -421,4 +502,13 @@
 .end method
 
 .method static native readSplitVisualDeltaMillis()I
+.end method
+
+.method static native resetReplayFreeCamera()V
+.end method
+
+.method static native setReplayFreeCameraEnabled(Z)V
+.end method
+
+.method static native setReplayFreeCameraLocked(Z)V
 .end method

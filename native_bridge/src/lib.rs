@@ -34,9 +34,19 @@ const UIFORM_CREATE_CTOR_HOOK_BYTES: usize = 16;
 const WORLD_LOAD_HOOK_BYTES: usize = 16;
 const GAME_LOAD_LEVEL_HOOK_BYTES: usize = 16;
 const GAME_ON_CHECKPOINT_HOOK_BYTES: usize = 16;
+const GAME_UPDATE_CAMERA_HOOK_BYTES: usize = 16;
+const GAME_START_LEVEL_INTRO_HOOK_BYTES: usize = 16;
 const HOOK_STUB_BYTES: usize = 16;
 const TRAMPOLINE_BYTES: usize = 32;
 const PAGE_SIZE: usize = 4096;
+const GAME_LEVEL_INTRO_CAMERA_FLAG_OFFSET: usize = 0x1c5;
+const FREE_CAMERA_AXIS_STRIDE_FLOATS: usize = 4;
+const FREE_CAMERA_RIGHT_AXIS: usize = 0;
+const FREE_CAMERA_UP_AXIS: usize = 3;
+const FREE_CAMERA_FORWARD_AXIS: usize = 6;
+const FREE_CAMERA_POSITION: usize = 9;
+const FREE_CAMERA_FRAME_FLOATS: usize = 12;
+const FREE_CAMERA_MIN_LENGTH_SQ: f32 = 0.000001;
 const UI_CONTROL_BUTTON_SIZE: usize = 0x130;
 const UIFORM_CREATE_CAR_PANEL_X: c_int = 0x0d7;
 const UIFORM_CREATE_CAR_PANEL_Y: c_int = 0x07d;
@@ -55,6 +65,8 @@ type UiFormCreateCtorFn = unsafe extern "C" fn(*mut c_void);
 type WorldLoadFn = unsafe extern "C" fn(*mut c_void, *const c_char, u8, c_uint) -> c_int;
 type GameLoadLevelFn = unsafe extern "C" fn(*mut c_void, c_uint, c_int) -> c_int;
 type GameOnCheckpointFn = unsafe extern "C" fn(*mut c_void, *const c_void, c_int);
+type GameUpdateCameraFn = unsafe extern "C" fn(*mut c_void, f32);
+type GameStartLevelIntroFn = unsafe extern "C" fn(*mut c_void, c_int);
 type LevelsGetUserLevelFn = unsafe extern "C" fn(c_uint) -> *mut u8;
 type LevelsGetUserLevelFileNameFn = unsafe extern "C" fn(c_uint) -> *const c_char;
 type OperatorNewFn = unsafe extern "C" fn(usize) -> *mut c_void;
@@ -153,6 +165,7 @@ static mut LAST_GHOST_RETRY_PAUSE_TIME: *mut c_int = ptr::null_mut();
 static mut NUM_GHOST_RETRY_SKIP_TIMES: *mut c_int = ptr::null_mut();
 static mut CHECKPOINT_TRANSFORM: *mut f32 = ptr::null_mut();
 static mut LAST_GHOST_TRANSFORM: *mut f32 = ptr::null_mut();
+static mut CAMERA_POINTER: *mut *mut f32 = ptr::null_mut();
 static mut LEVELS_GET_USER_LEVEL: *mut c_void = ptr::null_mut();
 static mut LEVELS_GET_USER_LEVEL_FILE_NAME: *mut c_void = ptr::null_mut();
 static mut OPERATOR_NEW: *mut c_void = ptr::null_mut();
@@ -168,8 +181,11 @@ static mut INGAME_LEVEL_EDITOR_SAVE_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut WORLD_LOAD_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut GAME_LOAD_LEVEL_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut GAME_ON_CHECKPOINT_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut GAME_UPDATE_CAMERA_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut GAME_START_LEVEL_INTRO_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut USER_TRACK_LAPS_BUTTON: *mut c_void = ptr::null_mut();
 static mut USER_TRACK_BOOST_REGEN_BUTTON: *mut c_void = ptr::null_mut();
+static mut FREE_CAMERA_FRAME: [f32; FREE_CAMERA_FRAME_FLOATS] = [0.0; FREE_CAMERA_FRAME_FLOATS];
 static mut LAST_SPLIT_CHECKPOINT: c_int = 0;
 static mut LAST_SPLIT_CURRENT_MS: i32 = -1;
 static mut FALLBACK_GHOST_CHECKPOINT_COUNT: c_int = 0;
@@ -182,6 +198,12 @@ static USER_TRACK_HOOKS_INSTALLED: AtomicBool = AtomicBool::new(false);
 static USER_TRACK_CREATE_FLAGS_ARMED: AtomicBool = AtomicBool::new(false);
 static USER_TRACK_PENDING_FLAGS: AtomicU8 = AtomicU8::new(0);
 static CURRENT_USER_TRACK_FLAGS: AtomicU8 = AtomicU8::new(0);
+static FREE_CAMERA_HOOKS_INSTALLED: AtomicBool = AtomicBool::new(false);
+static FREE_CAMERA_ENABLED: AtomicBool = AtomicBool::new(false);
+static FREE_CAMERA_ACTIVE: AtomicBool = AtomicBool::new(false);
+static FREE_CAMERA_IN_LEVEL_INTRO: AtomicBool = AtomicBool::new(false);
+static FREE_CAMERA_LEVEL_INTRO_STARTED: AtomicBool = AtomicBool::new(false);
+static FREE_CAMERA_CAPTURE_REQUESTED: AtomicBool = AtomicBool::new(false);
 
 const SIGABRT: c_int = 6;
 const SIGBUS: c_int = 7;
@@ -791,6 +813,214 @@ unsafe fn refill_current_car_boost(game: *mut c_void) {
         return;
     }
     ptr::write_volatile(car.add(CAR_FUEL_OFFSET) as *mut f32, 1.0f32);
+}
+
+unsafe fn ensure_free_camera_symbols() -> bool {
+    if CAMERA_POINTER.is_null() {
+        CAMERA_POINTER = resolve(b"g_pCamera\0") as *mut *mut f32;
+    }
+    !CAMERA_POINTER.is_null()
+}
+
+unsafe fn current_camera() -> *mut f32 {
+    if !ensure_free_camera_symbols() {
+        return ptr::null_mut();
+    }
+    ptr::read_volatile(CAMERA_POINTER)
+}
+
+unsafe fn game_is_level_intro(game: *mut c_void) -> bool {
+    !game.is_null()
+        && ptr::read_volatile((game as *mut u8).add(GAME_LEVEL_INTRO_CAMERA_FLAG_OFFSET)) != 0
+}
+
+unsafe fn capture_free_camera_frame(camera: *mut f32) {
+    if camera.is_null() {
+        return;
+    }
+    for axis in 0..3 {
+        let source = camera.add(axis * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+        let target = axis * 3;
+        FREE_CAMERA_FRAME[target] = ptr::read_volatile(source);
+        FREE_CAMERA_FRAME[target + 1] = ptr::read_volatile(source.add(1));
+        FREE_CAMERA_FRAME[target + 2] = ptr::read_volatile(source.add(2));
+    }
+    let source = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    FREE_CAMERA_FRAME[FREE_CAMERA_POSITION] = ptr::read_volatile(source);
+    FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 1] = ptr::read_volatile(source.add(1));
+    FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 2] = ptr::read_volatile(source.add(2));
+    FREE_CAMERA_ACTIVE.store(true, Ordering::Release);
+}
+
+unsafe fn write_free_camera_frame(camera: *mut f32) {
+    if camera.is_null() {
+        return;
+    }
+    let frame = ptr::addr_of!(FREE_CAMERA_FRAME) as *const f32;
+    for axis in 0..3 {
+        let source = frame.add(axis * 3);
+        let target = camera.add(axis * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+        ptr::copy_nonoverlapping(source, target, 3);
+    }
+    ptr::copy_nonoverlapping(
+        frame.add(FREE_CAMERA_POSITION),
+        camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS),
+        3,
+    );
+}
+
+fn fast_inverse_sqrt(value: f32) -> f32 {
+    if value <= FREE_CAMERA_MIN_LENGTH_SQ {
+        return 1.0;
+    }
+    let x2 = value * 0.5;
+    let mut bits = value.to_bits();
+    bits = 0x5f37_59df - (bits >> 1);
+    let mut estimate = f32::from_bits(bits);
+    estimate = estimate * (1.5 - x2 * estimate * estimate);
+    estimate
+}
+
+unsafe fn normalize_free_camera_axis(axis: usize) {
+    let x = FREE_CAMERA_FRAME[axis];
+    let y = FREE_CAMERA_FRAME[axis + 1];
+    let z = FREE_CAMERA_FRAME[axis + 2];
+    let length_sq = x * x + y * y + z * z;
+    if length_sq <= FREE_CAMERA_MIN_LENGTH_SQ {
+        return;
+    }
+    let scale = fast_inverse_sqrt(length_sq);
+    FREE_CAMERA_FRAME[axis] = x * scale;
+    FREE_CAMERA_FRAME[axis + 1] = y * scale;
+    FREE_CAMERA_FRAME[axis + 2] = z * scale;
+}
+
+unsafe fn nudge_free_camera_position(axis: usize, amount: f32) {
+    FREE_CAMERA_FRAME[FREE_CAMERA_POSITION] += FREE_CAMERA_FRAME[axis] * amount;
+    FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 1] += FREE_CAMERA_FRAME[axis + 1] * amount;
+    FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 2] += FREE_CAMERA_FRAME[axis + 2] * amount;
+}
+
+unsafe fn yaw_free_camera(amount: f32) {
+    for index in 0..3 {
+        let right = FREE_CAMERA_FRAME[FREE_CAMERA_RIGHT_AXIS + index];
+        let forward = FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + index];
+        FREE_CAMERA_FRAME[FREE_CAMERA_RIGHT_AXIS + index] = right + forward * amount;
+        FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + index] = forward - right * amount;
+    }
+    normalize_free_camera_axis(FREE_CAMERA_RIGHT_AXIS);
+    normalize_free_camera_axis(FREE_CAMERA_FORWARD_AXIS);
+}
+
+unsafe fn pitch_free_camera(amount: f32) {
+    for index in 0..3 {
+        let up = FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS + index];
+        let forward = FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + index];
+        FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS + index] = up - forward * amount;
+        FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + index] = forward + up * amount;
+    }
+    normalize_free_camera_axis(FREE_CAMERA_UP_AXIS);
+    normalize_free_camera_axis(FREE_CAMERA_FORWARD_AXIS);
+}
+
+unsafe fn nudge_free_camera(right: f32, up: f32, forward: f32, yaw: f32, pitch: f32) {
+    let camera = current_camera();
+    if camera.is_null() {
+        return;
+    }
+    if !FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
+        capture_free_camera_frame(camera);
+    }
+    if right != 0.0 {
+        nudge_free_camera_position(FREE_CAMERA_RIGHT_AXIS, right);
+    }
+    if up != 0.0 {
+        nudge_free_camera_position(FREE_CAMERA_UP_AXIS, up);
+    }
+    if forward != 0.0 {
+        nudge_free_camera_position(FREE_CAMERA_FORWARD_AXIS, forward);
+    }
+    if yaw != 0.0 {
+        yaw_free_camera(yaw);
+    }
+    if pitch != 0.0 {
+        pitch_free_camera(pitch);
+    }
+    FREE_CAMERA_ACTIVE.store(true, Ordering::Release);
+    write_free_camera_frame(camera);
+}
+
+unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds: f32) {
+    let original: GameUpdateCameraFn = mem::transmute(GAME_UPDATE_CAMERA_TRAMPOLINE);
+    original(game, delta_seconds);
+
+    let intro_camera_flag = game_is_level_intro(game);
+    if !intro_camera_flag {
+        FREE_CAMERA_LEVEL_INTRO_STARTED.store(false, Ordering::Release);
+    }
+    let in_level_intro =
+        intro_camera_flag && FREE_CAMERA_LEVEL_INTRO_STARTED.load(Ordering::Acquire);
+    FREE_CAMERA_IN_LEVEL_INTRO.store(in_level_intro, Ordering::Release);
+    if !in_level_intro {
+        FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
+        FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
+        return;
+    }
+    if !FREE_CAMERA_ENABLED.load(Ordering::Acquire) {
+        FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
+        return;
+    }
+
+    let camera = current_camera();
+    if camera.is_null() {
+        return;
+    }
+    if FREE_CAMERA_CAPTURE_REQUESTED.swap(false, Ordering::AcqRel) {
+        capture_free_camera_frame(camera);
+    }
+    if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
+        write_free_camera_frame(camera);
+    }
+}
+
+unsafe extern "C" fn hooked_game_start_level_intro(game: *mut c_void, intro_type: c_int) {
+    let original: GameStartLevelIntroFn = mem::transmute(GAME_START_LEVEL_INTRO_TRAMPOLINE);
+    original(game, intro_type);
+    FREE_CAMERA_LEVEL_INTRO_STARTED.store(true, Ordering::Release);
+    FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
+    FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
+}
+
+unsafe fn install_free_camera_hooks() -> bool {
+    if FREE_CAMERA_HOOKS_INSTALLED.load(Ordering::Acquire) {
+        return true;
+    }
+    if FREE_CAMERA_HOOKS_INSTALLED.swap(true, Ordering::AcqRel) {
+        return true;
+    }
+
+    let update_camera = resolve(b"_ZN4Game12UpdateCameraEf\0");
+    let start_level_intro = resolve(b"_ZN4Game15StartLevelIntroEi\0");
+    if update_camera.is_null() || start_level_intro.is_null() || !ensure_free_camera_symbols() {
+        FREE_CAMERA_HOOKS_INSTALLED.store(false, Ordering::Release);
+        return false;
+    }
+    GAME_UPDATE_CAMERA_TRAMPOLINE = install_inline_hook(
+        update_camera,
+        hooked_game_update_camera as *const c_void,
+        GAME_UPDATE_CAMERA_HOOK_BYTES,
+    );
+    GAME_START_LEVEL_INTRO_TRAMPOLINE = install_inline_hook(
+        start_level_intro,
+        hooked_game_start_level_intro as *const c_void,
+        GAME_START_LEVEL_INTRO_HOOK_BYTES,
+    );
+    let ok =
+        !GAME_UPDATE_CAMERA_TRAMPOLINE.is_null() && !GAME_START_LEVEL_INTRO_TRAMPOLINE.is_null();
+    if !ok {
+        FREE_CAMERA_HOOKS_INSTALLED.store(false, Ordering::Release);
+    }
+    ok
 }
 
 unsafe extern "C" fn hooked_ingame_level_editor_save(
@@ -1456,6 +1686,90 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_installUserTr
     _class: *mut c_void,
 ) -> u8 {
     install_user_track_hooks() as u8
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_installReplayFreeCameraHooks(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> u8 {
+    let installed = install_free_camera_hooks();
+    if installed {
+        FREE_CAMERA_ENABLED.store(true, Ordering::Release);
+    }
+    installed as u8
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayFreeCameraEnabled(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    enabled: u8,
+) {
+    let enabled = enabled != 0;
+    FREE_CAMERA_ENABLED.store(enabled, Ordering::Release);
+    if !enabled {
+        FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
+        FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayFreeCameraLocked(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    locked: u8,
+) {
+    if locked == 0 {
+        FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
+        FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
+        return;
+    }
+    FREE_CAMERA_ENABLED.store(true, Ordering::Release);
+    FREE_CAMERA_CAPTURE_REQUESTED.store(true, Ordering::Release);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_resetReplayFreeCamera(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) {
+    FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
+    FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_nudgeReplayFreeCamera(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    right: f32,
+    up: f32,
+    forward: f32,
+    yaw: f32,
+    pitch: f32,
+) {
+    if !FREE_CAMERA_ENABLED.load(Ordering::Acquire) {
+        return;
+    }
+    nudge_free_camera(right, up, forward, yaw, pitch);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplayFreeCameraStatus(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> c_int {
+    let mut status = 0;
+    if FREE_CAMERA_ENABLED.load(Ordering::Acquire) {
+        status |= 1;
+    }
+    if FREE_CAMERA_IN_LEVEL_INTRO.load(Ordering::Acquire) {
+        status |= 2;
+    }
+    if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
+        status |= 4;
+    }
+    status
 }
 
 #[no_mangle]

@@ -18,10 +18,10 @@
 .method constructor <init>(II)V
     .registers 3
 
-    .line 983
+    .line 995
     invoke-direct {p0, p1, p2}, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;-><init>(II)V
 
-    .line 984
+    .line 996
     return-void
 .end method
 
@@ -30,12 +30,12 @@
 .method public draw(Landroid/graphics/Canvas;)V
     .registers 13
 
-    .line 987
+    .line 999
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->getBounds()Landroid/graphics/Rect;
 
     move-result-object v0
 
-    .line 988
+    .line 1000
     invoke-virtual {v0}, Landroid/graphics/Rect;->width()I
 
     move-result v1
@@ -50,7 +50,7 @@
 
     int-to-float v1, v1
 
-    .line 989
+    .line 1001
     iget v2, v0, Landroid/graphics/Rect;->left:I
 
     int-to-float v2, v2
@@ -69,7 +69,7 @@
 
     add-float/2addr v2, v3
 
-    .line 990
+    .line 1002
     iget v3, v0, Landroid/graphics/Rect;->top:I
 
     int-to-float v3, v3
@@ -86,22 +86,22 @@
 
     add-float/2addr v3, v0
 
-    .line 991
+    .line 1003
     const/high16 v0, 0x3f000000
 
     mul-float v0, v0, v1
 
     add-float v4, v2, v0
 
-    .line 992
+    .line 1004
     add-float/2addr v0, v3
 
-    .line 994
+    .line 1006
     iget-object v5, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v5}, Landroid/graphics/Path;->reset()V
 
-    .line 995
+    .line 1007
     iget-object v5, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const v6, 0x3e75c28f
@@ -118,7 +118,7 @@
 
     invoke-virtual {v5, v6, v7}, Landroid/graphics/Path;->moveTo(FF)V
 
-    .line 996
+    .line 1008
     iget-object v5, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const v6, 0x3e3851ec
@@ -135,7 +135,7 @@
 
     invoke-virtual {v5, v6, v9}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 997
+    .line 1009
     iget-object v5, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const v6, 0x3ec28f5c
@@ -152,7 +152,7 @@
 
     invoke-virtual {v5, v6, v10}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 998
+    .line 1010
     iget-object v5, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const v6, 0x3f1eb852
@@ -163,7 +163,7 @@
 
     invoke-virtual {v5, v6, v10}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 999
+    .line 1011
     iget-object v5, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const v6, 0x3f51eb85
@@ -174,7 +174,7 @@
 
     invoke-virtual {v5, v6, v9}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1000
+    .line 1012
     iget-object v5, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const v6, 0x3f428f5c
@@ -185,19 +185,19 @@
 
     invoke-virtual {v5, v2, v7}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1001
+    .line 1013
     iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v2}, Landroid/graphics/Path;->close()V
 
-    .line 1002
+    .line 1014
     iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     iget-object v5, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {p1, v2, v5}, Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V
 
-    .line 1003
+    .line 1015
     const v2, 0x3eae147b
 
     mul-float v2, v2, v1
@@ -206,7 +206,7 @@
 
     invoke-virtual {p1, v4, v0, v2, v5}, Landroid/graphics/Canvas;->drawCircle(FFFLandroid/graphics/Paint;)V
 
-    .line 1004
+    .line 1016
     new-instance v0, Landroid/graphics/RectF;
 
     const v2, 0x3e19999a
@@ -231,11 +231,11 @@
 
     invoke-direct {v0, v5, v6, v4, v3}, Landroid/graphics/RectF;-><init>(FFFF)V
 
-    .line 1006
+    .line 1018
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {p1, v0, v8, v8, v1}, Landroid/graphics/Canvas;->drawRoundRect(Landroid/graphics/RectF;FFLandroid/graphics/Paint;)V
 
-    .line 1007
+    .line 1019
     return-void
 .end method
