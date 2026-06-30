@@ -435,6 +435,12 @@ def check_sources(skip_local_assets=False):
     ):
         ok = fail("replay follow distance calibration no longer rejects zero/stale ground-position samples") and ok
     if (
+        "read_live_car_basis" not in bridge
+        or "CAR_BODY_RIGHT_FLOAT" not in bridge
+        or "read_live_car_basis(game).unwrap_or((right, up, fwd))" not in bridge
+    ):
+        ok = fail("replay managed camera no longer preserves the live car basis for GoPro mode") and ok
+    if (
         "write_free_camera_frame" not in bridge
         or "ptr::copy_nonoverlapping" not in bridge
         or "FREE_CAMERA_CAPTURE_REQUESTED" not in bridge

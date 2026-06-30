@@ -36,6 +36,15 @@ const MIN_LAP_COUNT: u8 = 2;
 const MAX_LAP_COUNT: u8 = 9;
 const GAME_CURRENT_CAR_OFFSET: usize = 0xb0;
 const CAR_FUEL_OFFSET: usize = 0x128;
+/// Pointer to the car's physics body inside the Car object (Car::MoveToGround /
+/// UpdateShadow both deref `car + 0x158`).
+const CAR_BODY_PTR_OFFSET: usize = 0x158;
+/// The body's CURRENT world transform (TA::MFrame, written by
+/// TA::DynamicObject::SetFrame): basis rows at byte 0x1c0/0x1d0/0x1e0 (stride
+/// 0x10). Position is deliberately not used for the replay anchor here.
+const CAR_BODY_RIGHT_FLOAT: usize = 0x1c0 / 4;
+const CAR_BODY_UP_FLOAT: usize = 0x1d0 / 4;
+const CAR_BODY_FWD_FLOAT: usize = 0x1e0 / 4;
 const INGAME_LEVEL_EDITOR_SAVE_HOOK_BYTES: usize = 16;
 const INGAME_LEVEL_EDITOR_LOAD_HOOK_BYTES: usize = 16;
 const UIFORM_CREATE_CTOR_HOOK_BYTES: usize = 16;
@@ -1251,6 +1260,41 @@ unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
     true
 }
 
+/// Read only the live car basis for GoPro's car-locked orientation. Orbit anchor
+/// position stays chase-camera-derived below so bad body-position offsets cannot
+/// collapse the orbit radius again.
+unsafe fn read_live_car_basis(game: *mut c_void) -> Option<([f32; 3], [f32; 3], [f32; 3])> {
+    if game.is_null() {
+        return None;
+    }
+    let car = ptr::read_volatile((game as *mut u8).add(GAME_CURRENT_CAR_OFFSET) as *mut *mut u8);
+    if car.is_null() {
+        return None;
+    }
+    let body = ptr::read_volatile(car.add(CAR_BODY_PTR_OFFSET) as *mut *mut f32);
+    if body.is_null() {
+        return None;
+    }
+    let read3 = |offset: usize| -> [f32; 3] {
+        [
+            ptr::read_volatile(body.add(offset)),
+            ptr::read_volatile(body.add(offset + 1)),
+            ptr::read_volatile(body.add(offset + 2)),
+        ]
+    };
+    let right = read3(CAR_BODY_RIGHT_FLOAT);
+    let up = read3(CAR_BODY_UP_FLOAT);
+    let fwd = read3(CAR_BODY_FWD_FLOAT);
+    if [right, up, fwd]
+        .iter()
+        .flatten()
+        .any(|&v| !finite_camera_value(v))
+    {
+        return None;
+    }
+    Some((right, up, fwd))
+}
+
 /// Build the managed-camera target frame: the world point the camera orbits.
 ///
 /// The game's own chase camera already tracks the replay car and looks straight
@@ -1262,9 +1306,12 @@ unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
 /// distance, calibrated from `g_v3LastOnGroundPos` (the car's last ground-contact
 /// world point, a plain vec3 with no fragile pointer chain) projected onto the
 /// forward axis; a missing/out-of-range sample keeps the last good (or default)
-/// distance. The chase camera axes also double as a car-orientation proxy for
-/// GoPro/Helicopter.
-unsafe fn replay_follow_frame(camera: *const f32) -> Option<replay_camera::CarFrame> {
+/// distance. GoPro/Helicopter receive the live car basis when available, falling
+/// back to chase-camera axes only if the body transform is unavailable.
+unsafe fn replay_follow_frame(
+    game: *mut c_void,
+    camera: *const f32,
+) -> Option<replay_camera::CarFrame> {
     let read3 = |base: *const f32, offset: usize| -> [f32; 3] {
         [
             ptr::read_volatile(base.add(offset)),
@@ -1329,11 +1376,12 @@ unsafe fn replay_follow_frame(camera: *const f32) -> Option<replay_camera::CarFr
         cam_pos[1] + fwd[1] * distance,
         cam_pos[2] + fwd[2] * distance,
     ];
+    let (car_right, car_up, car_fwd) = read_live_car_basis(game).unwrap_or((right, up, fwd));
     Some(replay_camera::CarFrame {
         pos: anchor,
-        right,
-        up,
-        fwd,
+        right: car_right,
+        up: car_up,
+        fwd: car_fwd,
     })
 }
 
@@ -1522,7 +1570,7 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
             FREE_CAMERA_FOLLOW_CALIBRATED = false;
         }
         if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
-            if let Some(car) = replay_follow_frame(camera) {
+            if let Some(car) = replay_follow_frame(game, camera) {
                 if replay_camera::update(
                     delta_seconds,
                     &car,
