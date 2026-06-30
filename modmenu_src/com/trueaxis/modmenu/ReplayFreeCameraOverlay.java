@@ -6,15 +6,21 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
+import android.view.ActionMode;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.SearchEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.accessibility.AccessibilityEvent;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import android.view.Gravity;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
 
 /** Transparent replay-intro gesture layer backed by the native g_pCamera hook. */
 final class ReplayFreeCameraOverlay {
@@ -49,6 +55,14 @@ final class ReplayFreeCameraOverlay {
                 (WindowManager) activity.getSystemService(Activity.WINDOW_SERVICE);
         if (windowManager == null) return;
 
+        final GestureController controller = new GestureController(activity);
+        final Window window = activity.getWindow();
+        final Window.Callback existing = window.getCallback();
+        if (!(existing instanceof FreeCamWindowCallback)) {
+            window.setCallback(new FreeCamWindowCallback(existing, controller));
+            ModDebugLog.module("freecam", "window touch interceptor installed");
+        }
+
         final GestureLayer layer = new GestureLayer(activity);
         layer.setVisibility(View.GONE);
         if (Build.VERSION.SDK_INT >= 21) {
@@ -56,6 +70,7 @@ final class ReplayFreeCameraOverlay {
         }
 
         final int baseWindowFlags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                 | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
         final WindowManager.LayoutParams layout = new WindowManager.LayoutParams(
@@ -85,6 +100,7 @@ final class ReplayFreeCameraOverlay {
                     boolean inIntro = (bits & STATUS_IN_LEVEL_INTRO) != 0;
                     boolean visible = enabled && inIntro;
                     boolean active = (bits & STATUS_ACTIVE) != 0;
+                    controller.setIntroActive(visible);
                     if (visible && !added[0]) {
                         layout.token = activity.getWindow().getDecorView().getWindowToken();
                         if (layout.token != null) {
@@ -99,11 +115,7 @@ final class ReplayFreeCameraOverlay {
                     } else if (!visible && added[0]) {
                         removeLayer();
                     }
-                    layer.setReplayTouchable(visible);
                     layer.setVisibility(visible ? View.VISIBLE : View.GONE);
-                    if (visible && added[0]) {
-                        layer.bringToFront();
-                    }
                     if (visible != lastTouchable || active != lastActive) {
                         ModDebugLog.module("freecam",
                                 "gesture_layer touchable=" + visible + " active=" + active
@@ -121,7 +133,7 @@ final class ReplayFreeCameraOverlay {
                     handler.postDelayed(this, POLL_MS);
                 } catch (Throwable error) {
                     disabled = true;
-                    layer.setReplayTouchable(false);
+                    controller.setIntroActive(false);
                     layer.setVisibility(View.GONE);
                     removeLayer();
                     ModDebugLog.module("freecam", "gesture layer poll failed; disabling", error);
@@ -135,14 +147,130 @@ final class ReplayFreeCameraOverlay {
                 } catch (Throwable ignored) {
                 }
                 added[0] = false;
-                layer.setReplayTouchable(false);
                 layer.setVisibility(View.GONE);
             }
         };
         handler.post(poll);
     }
 
-    private static final class GestureLayer extends View {
+    private static final class FreeCamWindowCallback implements Window.Callback {
+        private final Window.Callback delegate;
+        private final GestureController controller;
+
+        FreeCamWindowCallback(Window.Callback delegate, GestureController controller) {
+            this.delegate = delegate;
+            this.controller = controller;
+        }
+
+        public boolean dispatchTouchEvent(MotionEvent event) {
+            Boolean consumed = controller.onWindowTouch(event);
+            if (consumed != null) {
+                // #region agent log
+                if (event.getActionMasked() == MotionEvent.ACTION_UP
+                        || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                    agentLog(consumed ? "G" : "F", "ReplayFreeCameraOverlay.java:dispatchTouchEvent",
+                            consumed ? "gesture_consumed" : "tap_passed_to_game",
+                            "{\"action\":" + event.getActionMasked()
+                                    + ",\"pointerCount\":" + event.getPointerCount()
+                                    + ",\"consumed\":" + consumed + "}");
+                }
+                // #endregion
+                return consumed;
+            }
+            return delegate.dispatchTouchEvent(event);
+        }
+
+        public boolean dispatchKeyEvent(KeyEvent event) {
+            return delegate.dispatchKeyEvent(event);
+        }
+
+        public boolean dispatchKeyShortcutEvent(KeyEvent event) {
+            return delegate.dispatchKeyShortcutEvent(event);
+        }
+
+        public boolean dispatchTrackballEvent(MotionEvent event) {
+            return delegate.dispatchTrackballEvent(event);
+        }
+
+        public boolean dispatchGenericMotionEvent(MotionEvent event) {
+            return delegate.dispatchGenericMotionEvent(event);
+        }
+
+        public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
+            return delegate.dispatchPopulateAccessibilityEvent(event);
+        }
+
+        public View onCreatePanelView(int featureId) {
+            return delegate.onCreatePanelView(featureId);
+        }
+
+        public boolean onCreatePanelMenu(int featureId, Menu menu) {
+            return delegate.onCreatePanelMenu(featureId, menu);
+        }
+
+        public boolean onPreparePanel(int featureId, View view, Menu menu) {
+            return delegate.onPreparePanel(featureId, view, menu);
+        }
+
+        public boolean onMenuOpened(int featureId, Menu menu) {
+            return delegate.onMenuOpened(featureId, menu);
+        }
+
+        public boolean onMenuItemSelected(int featureId, MenuItem item) {
+            return delegate.onMenuItemSelected(featureId, item);
+        }
+
+        public void onWindowAttributesChanged(WindowManager.LayoutParams attrs) {
+            delegate.onWindowAttributesChanged(attrs);
+        }
+
+        public void onContentChanged() {
+            delegate.onContentChanged();
+        }
+
+        public void onWindowFocusChanged(boolean hasFocus) {
+            delegate.onWindowFocusChanged(hasFocus);
+        }
+
+        public void onAttachedToWindow() {
+            delegate.onAttachedToWindow();
+        }
+
+        public void onDetachedFromWindow() {
+            delegate.onDetachedFromWindow();
+        }
+
+        public void onPanelClosed(int featureId, Menu menu) {
+            delegate.onPanelClosed(featureId, menu);
+        }
+
+        public boolean onSearchRequested() {
+            return delegate.onSearchRequested();
+        }
+
+        public boolean onSearchRequested(SearchEvent searchEvent) {
+            return delegate.onSearchRequested(searchEvent);
+        }
+
+        public ActionMode onWindowStartingActionMode(ActionMode.Callback callback) {
+            return delegate.onWindowStartingActionMode(callback);
+        }
+
+        public ActionMode onWindowStartingActionMode(
+                ActionMode.Callback callback, int type) {
+            return delegate.onWindowStartingActionMode(callback, type);
+        }
+
+        public void onActionModeStarted(ActionMode mode) {
+            delegate.onActionModeStarted(mode);
+        }
+
+        public void onActionModeFinished(ActionMode mode) {
+            delegate.onActionModeFinished(mode);
+        }
+    }
+
+    private static final class GestureController {
         private static final float MIN_MOTION_DP = 1.5f;
         private static final float PAN_UNITS_PER_DP = 0.85f;
         private static final float DOLLY_UNITS_PER_DP = 1.45f;
@@ -152,7 +280,7 @@ final class ReplayFreeCameraOverlay {
         private static final float MAX_ROTATE = 0.16f;
 
         private final float density;
-        private boolean replayTouchable;
+        private boolean introActive;
         private boolean haveBaseline;
         private int mode;
         private float lastCentroidX;
@@ -162,112 +290,66 @@ final class ReplayFreeCameraOverlay {
         private float downX;
         private float downY;
         private float maxMoveDp;
-        private boolean consumedDown;
-        private boolean gestureActive;
+        private boolean panActive;
 
-        GestureLayer(Activity activity) {
-            super(activity);
+        GestureController(Activity activity) {
             density = Math.max(0.75f, activity.getResources().getDisplayMetrics().density);
-            setWillNotDraw(true);
-            setFocusable(false);
-            setFocusableInTouchMode(false);
         }
 
-        void setReplayTouchable(boolean touchable) {
-            replayTouchable = touchable;
-            if (!touchable) {
+        void setIntroActive(boolean active) {
+            if (!active) {
                 resetGesture();
             }
+            introActive = active;
         }
 
-        public boolean onTouchEvent(MotionEvent event) {
-            if (!replayTouchable) return false;
+        Boolean onWindowTouch(MotionEvent event) {
+            if (!introActive) return null;
             int action = event.getActionMasked();
             int pointerCount = event.getPointerCount();
-            boolean handled = true;
+            if (pointerCount >= 2) {
+                if (action == MotionEvent.ACTION_POINTER_DOWN
+                        || action == MotionEvent.ACTION_POINTER_UP) {
+                    haveBaseline = false;
+                    mode = 0;
+                }
+                if (action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_CANCEL) {
+                    handleMove(event);
+                }
+                return Boolean.TRUE;
+            }
             if (action == MotionEvent.ACTION_DOWN) {
                 downX = event.getX();
                 downY = event.getY();
                 maxMoveDp = 0.0f;
-                consumedDown = true;
-                gestureActive = false;
-            } else if (action == MotionEvent.ACTION_POINTER_DOWN) {
-                gestureActive = true;
-                resetBaseline(event);
-            } else if (action == MotionEvent.ACTION_MOVE) {
-                if (pointerCount == 1 && consumedDown) {
-                    float dxDp = (event.getX() - downX) / density;
-                    float dyDp = (event.getY() - downY) / density;
-                    float moveDp = (float) Math.sqrt(dxDp * dxDp + dyDp * dyDp);
-                    if (moveDp > maxMoveDp) maxMoveDp = moveDp;
-                    if (!gestureActive && maxMoveDp >= MIN_MOTION_DP) {
-                        gestureActive = true;
-                        resetBaseline(event);
-                    }
-                } else if (pointerCount >= 2 && !gestureActive) {
-                    gestureActive = true;
+                panActive = false;
+                // #region agent log
+                agentLog("F", "ReplayFreeCameraOverlay.java:onWindowTouch",
+                        "single_finger_down_pass_through",
+                        "{\"x\":" + downX + ",\"y\":" + downY + "}");
+                // #endregion
+                return null;
+            }
+            if (action == MotionEvent.ACTION_MOVE) {
+                float dxDp = (event.getX() - downX) / density;
+                float dyDp = (event.getY() - downY) / density;
+                maxMoveDp = (float) Math.sqrt(dxDp * dxDp + dyDp * dyDp);
+                if (!panActive && maxMoveDp >= MIN_MOTION_DP) {
+                    panActive = true;
                     resetBaseline(event);
                 }
-                if (gestureActive) {
+                if (panActive) {
                     handleMove(event);
+                    return Boolean.TRUE;
                 }
-            } else if (action == MotionEvent.ACTION_POINTER_UP) {
-                if (gestureActive) {
-                    haveBaseline = false;
-                    mode = 0;
-                }
-            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                boolean tapLike = consumedDown && !gestureActive
-                        && maxMoveDp < MIN_MOTION_DP && pointerCount <= 1;
-                boolean forwarded = false;
-                if (tapLike) {
-                    forwarded = forwardTap(downX, downY);
-                }
-                // #region agent log
-                agentLog(tapLike ? "A" : "E", "ReplayFreeCameraOverlay.java:onTouchEvent",
-                        tapLike ? "tap_forwarded_to_game" : "gesture_or_multi_touch_end",
-                        "{\"action\":" + action + ",\"pointerCount\":" + pointerCount
-                                + ",\"maxMoveDp\":" + maxMoveDp + ",\"downX\":" + downX
-                                + ",\"downY\":" + downY + ",\"tapLike\":" + tapLike
-                                + ",\"forwarded\":" + forwarded + "}");
-                // #endregion
+                return null;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                boolean consumed = panActive;
                 resetGesture();
-            } else {
-                handled = true;
+                return consumed ? Boolean.TRUE : null;
             }
-            // #region agent log
-            if (action == MotionEvent.ACTION_DOWN) {
-                agentLog("A", "ReplayFreeCameraOverlay.java:onTouchEvent",
-                        "touch_down_claimed",
-                        "{\"x\":" + event.getX() + ",\"y\":" + event.getY()
-                                + ",\"pointerCount\":" + pointerCount + ",\"handled\":" + handled + "}");
-            } else if (action == MotionEvent.ACTION_POINTER_DOWN) {
-                agentLog("C", "ReplayFreeCameraOverlay.java:onTouchEvent",
-                        "pointer_down_claimed",
-                        "{\"pointerCount\":" + pointerCount + ",\"handled\":" + handled + "}");
-            }
-            // #endregion
-            return handled;
-        }
-
-        private boolean forwardTap(float x, float y) {
-            if (!(getContext() instanceof Activity)) return false;
-            Activity activity = (Activity) getContext();
-            View target = activity.getWindow().getDecorView();
-            if (target == null) return false;
-            long now = SystemClock.uptimeMillis();
-            MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0);
-            MotionEvent up = MotionEvent.obtain(now, now + 12, MotionEvent.ACTION_UP, x, y, 0);
-            try {
-                target.dispatchTouchEvent(down);
-                target.dispatchTouchEvent(up);
-                ModDebugLog.module("freecam",
-                        "tap forwarded x=" + fmt(x) + " y=" + fmt(y));
-                return true;
-            } finally {
-                down.recycle();
-                up.recycle();
-            }
+            return null;
         }
 
         private void handleMove(MotionEvent event) {
@@ -347,9 +429,8 @@ final class ReplayFreeCameraOverlay {
             lastCentroidY = 0.0f;
             lastDistance = 0.0f;
             lastAngle = 0.0f;
-            consumedDown = false;
             maxMoveDp = 0.0f;
-            gestureActive = false;
+            panActive = false;
         }
 
         private boolean smallTranslation(float dxDp, float dyDp) {
@@ -440,6 +521,15 @@ final class ReplayFreeCameraOverlay {
 
         private static String fmt(float value) {
             return String.valueOf(((int) (value * 1000.0f)) / 1000.0f);
+        }
+    }
+
+    private static final class GestureLayer extends View {
+        GestureLayer(Activity activity) {
+            super(activity);
+            setWillNotDraw(true);
+            setFocusable(false);
+            setFocusableInTouchMode(false);
         }
     }
 }
