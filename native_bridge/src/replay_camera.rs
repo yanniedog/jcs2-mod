@@ -35,7 +35,14 @@ pub const MODE_HELICOPTER: i32 = 2;
 pub const MODE_GOPRO: i32 = 3;
 // Reserved for a later pass (own implementation): Trackside = 4.
 
+// Sizes the per-mode state arrays below. Must be strictly greater than every
+// mode value the Java spinner (`ModMenu.REPLAY_CAMERA_MODE_NAMES`) can emit;
+// when adding a mode, bump this and add the matching Java name. `mode_index()`
+// additionally clamps any out-of-range value to 0, so a mismatch can never
+// index out of bounds — it would only mis-map a mode.
 const MODE_COUNT: usize = 5;
+// Compile-time guard: the highest implemented mode must own a state slot.
+const _: () = assert!((MODE_GOPRO as usize) < MODE_COUNT);
 
 /// One full revolution every 10 s => 36 deg/s = TAU / 10 rad/s.
 const ORBIT_RATE_RAD_PER_S: f32 = 0.628_318_55;
@@ -51,9 +58,16 @@ const MAX_STEP_RAD: f32 = 0.15;
 /// free-camera is enabled, with no extra menu wiring required yet.
 static MODE: AtomicI32 = AtomicI32::new(MODE_ORBIT);
 
-// Per-mode persisted state, indexed by mode value. Single-writer-per-field in
-// practice (gesture thread writes dir/radius, render thread advances dir);
-// matches the static-mut convention already used for the camera frame in lib.rs.
+// Per-mode persisted state, indexed by mode value.
+//
+// Threading model: the game render thread (the `Game::UpdateCamera` hook) calls
+// `update()` every frame and is the only writer of the per-frame camera fields;
+// the Android UI thread calls `zoom()` / `perspective()` / `reset()` (via JNI)
+// to nudge the same per-mode `DIR` / `RADIUS`. Writes are thus effectively
+// single-producer per field and are small f32 stores, where a torn read is
+// visually negligible and self-corrects on the next frame. `MODE` is atomic so
+// the mode swap itself is always observed coherently. This unsynchronised
+// `static mut` style deliberately matches the camera-frame convention in lib.rs.
 static mut INITIALISED: [bool; MODE_COUNT] = [false; MODE_COUNT];
 static mut RADIUS: [f32; MODE_COUNT] = [0.0; MODE_COUNT];
 static mut DIR: [[f32; 3]; MODE_COUNT] = [[0.0, 0.0, 1.0]; MODE_COUNT];
@@ -101,12 +115,8 @@ pub fn set_mode(mode: i32) {
 /// (re)capture or when leaving the replay).
 pub fn invalidate() {
     unsafe {
-        // Indexed assignment avoids taking a reference to the mutable static.
-        let mut i = 0;
-        while i < MODE_COUNT {
-            INITIALISED[i] = false;
-            i += 1;
-        }
+        // Direct whole-array store: no reference to the mutable static is taken.
+        INITIALISED = [false; MODE_COUNT];
     }
 }
 
