@@ -27,6 +27,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -57,6 +58,12 @@ public class ModMenu {
     private static final String K_SPLIT_LIST = "split_list";
     private static final String K_SPLIT_SECTOR_DELTA = "split_sector_delta";
     private static final String K_REPLAY_FREE_CAMERA = "replay_free_camera";
+    private static final String K_REPLAY_CAMERA_MODE = "replay_camera_mode";
+    // First managed mode value; spinner index 0 maps to this (Orbit). Matches
+    // replay_camera::MODE_ORBIT on the native side.
+    private static final int REPLAY_CAMERA_MODE_FIRST = 1;
+    private static final String[] REPLAY_CAMERA_MODE_NAMES = {
+            "Orbit", "Helicopter (track-locked)", "GoPro (car-locked)" };
     private static final String K_REPLAY_SWARM = "replay_swarm";
     private static final String K_SPLIT_ALPHA = "split_alpha";
     private static final String K_SPLIT_X = "split_x";
@@ -421,6 +428,15 @@ public class ModMenu {
         return prefs(c).getBoolean(K_REPLAY_FREE_CAMERA, true);
     }
 
+    /** Active replay camera mode (native replay_camera::MODE_*); defaults to Orbit. */
+    public static int replayCameraMode(Context c) {
+        int mode = prefs(c).getInt(K_REPLAY_CAMERA_MODE, REPLAY_CAMERA_MODE_FIRST);
+        int last = REPLAY_CAMERA_MODE_FIRST + REPLAY_CAMERA_MODE_NAMES.length - 1;
+        return (mode >= REPLAY_CAMERA_MODE_FIRST && mode <= last)
+                ? mode
+                : REPLAY_CAMERA_MODE_FIRST;
+    }
+
     public static boolean replaySwarmEnabled(Context c) {
         applyMenuDefaults(c);
         return prefs(c).getBoolean(K_REPLAY_SWARM, false);
@@ -641,6 +657,36 @@ public class ModMenu {
             addCheckBox(a, card,
                     "Enable gesture free camera during replays",
                     K_REPLAY_FREE_CAMERA, true);
+
+            TextView cameraModeLabel = label(a, "Camera mode", 11, Color.rgb(210, 216, 222));
+            cameraModeLabel.setPadding(0, dp(a, 4), 0, 0);
+            card.addView(cameraModeLabel, fill());
+            final Spinner cameraMode = new Spinner(a);
+            ArrayAdapter<String> cameraModeAdapter = new ArrayAdapter<String>(a,
+                    android.R.layout.simple_spinner_item, REPLAY_CAMERA_MODE_NAMES);
+            cameraModeAdapter.setDropDownViewResource(
+                    android.R.layout.simple_spinner_dropdown_item);
+            cameraMode.setAdapter(cameraModeAdapter);
+            cameraMode.setSelection(replayCameraMode(a) - REPLAY_CAMERA_MODE_FIRST);
+            cameraMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                public void onItemSelected(AdapterView<?> parent, View view, int position,
+                                           long id) {
+                    int mode = position + REPLAY_CAMERA_MODE_FIRST;
+                    prefs(a).edit().putInt(K_REPLAY_CAMERA_MODE, mode).apply();
+                    // Apply live if the native lib is loaded; install-time apply covers
+                    // the cold-start case.
+                    try {
+                        RequiredPatches.setReplayCameraMode(mode);
+                    } catch (Throwable ignored) {
+                    }
+                }
+
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
+            });
+            card.addView(cameraMode, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
 
             card.addView(sectionHeader(a, "Replay swarm mode"));
             TextView swarmHelp = label(a,

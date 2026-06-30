@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 592
+    .line 608
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$6;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,18 +43,18 @@
 .method public onClick(Landroid/view/View;)V
     .registers 3
 
-    .line 594
+    .line 610
     const-string p1, "launcher"
 
     const-string v0, "custom livery editor clicked"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 595
+    .line 611
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$6;->val$a:Landroid/app/Activity;
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
 
-    .line 596
+    .line 612
     return-void
 .end method

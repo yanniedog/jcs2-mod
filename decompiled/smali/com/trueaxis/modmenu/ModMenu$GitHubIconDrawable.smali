@@ -18,10 +18,10 @@
 .method constructor <init>(II)V
     .registers 3
 
-    .line 1180
+    .line 1226
     invoke-direct {p0, p1, p2}, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;-><init>(II)V
 
-    .line 1181
+    .line 1227
     return-void
 .end method
 
@@ -30,7 +30,7 @@
 .method public draw(Landroid/graphics/Canvas;)V
     .registers 24
 
-    .line 1184
+    .line 1230
     move-object/from16 v0, p0
 
     move-object/from16 v1, p1
@@ -39,7 +39,7 @@
 
     move-result-object v2
 
-    .line 1185
+    .line 1231
     invoke-virtual {v2}, Landroid/graphics/Rect;->width()I
 
     move-result v3
@@ -54,7 +54,7 @@
 
     int-to-float v3, v3
 
-    .line 1186
+    .line 1232
     iget v4, v2, Landroid/graphics/Rect;->left:I
 
     int-to-float v4, v4
@@ -73,7 +73,7 @@
 
     add-float/2addr v4, v5
 
-    .line 1187
+    .line 1233
     iget v5, v2, Landroid/graphics/Rect;->top:I
 
     int-to-float v5, v5
@@ -90,17 +90,17 @@
 
     add-float/2addr v5, v2
 
-    .line 1188
+    .line 1234
     const/high16 v2, 0x41c00000
 
     div-float/2addr v3, v2
 
-    .line 1190
+    .line 1236
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v2}, Landroid/graphics/Path;->reset()V
 
-    .line 1191
+    .line 1237
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v6, 0x41400000
@@ -123,19 +123,19 @@
 
     invoke-virtual {v2, v6, v7, v8, v9}, Landroid/graphics/Path;->addCircle(FFFLandroid/graphics/Path$Direction;)V
 
-    .line 1192
+    .line 1238
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     iget-object v6, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v1, v2, v6}, Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V
 
-    .line 1194
+    .line 1240
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v2}, Landroid/graphics/Path;->reset()V
 
-    .line 1195
+    .line 1241
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v6, 0x40d00000
@@ -152,7 +152,7 @@
 
     invoke-virtual {v2, v6, v8}, Landroid/graphics/Path;->moveTo(FF)V
 
-    .line 1196
+    .line 1242
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v6, 0x40600000
@@ -169,7 +169,7 @@
 
     invoke-virtual {v2, v6, v10}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1197
+    .line 1243
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v6, 0x41200000
@@ -186,24 +186,24 @@
 
     invoke-virtual {v2, v6, v11}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1198
+    .line 1244
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v2}, Landroid/graphics/Path;->close()V
 
-    .line 1199
+    .line 1245
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     iget-object v6, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v1, v2, v6}, Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V
 
-    .line 1201
+    .line 1247
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v2}, Landroid/graphics/Path;->reset()V
 
-    .line 1202
+    .line 1248
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v6, 0x418c0000
@@ -214,7 +214,7 @@
 
     invoke-virtual {v2, v6, v8}, Landroid/graphics/Path;->moveTo(FF)V
 
-    .line 1203
+    .line 1249
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v6, 0x41a40000
@@ -225,7 +225,7 @@
 
     invoke-virtual {v2, v8, v10}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1204
+    .line 1250
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v8, 0x41600000
@@ -236,24 +236,24 @@
 
     invoke-virtual {v2, v8, v11}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1205
+    .line 1251
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v2}, Landroid/graphics/Path;->close()V
 
-    .line 1206
+    .line 1252
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     iget-object v8, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v1, v2, v8}, Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V
 
-    .line 1208
+    .line 1254
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v2}, Landroid/graphics/Path;->reset()V
 
-    .line 1209
+    .line 1255
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v8, 0x40900000
@@ -270,7 +270,7 @@
 
     invoke-virtual {v2, v8, v10}, Landroid/graphics/Path;->moveTo(FF)V
 
-    .line 1210
+    .line 1256
     iget-object v11, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     add-float v14, v4, v9
@@ -305,7 +305,7 @@
 
     invoke-virtual/range {v11 .. v17}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1212
+    .line 1258
     iget-object v11, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v6, 0x40e00000
@@ -338,24 +338,24 @@
 
     invoke-virtual/range {v11 .. v17}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1214
+    .line 1260
     iget-object v7, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v7}, Landroid/graphics/Path;->close()V
 
-    .line 1215
+    .line 1261
     iget-object v7, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     iget-object v9, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v1, v7, v9}, Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V
 
-    .line 1217
+    .line 1263
     iget-object v7, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v7}, Landroid/graphics/Path;->reset()V
 
-    .line 1218
+    .line 1264
     iget-object v7, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v9, 0x419c0000
@@ -366,7 +366,7 @@
 
     invoke-virtual {v7, v9, v10}, Landroid/graphics/Path;->moveTo(FF)V
 
-    .line 1219
+    .line 1265
     iget-object v15, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v7, 0x41b40000
@@ -383,7 +383,7 @@
 
     invoke-virtual/range {v15 .. v21}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1221
+    .line 1267
     iget-object v11, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v2, 0x41880000
@@ -406,18 +406,18 @@
 
     invoke-virtual/range {v11 .. v17}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1223
+    .line 1269
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v2}, Landroid/graphics/Path;->close()V
 
-    .line 1224
+    .line 1270
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->path:Landroid/graphics/Path;
 
     iget-object v3, v0, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v1, v2, v3}, Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V
 
-    .line 1225
+    .line 1271
     return-void
 .end method
