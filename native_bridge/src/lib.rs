@@ -1333,7 +1333,9 @@ unsafe fn update_playback_motion(camera: *const f32) {
 
 unsafe fn reset_playback_motion() {
     FREE_CAMERA_LAST_CAM_VALID = false;
-    FREE_CAMERA_STATIONARY_FRAMES = 0;
+    // Start at the limit so playback reads as "still" until real motion is seen;
+    // otherwise the overlay would block the menu for ~12 frames after a reset.
+    FREE_CAMERA_STATIONARY_FRAMES = FREE_CAMERA_STATIONARY_LIMIT;
     FREE_CAMERA_PLAYBACK_MOVING.store(false, Ordering::Release);
 }
 
