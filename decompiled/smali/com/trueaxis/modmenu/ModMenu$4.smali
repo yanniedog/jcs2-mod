@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 561
+    .line 577
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,19 +43,19 @@
 .method public onClick(Landroid/view/View;)V
     .registers 3
 
-    .line 563
+    .line 579
     const-string p1, "launcher"
 
     const-string v0, "donate icon clicked"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 564
+    .line 580
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$a:Landroid/app/Activity;
 
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->showDonateDialog(Landroid/app/Activity;)V
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->access$000(Landroid/app/Activity;)V
 
-    .line 565
+    .line 581
     return-void
 .end method

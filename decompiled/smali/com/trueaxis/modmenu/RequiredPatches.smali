@@ -64,7 +64,7 @@
 .end method
 
 .method public static apply(Landroid/app/Activity;)V
-    .registers 6
+    .registers 7
 
     .line 28
     const-string v0, "YCS2Mod"
@@ -279,27 +279,45 @@
     invoke-static {v1}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayFreeCameraEnabled(Z)V
 
     .line 61
-    new-instance v3, Ljava/lang/StringBuilder;
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->replayCameraMode(Landroid/content/Context;)I
 
-    invoke-direct {v3}, Ljava/lang/StringBuilder;-><init>()V
+    move-result v3
 
-    const-string v4, "replay free camera hooks installed="
+    .line 62
+    invoke-static {v3}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayCameraMode(I)V
 
-    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    .line 63
+    new-instance v4, Ljava/lang/StringBuilder;
 
-    move-result-object v3
+    invoke-direct {v4}, Ljava/lang/StringBuilder;-><init>()V
 
-    invoke-virtual {v3, v2}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+    const-string v5, "replay free camera hooks installed="
 
-    move-result-object v3
+    invoke-virtual {v4, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    const-string v4, " enabled="
+    move-result-object v4
 
-    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v4, v2}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
 
-    move-result-object v3
+    move-result-object v4
 
-    invoke-virtual {v3, v1}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+    const-string v5, " enabled="
+
+    invoke-virtual {v4, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v4
+
+    invoke-virtual {v4, v1}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+
+    move-result-object v4
+
+    const-string v5, " mode="
+
+    invoke-virtual {v4, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v4
+
+    invoke-virtual {v4, v3}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
     move-result-object v3
 
@@ -309,57 +327,57 @@
 
     invoke-static {v3}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 63
-    if-eqz v2, :cond_d8
+    .line 65
+    if-eqz v2, :cond_e9
 
-    if-eqz v1, :cond_d8
-
-    .line 64
-    invoke-static {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay;->install(Landroid/app/Activity;)V
-    :try_end_d8
-    .catchall {:try_start_aa .. :try_end_d8} :catchall_d9
-
-    .line 69
-    :cond_d8
-    goto :goto_e2
+    if-eqz v1, :cond_e9
 
     .line 66
-    :catchall_d9
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay;->install(Landroid/app/Activity;)V
+    :try_end_e9
+    .catchall {:try_start_aa .. :try_end_e9} :catchall_ea
+
+    .line 71
+    :cond_e9
+    goto :goto_f3
+
+    .line 68
+    :catchall_ea
     move-exception v1
 
-    .line 67
+    .line 69
     const-string v2, "Could not install replay free camera"
 
     invoke-static {v0, v2, v1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 68
+    .line 70
     invoke-static {v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 70
-    :goto_e2
+    .line 72
+    :goto_f3
     const-string v1, "replay visual marker disabled; replay data is not modified"
 
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 71
+    .line 73
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->replaySwarmEnabled(Landroid/content/Context;)Z
 
     move-result v1
 
-    if-eqz v1, :cond_11b
+    if-eqz v1, :cond_12c
 
-    .line 73
-    :try_start_ed
+    .line 75
+    :try_start_fe
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->installReplaySwarmHooks()Z
 
     move-result v1
 
-    .line 74
+    .line 76
     const/4 v2, 0x1
 
     invoke-static {v2}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplaySwarmEnabled(Z)V
 
-    .line 75
+    .line 77
     new-instance v2, Ljava/lang/StringBuilder;
 
     invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
@@ -380,99 +398,99 @@
 
     invoke-static {v2}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 76
-    if-eqz v1, :cond_11a
-
-    .line 77
-    invoke-static {p0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->install(Landroid/app/Activity;)V
-    :try_end_110
-    .catchall {:try_start_ed .. :try_end_110} :catchall_111
-
-    goto :goto_11a
+    .line 78
+    if-eqz v1, :cond_12b
 
     .line 79
-    :catchall_111
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->install(Landroid/app/Activity;)V
+    :try_end_121
+    .catchall {:try_start_fe .. :try_end_121} :catchall_122
+
+    goto :goto_12b
+
+    .line 81
+    :catchall_122
     move-exception v1
 
-    .line 80
+    .line 82
     const-string v2, "Could not install replay swarm mode"
 
     invoke-static {v0, v2, v1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 81
+    .line 83
     invoke-static {v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 82
-    :cond_11a
-    :goto_11a
-    goto :goto_121
-
-    .line 85
-    :cond_11b
-    const/4 v1, 0x0
-
-    :try_start_11c
-    invoke-static {v1}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplaySwarmEnabled(Z)V
-    :try_end_11f
-    .catchall {:try_start_11c .. :try_end_11f} :catchall_120
+    .line 84
+    :cond_12b
+    :goto_12b
+    goto :goto_132
 
     .line 87
-    goto :goto_121
+    :cond_12c
+    const/4 v1, 0x0
 
-    .line 86
-    :catchall_120
-    move-exception v1
+    :try_start_12d
+    invoke-static {v1}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplaySwarmEnabled(Z)V
+    :try_end_130
+    .catchall {:try_start_12d .. :try_end_130} :catchall_131
 
     .line 89
-    :goto_121
+    goto :goto_132
+
+    .line 88
+    :catchall_131
+    move-exception v1
+
+    .line 91
+    :goto_132
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->checkpointSplitsEnabled(Landroid/content/Context;)Z
 
     move-result v1
 
-    if-eqz v1, :cond_13a
+    if-eqz v1, :cond_14b
 
-    .line 90
+    .line 92
     const-string v1, "checkpoint split HUD enabled"
 
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 92
-    :try_start_12c
+    .line 94
+    :try_start_13d
     invoke-static {p0}, Lcom/trueaxis/modmenu/SplitTimeHud;->install(Landroid/app/Activity;)V
-    :try_end_12f
-    .catchall {:try_start_12c .. :try_end_12f} :catchall_130
+    :try_end_140
+    .catchall {:try_start_13d .. :try_end_140} :catchall_141
 
-    .line 96
-    :goto_12f
-    goto :goto_13f
+    .line 98
+    :goto_140
+    goto :goto_150
 
-    .line 93
-    :catchall_130
+    .line 95
+    :catchall_141
     move-exception p0
 
-    .line 94
+    .line 96
     const-string v1, "Could not install checkpoint split HUD"
 
     invoke-static {v0, v1, p0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 95
+    .line 97
     invoke-static {v1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    goto :goto_12f
+    goto :goto_140
 
-    .line 98
-    :cond_13a
+    .line 100
+    :cond_14b
     const-string p0, "checkpoint split HUD disabled"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 100
-    :goto_13f
+    .line 102
+    :goto_150
     const-string p0, "after RequiredPatches.apply"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->logRuntime(Ljava/lang/String;)V
 
-    .line 101
+    .line 103
     return-void
 .end method
 

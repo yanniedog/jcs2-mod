@@ -1219,6 +1219,39 @@ unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
     true
 }
 
+/// Read the replayed car's world frame (position + basis) from the ghost
+/// transform for the managed camera modes. The transform shares the engine's
+/// stride-4 4x4 layout: right @ 0..3, up @ 4..7, forward @ 8..11, position @
+/// 12..15, so the basis triples are the car's local axes in world space.
+unsafe fn read_replay_car_frame() -> Option<replay_camera::CarFrame> {
+    ensure_free_camera_symbols();
+    if LAST_GHOST_TRANSFORM.is_null() {
+        return None;
+    }
+    let transform = LAST_GHOST_TRANSFORM;
+    let read3 = |offset: usize| -> [f32; 3] {
+        [
+            ptr::read_volatile(transform.add(offset)),
+            ptr::read_volatile(transform.add(offset + 1)),
+            ptr::read_volatile(transform.add(offset + 2)),
+        ]
+    };
+    let frame = replay_camera::CarFrame {
+        right: read3(0),
+        up: read3(FREE_CAMERA_AXIS_STRIDE_FLOATS),
+        fwd: read3(2 * FREE_CAMERA_AXIS_STRIDE_FLOATS),
+        pos: read3(GHOST_TRANSFORM_POS_FLOAT),
+    };
+    let finite = [frame.right, frame.up, frame.fwd, frame.pos]
+        .iter()
+        .flatten()
+        .all(|&value| finite_camera_value(value));
+    if !finite {
+        return None;
+    }
+    Some(frame)
+}
+
 unsafe fn aim_free_camera_at(anchor: &[f32; 3]) {
     let pos_x = FREE_CAMERA_FRAME[FREE_CAMERA_POSITION];
     let pos_y = FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 1];
@@ -1358,16 +1391,16 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
             capture_free_camera_frame(camera);
             replay_camera::invalidate();
         }
-        let mut car = [0.0f32; 3];
-        if FREE_CAMERA_ACTIVE.load(Ordering::Acquire)
-            && free_camera_anchor_position(&mut car)
-            && replay_camera::update(
-                delta_seconds,
-                car,
-                &mut *ptr::addr_of_mut!(FREE_CAMERA_FRAME),
-            )
-        {
-            write_free_camera_frame(camera);
+        if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
+            if let Some(car) = read_replay_car_frame() {
+                if replay_camera::update(
+                    delta_seconds,
+                    &car,
+                    &mut *ptr::addr_of_mut!(FREE_CAMERA_FRAME),
+                ) {
+                    write_free_camera_frame(camera);
+                }
+            }
         }
         return;
     }

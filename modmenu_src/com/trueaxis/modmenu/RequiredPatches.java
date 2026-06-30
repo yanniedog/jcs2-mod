@@ -58,8 +58,10 @@ public final class RequiredPatches {
         try {
             boolean installed = installReplayFreeCameraHooks();
             setReplayFreeCameraEnabled(replayFreeCameraEnabled);
+            int cameraMode = ModMenu.replayCameraMode(activity);
+            setReplayCameraMode(cameraMode);
             ModDebugLog.log("replay free camera hooks installed=" + installed
-                    + " enabled=" + replayFreeCameraEnabled);
+                    + " enabled=" + replayFreeCameraEnabled + " mode=" + cameraMode);
             if (installed && replayFreeCameraEnabled) {
                 ReplayFreeCameraOverlay.install(activity);
             }
