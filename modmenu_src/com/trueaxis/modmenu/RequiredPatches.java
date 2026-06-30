@@ -107,6 +107,7 @@ public final class RequiredPatches {
     static native void setReplayFreeCameraEnabled(boolean enabled);
     static native void setReplayFreeCameraLocked(boolean locked);
     static native void resetReplayFreeCamera();
+    static native void setReplayCameraMode(int mode);
     static native void nudgeReplayFreeCamera(float right, float up, float forward,
                                              float yaw, float pitch);
     static native void gestureReplayFreeCamera(float right, float up, float forward,

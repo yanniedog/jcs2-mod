@@ -79,6 +79,7 @@ final class ReplaySwarmOverlay {
         ModDebugLog.log("replay swarm overlay installed");
         handler.post(new Runnable() {
             private int lastState;
+            private int lastCatalog;
             private boolean disabled;
 
             public void run() {
@@ -97,10 +98,15 @@ final class ReplaySwarmOverlay {
 
             private void poll(Button configureButton, TextView statusView) {
                 int state = RequiredPatches.readReplaySwarmActive();
+                int catalog = RequiredPatches.readReplaySwarmCatalogCount();
+                if (catalog != lastCatalog) {
+                    lastCatalog = catalog;
+                    ModDebugLog.module("swarm", "catalog updated count=" + catalog);
+                }
                 if (state != lastState) {
                     lastState = state;
                     ModDebugLog.module("swarm", "overlay state=" + state
-                            + " catalog=" + RequiredPatches.readReplaySwarmCatalogCount()
+                            + " catalog=" + catalog
                             + " ghosts=" + RequiredPatches.readReplaySwarmGhostCount());
                 }
 

@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 457
+    .line 549
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -41,20 +41,59 @@
 
 # virtual methods
 .method public onClick(Landroid/view/View;)V
-    .registers 3
+    .registers 7
 
-    .line 459
-    const-string p1, "launcher"
+    .line 552
+    const-string p1, "https://github.com/yanniedog/jcs2-mod"
 
-    const-string v0, "manual update check clicked"
+    const-string v0, "launcher"
 
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    :try_start_4
+    const-string v1, "open link url=https://github.com/yanniedog/jcs2-mod"
 
-    .line 460
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
+    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    invoke-static {p1}, Lcom/trueaxis/modmenu/UpdateManager;->checkNow(Landroid/app/Activity;)V
+    .line 553
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
 
-    .line 461
+    new-instance v2, Landroid/content/Intent;
+
+    const-string v3, "android.intent.action.VIEW"
+
+    invoke-static {p1}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
+
+    move-result-object v4
+
+    invoke-direct {v2, v3, v4}, Landroid/content/Intent;-><init>(Ljava/lang/String;Landroid/net/Uri;)V
+
+    invoke-virtual {v1, v2}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
+    :try_end_19
+    .catchall {:try_start_4 .. :try_end_19} :catchall_1a
+
+    .line 557
+    goto :goto_2a
+
+    .line 554
+    :catchall_1a
+    move-exception v1
+
+    .line 555
+    const-string v2, "open link failed url=https://github.com/yanniedog/jcs2-mod"
+
+    invoke-static {v0, v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+
+    .line 556
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
+
+    const/4 v1, 0x1
+
+    invoke-static {v0, p1, v1}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
+
+    move-result-object p1
+
+    invoke-virtual {p1}, Landroid/widget/Toast;->show()V
+
+    .line 558
+    :goto_2a
     return-void
 .end method

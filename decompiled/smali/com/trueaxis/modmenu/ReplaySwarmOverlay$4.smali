@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 195
+    .line 201
     iput-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$4;->val$status:Landroid/widget/TextView;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$4;->val$activity:Landroid/app/Activity;
@@ -47,17 +47,17 @@
 .method public onClick(Landroid/content/DialogInterface;I)V
     .registers 3
 
-    .line 197
+    .line 203
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->clearReplaySwarm()V
 
-    .line 198
+    .line 204
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$4;->val$status:Landroid/widget/TextView;
 
     const/16 p2, 0x8
 
     invoke-virtual {p1, p2}, Landroid/widget/TextView;->setVisibility(I)V
 
-    .line 199
+    .line 205
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$4;->val$activity:Landroid/app/Activity;
 
     const-string p2, "Replay swarm cleared."
@@ -65,6 +65,6 @@
     # invokes: Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->toast(Landroid/app/Activity;Ljava/lang/String;)V
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->access$100(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 200
+    .line 206
     return-void
 .end method

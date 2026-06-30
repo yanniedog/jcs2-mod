@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Ljava/lang/Runnable;
+.implements Landroid/view/View$OnClickListener;
 
 
 # annotations
@@ -20,22 +20,18 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
-
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;)V
-    .registers 3
+.method constructor <init>(Landroid/app/Activity;)V
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 537
+    .line 592
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$6;->val$a:Landroid/app/Activity;
-
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$6;->val$splitOptions:Landroid/widget/LinearLayout;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -44,17 +40,21 @@
 
 
 # virtual methods
-.method public run()V
+.method public onClick(Landroid/view/View;)V
     .registers 3
 
-    .line 539
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$6;->val$a:Landroid/app/Activity;
+    .line 594
+    const-string p1, "launcher"
 
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$6;->val$splitOptions:Landroid/widget/LinearLayout;
+    const-string v0, "custom livery editor clicked"
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;)V
-    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->access$000(Landroid/content/Context;Landroid/view/View;)V
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 540
+    .line 595
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$6;->val$a:Landroid/app/Activity;
+
+    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+
+    .line 596
     return-void
 .end method

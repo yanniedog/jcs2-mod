@@ -3,12 +3,12 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Landroid/view/View$OnClickListener;
+.implements Ljava/lang/Runnable;
 
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+    value = Lcom/trueaxis/modmenu/ModMenu;->showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -20,11 +20,11 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$cars:Landroid/widget/Spinner;
+.field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
+.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;)V
     .registers 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
@@ -32,10 +32,10 @@
         }
     .end annotation
 
-    .line 723
+    .line 668
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$cars:Landroid/widget/Spinner;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$splitOptions:Landroid/widget/LinearLayout;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -44,61 +44,17 @@
 
 
 # virtual methods
-.method public onClick(Landroid/view/View;)V
-    .registers 4
+.method public run()V
+    .registers 3
 
-    .line 725
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
-
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$cars:Landroid/widget/Spinner;
-
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$200(Landroid/content/Context;Landroid/widget/Spinner;)V
-
-    .line 727
-    :try_start_7
-    new-instance p1, Landroid/content/Intent;
-
+    .line 670
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
 
-    const-class v1, Lcom/trueaxis/modmenu/LiveryDesignerActivity;
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$splitOptions:Landroid/widget/LinearLayout;
 
-    invoke-direct {p1, v0, v1}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;)V
+    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Landroid/view/View;)V
 
-    .line 728
-    const-string v0, "car"
-
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$cars:Landroid/widget/Spinner;
-
-    invoke-virtual {v1}, Landroid/widget/Spinner;->getSelectedItemPosition()I
-
-    move-result v1
-
-    invoke-virtual {p1, v0, v1}, Landroid/content/Intent;->putExtra(Ljava/lang/String;I)Landroid/content/Intent;
-
-    .line 729
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
-
-    invoke-virtual {v0, p1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
-    :try_end_20
-    .catchall {:try_start_7 .. :try_end_20} :catchall_21
-
-    .line 732
-    goto :goto_29
-
-    .line 730
-    :catchall_21
-    move-exception p1
-
-    .line 731
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
-
-    const-string v0, "Could not open the designer."
-
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$300(Landroid/content/Context;Ljava/lang/String;)V
-
-    .line 733
-    :goto_29
+    .line 671
     return-void
 .end method

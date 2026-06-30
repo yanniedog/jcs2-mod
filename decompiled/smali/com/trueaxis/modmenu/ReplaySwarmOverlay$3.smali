@@ -36,7 +36,7 @@
         }
     .end annotation
 
-    .line 202
+    .line 208
     iput-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$primaryGroup:Landroid/widget/RadioGroup;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$activity:Landroid/app/Activity;
@@ -55,17 +55,17 @@
 .method public onClick(Landroid/content/DialogInterface;I)V
     .registers 6
 
-    .line 204
+    .line 210
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$primaryGroup:Landroid/widget/RadioGroup;
 
     invoke-virtual {p1}, Landroid/widget/RadioGroup;->getCheckedRadioButtonId()I
 
     move-result p1
 
-    .line 205
+    .line 211
     if-gez p1, :cond_10
 
-    .line 206
+    .line 212
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$activity:Landroid/app/Activity;
 
     const-string p2, "Choose a primary replay."
@@ -73,14 +73,14 @@
     # invokes: Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->toast(Landroid/app/Activity;Ljava/lang/String;)V
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->access$100(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 207
+    .line 213
     return-void
 
-    .line 209
+    .line 215
     :cond_10
     nop
 
-    .line 210
+    .line 216
     const/4 p2, 0x0
 
     const/4 v0, 0x0
@@ -92,7 +92,7 @@
 
     if-ge v0, v2, :cond_29
 
-    .line 211
+    .line 217
     if-eq v0, p1, :cond_26
 
     iget-object v2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$boxes:[Landroid/widget/CheckBox;
@@ -105,22 +105,22 @@
 
     if-eqz v2, :cond_26
 
-    .line 212
+    .line 218
     add-int/lit8 v1, v1, 0x1
 
-    .line 210
+    .line 216
     :cond_26
     add-int/lit8 v0, v0, 0x1
 
     goto :goto_14
 
-    .line 215
+    .line 221
     :cond_29
     const/4 v0, 0x1
 
     if-ge v1, v0, :cond_34
 
-    .line 216
+    .line 222
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$activity:Landroid/app/Activity;
 
     const-string p2, "Select at least one ghost replay."
@@ -128,17 +128,17 @@
     # invokes: Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->toast(Landroid/app/Activity;Ljava/lang/String;)V
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->access$100(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 217
+    .line 223
     return-void
 
-    .line 219
+    .line 225
     :cond_34
     new-array v0, v1, [I
 
-    .line 220
+    .line 226
     nop
 
-    .line 221
+    .line 227
     const/4 v1, 0x0
 
     :goto_38
@@ -146,7 +146,7 @@
 
     if-ge p2, v2, :cond_50
 
-    .line 222
+    .line 228
     if-eq p2, p1, :cond_4d
 
     iget-object v2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$boxes:[Landroid/widget/CheckBox;
@@ -159,24 +159,24 @@
 
     if-eqz v2, :cond_4d
 
-    .line 223
+    .line 229
     add-int/lit8 v2, v1, 0x1
 
     aput p2, v0, v1
 
     move v1, v2
 
-    .line 221
+    .line 227
     :cond_4d
     add-int/lit8 p2, p2, 0x1
 
     goto :goto_38
 
-    .line 226
+    .line 232
     :cond_50
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplaySwarmSelection(I[I)V
 
-    .line 227
+    .line 233
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$activity:Landroid/app/Activity;
 
     new-instance p2, Ljava/lang/StringBuilder;
@@ -189,7 +189,7 @@
 
     move-result-object p2
 
-    .line 228
+    .line 234
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmGhostCount()I
 
     move-result v0
@@ -208,10 +208,10 @@
 
     move-result-object p2
 
-    .line 227
+    .line 233
     # invokes: Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->toast(Landroid/app/Activity;Ljava/lang/String;)V
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->access$100(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 230
+    .line 236
     return-void
 .end method
