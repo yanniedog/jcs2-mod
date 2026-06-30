@@ -1,11 +1,10 @@
 # GitHub APK Release Automation
 
-The repository has two GitHub Actions workflows:
+The repository has GitHub Actions workflows:
 
-- `pr-ci`: runs on pull requests and checks the mod surface without requiring
-  signing secrets or the ignored `decompiled/assets/` tree.
-- `release-apk`: runs after a pull request is merged into `main` and creates a
-  signed APK plus a GitHub Release.
+- `pr-ci`: runs on pull requests — Rust/native/smali build + mod surface audit (required check: **`pr-ci`**).
+- `pr-bot-presence-gate` / `pr-bot-feedback-check`: bot QA gates (required checks: **`bot-presence-gate`**, **`bot-feedback-gate`**). See [`WORKFLOW.md`](../WORKFLOW.md).
+- `release-apk`: runs after a pull request is **squash-merged** into `main` and creates a signed APK plus a GitHub Release.
 
 ## Large APK hosting and app updates
 
