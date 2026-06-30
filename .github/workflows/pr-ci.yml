@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  mod-surface:
-    name: mod surface audit and generated-code check
+  pr-ci:
+    name: pr-ci
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
