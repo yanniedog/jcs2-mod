@@ -39,12 +39,14 @@ const CAR_FUEL_OFFSET: usize = 0x128;
 /// Pointer to the car's physics body inside the Car object (Car::MoveToGround /
 /// UpdateShadow both deref `car + 0x158`).
 const CAR_BODY_PTR_OFFSET: usize = 0x158;
-/// The body's world transform (TA::MFrame): basis rows at byte 0x1d0/0x1e0/0x1f0
-/// (stride 0x10) and translation at 0x200 -- in f32 indices below.
-const CAR_BODY_RIGHT_FLOAT: usize = 0x1d0 / 4;
-const CAR_BODY_UP_FLOAT: usize = 0x1e0 / 4;
-const CAR_BODY_FWD_FLOAT: usize = 0x1f0 / 4;
-const CAR_BODY_POS_FLOAT: usize = 0x200 / 4;
+/// The body's CURRENT world transform (TA::MFrame, written by
+/// TA::DynamicObject::SetFrame): basis rows at byte 0x1c0/0x1d0/0x1e0 (stride
+/// 0x10) and translation at 0x1f0 -- in f32 indices below. Byte 0x200 begins a
+/// stale cached copy of the frame and must not be used as the position.
+const CAR_BODY_RIGHT_FLOAT: usize = 0x1c0 / 4;
+const CAR_BODY_UP_FLOAT: usize = 0x1d0 / 4;
+const CAR_BODY_FWD_FLOAT: usize = 0x1e0 / 4;
+const CAR_BODY_POS_FLOAT: usize = 0x1f0 / 4;
 /// Lift the orbit anchor along the car's up axis toward roof height (world units).
 const CAR_ROOF_OFFSET: f32 = 0.0;
 const INGAME_LEVEL_EDITOR_SAVE_HOOK_BYTES: usize = 16;
@@ -1264,11 +1266,11 @@ unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
 }
 
 /// Read the live car's world frame from the Car object chain
-/// `game -> car (*+0xb0) -> body (*+0x158)`, whose TA::MFrame has basis rows at
-/// f32 indices 116/120/124 (bytes 0x1d0/0x1e0/0x1f0) and the translation at f32
-/// 128 (byte 0x200). This is the actual replay car the chase camera follows --
-/// `g_ghostTransform` is the separate racing ghost. The anchor is lifted along
-/// the car up axis toward roof height by `CAR_ROOF_OFFSET`.
+/// `game -> car (*+0xb0) -> body (*+0x158)`, whose current TA::MFrame has basis
+/// rows at f32 indices 112/116/120 (bytes 0x1c0/0x1d0/0x1e0) and the translation
+/// at f32 124 (byte 0x1f0). This is the actual replay car the chase camera
+/// follows -- `g_ghostTransform` is the separate racing ghost. The anchor is
+/// lifted along the car up axis toward roof height by `CAR_ROOF_OFFSET`.
 unsafe fn read_car_world_frame(game: *mut c_void) -> Option<replay_camera::CarFrame> {
     if game.is_null() {
         return None;
@@ -1292,10 +1294,10 @@ unsafe fn read_car_world_frame(game: *mut c_void) -> Option<replay_camera::CarFr
     let up = read3(CAR_BODY_UP_FLOAT);
     let fwd = read3(CAR_BODY_FWD_FLOAT);
     let pos = read3(CAR_BODY_POS_FLOAT);
-    if ![right, up, fwd, pos]
+    if [right, up, fwd, pos]
         .iter()
         .flatten()
-        .all(|&v| finite_camera_value(v))
+        .any(|&v| !finite_camera_value(v))
     {
         return None;
     }
