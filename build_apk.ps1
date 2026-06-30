@@ -3,11 +3,24 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $Root
 
+function Copy-TextOverlayLf($source, $destination) {
+    $text = [System.IO.File]::ReadAllText($source)
+    $text = $text -replace "`r`n", "`n"
+    $text = $text -replace "`r", "`n"
+    [System.IO.File]::WriteAllText(
+        $destination,
+        $text,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+}
+
 Write-Host "Applying tracked mod asset overlays..."
-Copy-Item (Join-Path $Root "mod_assets\shaders\afterburner.vert") `
-    (Join-Path $Root "decompiled\assets\shaders\afterburner.vert") -Force
-Copy-Item (Join-Path $Root "mod_assets\shaders\afterburner_fix.vert") `
-    (Join-Path $Root "decompiled\assets\shaders\afterburner_fix.vert") -Force
+Copy-TextOverlayLf `
+    (Join-Path $Root "mod_assets\shaders\afterburner.vert") `
+    (Join-Path $Root "decompiled\assets\shaders\afterburner.vert")
+Copy-TextOverlayLf `
+    (Join-Path $Root "mod_assets\shaders\afterburner_fix.vert") `
+    (Join-Path $Root "decompiled\assets\shaders\afterburner_fix.vert")
 
 $ApktoolYml = Join-Path $Root "decompiled\apktool.yml"
 $VersionText = Get-Content $ApktoolYml -Raw
