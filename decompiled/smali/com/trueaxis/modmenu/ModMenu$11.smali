@@ -3,12 +3,12 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Ljava/lang/Runnable;
+.implements Landroid/view/View$OnClickListener;
 
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+    value = Lcom/trueaxis/modmenu/ModMenu;->showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -18,28 +18,20 @@
 
 
 # instance fields
-.field final synthetic val$a:Landroid/app/Activity;
-
-.field final synthetic val$cars:Landroid/widget/Spinner;
-
-.field final synthetic val$status:Landroid/widget/TextView;
+.field final synthetic val$onPlay:Ljava/lang/Runnable;
 
 
 # direct methods
-.method constructor <init>(Landroid/widget/Spinner;Landroid/widget/TextView;Landroid/app/Activity;)V
-    .registers 4
+.method constructor <init>(Ljava/lang/Runnable;)V
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 753
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$cars:Landroid/widget/Spinner;
-
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$status:Landroid/widget/TextView;
-
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$a:Landroid/app/Activity;
+    .line 708
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$onPlay:Ljava/lang/Runnable;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -48,45 +40,21 @@
 
 
 # virtual methods
-.method public run()V
-    .registers 4
+.method public onClick(Landroid/view/View;)V
+    .registers 3
 
-    .line 755
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$cars:Landroid/widget/Spinner;
+    .line 710
+    const-string p1, "launcher"
 
-    invoke-virtual {v0}, Landroid/widget/Spinner;->getSelectedItemPosition()I
+    const-string v0, "play button invoking onPlay"
 
-    move-result v0
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 756
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$status:Landroid/widget/TextView;
+    .line 711
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$onPlay:Ljava/lang/Runnable;
 
-    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$a:Landroid/app/Activity;
+    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
-    invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$400(Landroid/content/Context;I)Ljava/io/File;
-
-    move-result-object v0
-
-    invoke-virtual {v0}, Ljava/io/File;->isFile()Z
-
-    move-result v0
-
-    if-eqz v0, :cond_17
-
-    .line 757
-    const-string v0, "Active livery: custom"
-
-    goto :goto_19
-
-    .line 758
-    :cond_17
-    const-string v0, "Active livery: bundled default"
-
-    .line 756
-    :goto_19
-    invoke-virtual {v1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
-
-    .line 759
+    .line 712
     return-void
 .end method

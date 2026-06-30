@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 494
+    .line 569
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -41,20 +41,59 @@
 
 # virtual methods
 .method public onClick(Landroid/view/View;)V
-    .registers 3
+    .registers 7
 
-    .line 496
-    const-string p1, "launcher"
+    .line 572
+    const-string p1, "https://discord.gg/stBdE2Tfs2"
 
-    const-string v0, "local game data export clicked"
+    const-string v0, "launcher"
 
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    :try_start_4
+    const-string v1, "open link url=https://discord.gg/stBdE2Tfs2"
 
-    .line 497
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
+    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    invoke-static {p1}, Lcom/trueaxis/modmenu/GameDataExporter;->exportNow(Landroid/app/Activity;)V
+    .line 573
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
-    .line 498
+    new-instance v2, Landroid/content/Intent;
+
+    const-string v3, "android.intent.action.VIEW"
+
+    invoke-static {p1}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
+
+    move-result-object v4
+
+    invoke-direct {v2, v3, v4}, Landroid/content/Intent;-><init>(Ljava/lang/String;Landroid/net/Uri;)V
+
+    invoke-virtual {v1, v2}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
+    :try_end_19
+    .catchall {:try_start_4 .. :try_end_19} :catchall_1a
+
+    .line 577
+    goto :goto_2a
+
+    .line 574
+    :catchall_1a
+    move-exception v1
+
+    .line 575
+    const-string v2, "open link failed url=https://discord.gg/stBdE2Tfs2"
+
+    invoke-static {v0, v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+
+    .line 576
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
+
+    const/4 v1, 0x1
+
+    invoke-static {v0, p1, v1}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
+
+    move-result-object p1
+
+    invoke-virtual {p1}, Landroid/widget/Toast;->show()V
+
+    .line 578
+    :goto_2a
     return-void
 .end method

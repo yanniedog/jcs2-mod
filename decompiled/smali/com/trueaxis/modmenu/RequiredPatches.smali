@@ -614,6 +614,9 @@
 .method static native resetReplayFreeCamera()V
 .end method
 
+.method static native setReplayCameraMode(I)V
+.end method
+
 .method static native setReplayFreeCameraEnabled(Z)V
 .end method
 

@@ -2,6 +2,8 @@ package com.trueaxis.modmenu;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -16,6 +18,7 @@ import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
@@ -28,6 +31,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.ScrollView;
@@ -59,6 +63,8 @@ public class ModMenu {
     private static final String K_SPLIT_Y = "split_y";
     private static final String REPO_URL = "https://github.com/yanniedog/jcs2-mod";
     private static final String DISCORD_URL = "https://discord.gg/stBdE2Tfs2";
+    private static final String DONATE_SOLANA_ADDRESS =
+            "F6mjNXKBKzjmKTK1Z9cWabFHZYtxMg8rojuNuppX2EG1";
     private static final String DISPLAY_NAME = "JCS2 Community Mod";
     private static final int REQUEST_IMPORT = 7301;
     private static final int REQUEST_EXPORT = 7302;
@@ -136,9 +142,120 @@ public class ModMenu {
         return view;
     }
 
+    private static Button iconLinkButton(final Activity a, int color, Drawable icon,
+            String contentDescription, final View.OnClickListener listener) {
+        Button view = new Button(a);
+        view.setText("");
+        view.setContentDescription(contentDescription);
+        view.setGravity(Gravity.CENTER);
+        view.setMinHeight(0);
+        view.setMinimumHeight(0);
+        view.setMinWidth(0);
+        view.setMinimumWidth(0);
+        int pad = dp(a, 9);
+        view.setPadding(pad, pad, pad, pad);
+        view.setBackgroundDrawable(background(color, dp(a, 10)));
+        int iconSize = dp(a, 22);
+        icon.setBounds(0, 0, iconSize, iconSize);
+        view.setCompoundDrawables(icon, null, null, null);
+        view.setOnClickListener(listener);
+        return view;
+    }
+
+    private static void addButtonRow(Activity a, LinearLayout card, Button left, Button right) {
+        LinearLayout row = new LinearLayout(a);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams cell = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        cell.setMargins(0, dp(a, 2), 0, dp(a, 2));
+        if (left != null) {
+            row.addView(left, cell);
+        }
+        if (right != null) {
+            row.addView(right, cell);
+        }
+        card.addView(row, fill());
+    }
+
+    private static void showDonateDialog(final Activity a) {
+        ModDebugLog.module("launcher", "donate modal opened address=" + DONATE_SOLANA_ADDRESS);
+        LinearLayout content = new LinearLayout(a);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(a, 16), dp(a, 12), dp(a, 16), dp(a, 4));
+
+        TextView title = label(a, "Fuel the development", 16, Color.rgb(255, 128, 0));
+        title.setPadding(0, 0, 0, dp(a, 4));
+        content.addView(title);
+
+        TextView lead = label(a,
+                "Scan the QR or copy the wallet to support the mod.",
+                11, Color.rgb(170, 178, 185));
+        lead.setPadding(0, 0, 0, dp(a, 8));
+        content.addView(lead);
+
+        TextView walletLabel = label(a, "Solana (SOL) wallet", 12, Color.WHITE);
+        walletLabel.setPadding(0, 0, 0, dp(a, 2));
+        content.addView(walletLabel);
+
+        TextView address = label(a, DONATE_SOLANA_ADDRESS, 9, Color.rgb(210, 216, 222));
+        address.setTypeface(Typeface.MONOSPACE);
+        if (Build.VERSION.SDK_INT >= 16) {
+            address.setTextIsSelectable(true);
+        }
+        address.setPadding(0, 0, 0, dp(a, 6));
+        content.addView(address);
+
+        final TextView copyStatus = label(a, "", 10, Color.rgb(120, 220, 140));
+        copyStatus.setPadding(0, 0, 0, dp(a, 4));
+        copyStatus.setVisibility(View.GONE);
+        content.addView(copyStatus);
+
+        Button copy = button(a, "Copy address");
+        copy.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                try {
+                    ClipboardManager clipboard = (ClipboardManager) a.getSystemService(
+                            Context.CLIPBOARD_SERVICE);
+                    clipboard.setPrimaryClip(ClipData.newPlainText(
+                            "Solana wallet", DONATE_SOLANA_ADDRESS));
+                    ModDebugLog.module("launcher", "donate address copied");
+                    copyStatus.setText("Value copied!");
+                    copyStatus.setVisibility(View.VISIBLE);
+                } catch (Throwable error) {
+                    ModDebugLog.module("launcher", "donate address copy failed", error);
+                    Toast.makeText(a, DONATE_SOLANA_ADDRESS, Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+        content.addView(copy, fill());
+
+        FrameLayout qrWrap = new FrameLayout(a);
+        qrWrap.setBackgroundDrawable(background(Color.WHITE, dp(a, 8)));
+        qrWrap.setPadding(dp(a, 12), dp(a, 12), dp(a, 12), dp(a, 12));
+        ImageView qr = new ImageView(a);
+        int qrPx = dp(a, 220);
+        qr.setImageBitmap(QrCodeEncoder.encode(DONATE_SOLANA_ADDRESS, qrPx));
+        qr.setAdjustViewBounds(true);
+        qrWrap.addView(qr, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER));
+        LinearLayout.LayoutParams qrLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        qrLp.gravity = Gravity.CENTER_HORIZONTAL;
+        qrLp.topMargin = dp(a, 8);
+        content.addView(qrWrap, qrLp);
+
+        new AlertDialog.Builder(a)
+                .setView(content)
+                .setPositiveButton("Done", null)
+                .show();
+    }
+
     private static TextView sectionHeader(Context c, String text) {
-        TextView view = label(c, text, 13, Color.rgb(255, 128, 0));
-        view.setPadding(0, dp(c, 12), 0, dp(c, 4));
+        TextView view = label(c, text, 12, Color.rgb(255, 128, 0));
+        view.setPadding(0, dp(c, 6), 0, dp(c, 2));
         return view;
     }
 
@@ -398,48 +515,75 @@ public class ModMenu {
             LinearLayout root = new LinearLayout(a);
             root.setOrientation(LinearLayout.VERTICAL);
             root.setBackgroundColor(Color.rgb(13, 17, 23));
-            root.setPadding(dp(a, 20), dp(a, 16), dp(a, 20), dp(a, 16));
+            root.setPadding(dp(a, 12), dp(a, 10), dp(a, 12), dp(a, 10));
 
-            TextView title = label(a, DISPLAY_NAME, 23, Color.rgb(255, 128, 0));
+            TextView title = label(a, DISPLAY_NAME, 20, Color.rgb(255, 128, 0));
             title.setGravity(Gravity.CENTER);
             title.setPadding(0, 0, 0, dp(a, 2));
             root.addView(title);
 
-            TextView version = label(a, buildSummary(a), 11, Color.rgb(210, 216, 222));
+            TextView version = label(a, buildSummary(a), 10, Color.rgb(210, 216, 222));
             version.setGravity(Gravity.CENTER);
-            version.setPadding(0, 0, 0, dp(a, 3));
+            version.setPadding(0, 0, 0, dp(a, 2));
             root.addView(version);
 
             TextView subtitle = label(a,
-                    "A community mod for Jet Car Stunts 2 with updates, custom liveries, and replay split tools before launch.",
-                    11, Color.rgb(170, 178, 185));
+                    "Updates, custom liveries, and replay tools before launch.",
+                    10, Color.rgb(170, 178, 185));
             subtitle.setGravity(Gravity.CENTER);
-            subtitle.setPadding(0, 0, 0, dp(a, 8));
+            subtitle.setPadding(0, 0, 0, dp(a, 6));
             root.addView(subtitle);
 
             LinearLayout links = new LinearLayout(a);
             links.setOrientation(LinearLayout.HORIZONTAL);
             links.setGravity(Gravity.CENTER);
-            links.setPadding(0, 0, 0, dp(a, 10));
-            LinearLayout.LayoutParams gitHubLinkParams = new LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-            gitHubLinkParams.setMargins(dp(a, 4), 0, dp(a, 4), 0);
-            LinearLayout.LayoutParams discordLinkParams = new LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-            discordLinkParams.setMargins(dp(a, 4), 0, dp(a, 4), 0);
-            links.addView(linkButton(a, "GitHub", Color.rgb(36, 41, 46),
-                    new GitHubIconDrawable(Color.WHITE, Color.rgb(36, 41, 46)), REPO_URL),
-                    gitHubLinkParams);
-            links.addView(linkButton(a, "Discord", Color.rgb(88, 101, 242),
-                    new DiscordIconDrawable(Color.WHITE, Color.rgb(88, 101, 242)), DISCORD_URL),
-                    discordLinkParams);
+            links.setPadding(0, 0, 0, dp(a, 6));
+            LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(
+                    dp(a, 42), dp(a, 42));
+            iconLp.setMargins(dp(a, 5), 0, dp(a, 5), 0);
+            int githubBg = Color.rgb(36, 41, 46);
+            int discordBg = Color.rgb(88, 101, 242);
+            int donateBg = Color.rgb(20, 25, 35);
+            links.addView(iconLinkButton(a, githubBg,
+                    new GitHubIconDrawable(Color.WHITE, githubBg), "GitHub",
+                    new View.OnClickListener() {
+                        public void onClick(View v) {
+                            try {
+                                ModDebugLog.module("launcher", "open link url=" + REPO_URL);
+                                a.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(REPO_URL)));
+                            } catch (Throwable error) {
+                                ModDebugLog.module("launcher", "open link failed url=" + REPO_URL, error);
+                                Toast.makeText(a, REPO_URL, Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    }), iconLp);
+            links.addView(iconLinkButton(a, donateBg, new SolanaDonateIconDrawable(),
+                    "Donate", new View.OnClickListener() {
+                        public void onClick(View v) {
+                            ModDebugLog.module("launcher", "donate icon clicked");
+                            showDonateDialog(a);
+                        }
+                    }), iconLp);
+            links.addView(iconLinkButton(a, discordBg,
+                    new DiscordIconDrawable(Color.WHITE, discordBg), "Discord",
+                    new View.OnClickListener() {
+                        public void onClick(View v) {
+                            try {
+                                ModDebugLog.module("launcher", "open link url=" + DISCORD_URL);
+                                a.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(DISCORD_URL)));
+                            } catch (Throwable error) {
+                                ModDebugLog.module("launcher", "open link failed url=" + DISCORD_URL, error);
+                                Toast.makeText(a, DISCORD_URL, Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    }), iconLp);
             root.addView(links);
 
             ScrollView scroll = new ScrollView(a);
             scroll.setFillViewport(true);
             LinearLayout card = new LinearLayout(a);
             card.setOrientation(LinearLayout.VERTICAL);
-            card.setPadding(dp(a, 16), dp(a, 10), dp(a, 16), dp(a, 14));
+            card.setPadding(dp(a, 10), dp(a, 6), dp(a, 10), dp(a, 8));
             card.setBackgroundDrawable(background(Color.rgb(28, 32, 38), dp(a, 10)));
 
             card.addView(sectionHeader(a, "Mod tools"));
@@ -451,16 +595,14 @@ public class ModMenu {
                     showLiveryManager(a);
                 }
             });
-            card.addView(liveries, fill());
-
-            Button updates = button(a, "Check for updates");
+            Button updates = button(a, "Check updates");
             updates.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     ModDebugLog.module("launcher", "manual update check clicked");
                     UpdateManager.checkNow(a);
                 }
             });
-            card.addView(updates, fill());
+            addButtonRow(a, card, liveries, updates);
 
             Button uploadLogs = button(a, "Upload debug logs");
             uploadLogs.setOnClickListener(new View.OnClickListener() {
@@ -472,25 +614,15 @@ public class ModMenu {
             card.addView(uploadLogs, fill());
 
             card.addView(sectionHeader(a, "Cloud sync (Play Games)"));
-            TextView playGamesStatus = label(a, PlayGamesAssessment.signInStatus(a), 10,
-                    Color.rgb(255, 196, 120));
-            playGamesStatus.setPadding(0, 0, 0, dp(a, 2));
-            card.addView(playGamesStatus);
-            TextView playGamesLeaderboards = label(a,
-                    "Leaderboards: " + PlayGamesAssessment.leaderboardFeasibility(),
+            TextView playGamesSummary = label(a,
+                    PlayGamesAssessment.signInStatus(a) + "\n"
+                            + "Leaderboards: " + PlayGamesAssessment.leaderboardFeasibility()
+                            + " | Replays: " + PlayGamesAssessment.replayFeasibility() + "\n"
+                            + PlayGamesAssessment.localBackupStatus(a),
                     10, Color.rgb(170, 178, 185));
-            playGamesLeaderboards.setPadding(0, 0, 0, dp(a, 2));
-            card.addView(playGamesLeaderboards);
-            TextView playGamesReplays = label(a,
-                    "Replays: " + PlayGamesAssessment.replayFeasibility(),
-                    10, Color.rgb(170, 178, 185));
-            playGamesReplays.setPadding(0, 0, 0, dp(a, 4));
-            card.addView(playGamesReplays);
-            TextView localBackup = label(a, PlayGamesAssessment.localBackupStatus(a),
-                    10, Color.rgb(210, 216, 222));
-            localBackup.setPadding(0, 0, 0, dp(a, 4));
-            card.addView(localBackup);
-            Button exportData = button(a, "Export local stats / replay queue");
+            playGamesSummary.setPadding(0, 0, 0, dp(a, 4));
+            card.addView(playGamesSummary);
+            Button exportData = button(a, "Export stats / replays");
             exportData.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     ModDebugLog.module("launcher", "local game data export clicked");
@@ -500,9 +632,9 @@ public class ModMenu {
             card.addView(exportData, fill());
 
             TextView coreNote = label(a,
-                    "Always on: purchase compatibility, expanded checkpoint capacity, and blue flame identification. Replay files are not rewritten.",
-                    10, Color.rgb(150, 158, 165));
-            coreNote.setPadding(0, dp(a, 9), 0, dp(a, 2));
+                    "Always on: purchase compatibility, expanded checkpoints, blue flame ID.",
+                    9, Color.rgb(150, 158, 165));
+            coreNote.setPadding(0, dp(a, 4), 0, dp(a, 2));
             card.addView(coreNote);
 
             card.addView(sectionHeader(a, "Replay free camera"));
@@ -512,9 +644,8 @@ public class ModMenu {
 
             card.addView(sectionHeader(a, "Replay swarm mode"));
             TextView swarmHelp = label(a,
-                    "Overlay multiple passive replays on the same track. Open a replay in-game, "
-                            + "tap Swarm, choose one primary replay and any extra ghost replays.",
-                    10, Color.rgb(170, 178, 185));
+                    "Overlay passive replays on the same track. Tap Swarm in-game to pick ghosts.",
+                    9, Color.rgb(170, 178, 185));
             swarmHelp.setPadding(0, 0, 0, dp(a, 2));
             card.addView(swarmHelp);
             addCheckBox(a, card,
@@ -523,8 +654,8 @@ public class ModMenu {
 
             card.addView(sectionHeader(a, "Replay split HUD"));
             TextView splitHelp = label(a,
-                    "Compares your run with the saved replay ghost when checkpoint timing is available.",
-                    10, Color.rgb(170, 178, 185));
+                    "Compares your run with the saved replay ghost when timing is available.",
+                    9, Color.rgb(170, 178, 185));
             splitHelp.setPadding(0, 0, 0, dp(a, 2));
             card.addView(splitHelp);
 
@@ -570,10 +701,10 @@ public class ModMenu {
             play.setTextSize(14.0f);
             play.setTextColor(Color.BLACK);
             play.setBackgroundDrawable(background(Color.rgb(255, 128, 0), dp(a, 8)));
-            play.setPadding(dp(a, 16), dp(a, 12), dp(a, 16), dp(a, 12));
+            play.setPadding(dp(a, 16), dp(a, 10), dp(a, 16), dp(a, 10));
             LinearLayout.LayoutParams playLp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            playLp.topMargin = dp(a, 12);
+            playLp.topMargin = dp(a, 8);
             play.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     ModDebugLog.module("launcher", "play button invoking onPlay");
@@ -632,7 +763,7 @@ public class ModMenu {
         checkBox.setTextColor(Color.WHITE);
         checkBox.setTextSize(11.0f);
         checkBox.setChecked(prefs(c).getBoolean(key, defaultValue));
-        checkBox.setPadding(0, dp(c, 4), 0, 0);
+        checkBox.setPadding(0, dp(c, 2), 0, 0);
         checkBox.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 prefs(c).edit().putBoolean(key, checkBox.isChecked()).apply();
@@ -1054,22 +1185,43 @@ public class ModMenu {
             float size = Math.min(b.width(), b.height());
             float x = b.left + (b.width() - size) / 2.0f;
             float y = b.top + (b.height() - size) / 2.0f;
-            float cx = x + size * 0.5f;
-            float cy = y + size * 0.5f;
+            float s = size / 24.0f;
 
             path.reset();
-            path.moveTo(x + size * 0.24f, y + size * 0.30f);
-            path.lineTo(x + size * 0.18f, y + size * 0.08f);
-            path.lineTo(x + size * 0.38f, y + size * 0.20f);
-            path.lineTo(x + size * 0.62f, y + size * 0.20f);
-            path.lineTo(x + size * 0.82f, y + size * 0.08f);
-            path.lineTo(x + size * 0.76f, y + size * 0.30f);
+            path.addCircle(x + 12.0f * s, y + 11.5f * s, 9.0f * s, Path.Direction.CW);
+            canvas.drawPath(path, paint);
+
+            path.reset();
+            path.moveTo(x + 6.5f * s, y + 5.5f * s);
+            path.lineTo(x + 3.5f * s, y + 1.5f * s);
+            path.lineTo(x + 10.0f * s, y + 4.0f * s);
             path.close();
             canvas.drawPath(path, paint);
-            canvas.drawCircle(cx, cy, size * 0.34f, paint);
-            RectF chin = new RectF(cx - size * 0.15f, y + size * 0.67f,
-                    cx + size * 0.15f, y + size * 0.93f);
-            canvas.drawRoundRect(chin, size * 0.08f, size * 0.08f, paint);
+
+            path.reset();
+            path.moveTo(x + 17.5f * s, y + 5.5f * s);
+            path.lineTo(x + 20.5f * s, y + 1.5f * s);
+            path.lineTo(x + 14.0f * s, y + 4.0f * s);
+            path.close();
+            canvas.drawPath(path, paint);
+
+            path.reset();
+            path.moveTo(x + 4.5f * s, y + 14.5f * s);
+            path.cubicTo(x + 1.5f * s, y + 16.5f * s, x + 1.5f * s, y + 20.5f * s,
+                    x + 5.0f * s, y + 21.5f * s);
+            path.cubicTo(x + 7.0f * s, y + 19.0f * s, x + 7.0f * s, y + 16.0f * s,
+                    x + 5.5f * s, y + 14.5f * s);
+            path.close();
+            canvas.drawPath(path, paint);
+
+            path.reset();
+            path.moveTo(x + 19.5f * s, y + 14.5f * s);
+            path.cubicTo(x + 22.5f * s, y + 16.5f * s, x + 22.5f * s, y + 20.5f * s,
+                    x + 19.0f * s, y + 21.5f * s);
+            path.cubicTo(x + 17.0f * s, y + 19.0f * s, x + 17.0f * s, y + 16.0f * s,
+                    x + 18.5f * s, y + 14.5f * s);
+            path.close();
+            canvas.drawPath(path, paint);
         }
     }
 
@@ -1083,32 +1235,98 @@ public class ModMenu {
             float size = Math.min(b.width(), b.height());
             float x = b.left + (b.width() - size) / 2.0f;
             float y = b.top + (b.height() - size) / 2.0f;
+            float s = size / 24.0f;
 
             path.reset();
-            path.moveTo(x + size * 0.24f, y + size * 0.27f);
-            path.cubicTo(x + size * 0.36f, y + size * 0.19f,
-                    x + size * 0.64f, y + size * 0.19f,
-                    x + size * 0.76f, y + size * 0.27f);
-            path.cubicTo(x + size * 0.86f, y + size * 0.37f,
-                    x + size * 0.90f, y + size * 0.55f,
-                    x + size * 0.82f, y + size * 0.72f);
-            path.cubicTo(x + size * 0.73f, y + size * 0.78f,
-                    x + size * 0.62f, y + size * 0.72f,
-                    x + size * 0.57f, y + size * 0.66f);
-            path.lineTo(x + size * 0.43f, y + size * 0.66f);
-            path.cubicTo(x + size * 0.38f, y + size * 0.72f,
-                    x + size * 0.27f, y + size * 0.78f,
-                    x + size * 0.18f, y + size * 0.72f);
-            path.cubicTo(x + size * 0.10f, y + size * 0.55f,
-                    x + size * 0.14f, y + size * 0.37f,
-                    x + size * 0.24f, y + size * 0.27f);
+            path.moveTo(x + 4.5f * s, y + 6.5f * s);
+            path.cubicTo(x + 4.5f * s, y + 4.5f * s, x + 6.0f * s, y + 3.0f * s,
+                    x + 8.5f * s, y + 3.0f * s);
+            path.cubicTo(x + 9.5f * s, y + 2.0f * s, x + 11.0f * s, y + 1.5f * s,
+                    x + 12.0f * s, y + 1.5f * s);
+            path.cubicTo(x + 13.0f * s, y + 1.5f * s, x + 14.5f * s, y + 2.0f * s,
+                    x + 15.5f * s, y + 3.0f * s);
+            path.cubicTo(x + 18.0f * s, y + 3.0f * s, x + 19.5f * s, y + 4.5f * s,
+                    x + 19.5f * s, y + 6.5f * s);
+            path.cubicTo(x + 20.5f * s, y + 8.0f * s, x + 21.0f * s, y + 10.0f * s,
+                    x + 20.5f * s, y + 12.0f * s);
+            path.cubicTo(x + 19.0f * s, y + 13.0f * s, x + 17.5f * s, y + 13.5f * s,
+                    x + 16.0f * s, y + 13.0f * s);
+            path.lineTo(x + 14.5f * s, y + 14.5f * s);
+            path.lineTo(x + 13.0f * s, y + 13.5f * s);
+            path.cubicTo(x + 12.5f * s, y + 13.7f * s, x + 11.5f * s, y + 13.7f * s,
+                    x + 11.0f * s, y + 13.5f * s);
+            path.lineTo(x + 9.5f * s, y + 14.5f * s);
+            path.lineTo(x + 8.0f * s, y + 13.0f * s);
+            path.cubicTo(x + 6.5f * s, y + 13.5f * s, x + 5.0f * s, y + 13.0f * s,
+                    x + 3.5f * s, y + 12.0f * s);
+            path.cubicTo(x + 3.0f * s, y + 10.0f * s, x + 3.5f * s, y + 8.0f * s,
+                    x + 4.5f * s, y + 6.5f * s);
             path.close();
             canvas.drawPath(path, paint);
-            canvas.drawCircle(x + size * 0.39f, y + size * 0.50f, size * 0.055f, cutout);
-            canvas.drawCircle(x + size * 0.61f, y + size * 0.50f, size * 0.055f, cutout);
-            RectF smile = new RectF(x + size * 0.43f, y + size * 0.57f,
-                    x + size * 0.57f, y + size * 0.63f);
-            canvas.drawRoundRect(smile, size * 0.03f, size * 0.03f, cutout);
+            canvas.drawCircle(x + 9.0f * s, y + 9.5f * s, 1.4f * s, cutout);
+            canvas.drawCircle(x + 15.0f * s, y + 9.5f * s, 1.4f * s, cutout);
+        }
+    }
+
+    private static class SolanaDonateIconDrawable extends Drawable {
+        private final Paint bar1 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint bar2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint bar3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path path = new Path();
+
+        SolanaDonateIconDrawable() {
+            bar1.setStyle(Paint.Style.FILL);
+            bar1.setColor(Color.rgb(0, 255, 163));
+            bar2.setStyle(Paint.Style.FILL);
+            bar2.setColor(Color.rgb(153, 69, 255));
+            bar3.setStyle(Paint.Style.FILL);
+            bar3.setColor(Color.rgb(220, 31, 255));
+        }
+
+        public void draw(Canvas canvas) {
+            Rect b = getBounds();
+            float size = Math.min(b.width(), b.height());
+            float x = b.left + (b.width() - size) / 2.0f;
+            float y = b.top + (b.height() - size) / 2.0f;
+            float s = size / 24.0f;
+            drawBar(canvas, x + 3.5f * s, y + 14.0f * s, 3.5f * s, 8.0f * s, 2.2f * s, bar1);
+            drawBar(canvas, x + 9.5f * s, y + 12.0f * s, 3.5f * s, 10.0f * s, 2.2f * s, bar2);
+            drawBar(canvas, x + 15.5f * s, y + 10.0f * s, 3.5f * s, 12.0f * s, 2.2f * s, bar3);
+        }
+
+        private void drawBar(Canvas canvas, float left, float bottom, float width, float height,
+                float skew, Paint paint) {
+            path.reset();
+            path.moveTo(left, bottom);
+            path.lineTo(left + width, bottom - skew);
+            path.lineTo(left + width, bottom - skew - height);
+            path.lineTo(left, bottom - height);
+            path.close();
+            canvas.drawPath(path, paint);
+        }
+
+        public void setAlpha(int alpha) {
+            bar1.setAlpha(alpha);
+            bar2.setAlpha(alpha);
+            bar3.setAlpha(alpha);
+        }
+
+        public void setColorFilter(ColorFilter colorFilter) {
+            bar1.setColorFilter(colorFilter);
+            bar2.setColorFilter(colorFilter);
+            bar3.setColorFilter(colorFilter);
+        }
+
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
+        }
+
+        public int getIntrinsicWidth() {
+            return 24;
+        }
+
+        public int getIntrinsicHeight() {
+            return 24;
         }
     }
 

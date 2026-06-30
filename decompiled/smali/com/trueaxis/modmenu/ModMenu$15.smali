@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Landroid/view/View$OnClickListener;
+.implements Ljava/lang/Runnable;
 
 
 # annotations
@@ -22,11 +22,11 @@
 
 .field final synthetic val$cars:Landroid/widget/Spinner;
 
-.field final synthetic val$refresh:Ljava/lang/Runnable;
+.field final synthetic val$status:Landroid/widget/TextView;
 
 
 # direct methods
-.method constructor <init>(Landroid/widget/Spinner;Landroid/app/Activity;Ljava/lang/Runnable;)V
+.method constructor <init>(Landroid/widget/Spinner;Landroid/widget/TextView;Landroid/app/Activity;)V
     .registers 4
     .annotation system Ldalvik/annotation/Signature;
         value = {
@@ -34,12 +34,12 @@
         }
     .end annotation
 
-    .line 814
+    .line 884
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$cars:Landroid/widget/Spinner;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$a:Landroid/app/Activity;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$status:Landroid/widget/TextView;
 
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$refresh:Ljava/lang/Runnable;
+    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -48,84 +48,45 @@
 
 
 # virtual methods
-.method public onClick(Landroid/view/View;)V
-    .registers 5
+.method public run()V
+    .registers 4
 
-    .line 816
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$cars:Landroid/widget/Spinner;
+    .line 886
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$cars:Landroid/widget/Spinner;
 
-    invoke-virtual {p1}, Landroid/widget/Spinner;->getSelectedItemPosition()I
+    invoke-virtual {v0}, Landroid/widget/Spinner;->getSelectedItemPosition()I
 
-    move-result p1
+    move-result v0
 
-    .line 817
-    new-instance v0, Ljava/lang/StringBuilder;
+    .line 887
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$status:Landroid/widget/TextView;
 
-    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$a:Landroid/app/Activity;
 
-    const-string v1, "restore default car="
-
-    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v0
-
-    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->carName(I)Ljava/lang/String;
-
-    move-result-object v1
-
-    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
+    invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$500(Landroid/content/Context;I)Ljava/io/File;
 
     move-result-object v0
 
-    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    invoke-virtual {v0}, Ljava/io/File;->isFile()Z
 
-    move-result-object v0
+    move-result v0
 
-    const-string v1, "livery"
+    if-eqz v0, :cond_17
 
-    invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    .line 888
+    const-string v0, "Active livery: custom"
 
-    .line 818
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$a:Landroid/app/Activity;
+    goto :goto_19
 
-    invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModMenu;->deleteCustomLivery(Landroid/content/Context;I)V
+    .line 889
+    :cond_17
+    const-string v0, "Active livery: bundled default"
 
-    .line 819
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$refresh:Ljava/lang/Runnable;
+    .line 887
+    :goto_19
+    invoke-virtual {v1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    invoke-interface {v0}, Ljava/lang/Runnable;->run()V
-
-    .line 820
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$a:Landroid/app/Activity;
-
-    new-instance v1, Ljava/lang/StringBuilder;
-
-    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
-
-    # getter for: Lcom/trueaxis/modmenu/ModMenu;->CAR_NAMES:[Ljava/lang/String;
-    invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->access$600()[Ljava/lang/String;
-
-    move-result-object v2
-
-    aget-object p1, v2, p1
-
-    invoke-virtual {v1, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p1
-
-    const-string v1, " restored. Restart the game to apply."
-
-    invoke-virtual {p1, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p1
-
-    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p1
-
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModMenu;->access$300(Landroid/content/Context;Ljava/lang/String;)V
-
-    .line 821
+    .line 890
     return-void
 .end method

@@ -8,6 +8,8 @@ use core::panic::PanicInfo;
 use core::ptr;
 use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
+mod replay_camera;
+
 const RTLD_DEFAULT: *mut c_void = 0usize as *mut c_void;
 const RTLD_NOW: c_int = 2;
 const CHECKPOINT_LIMIT: c_int = 999;
@@ -66,6 +68,9 @@ const FREE_CAMERA_FORWARD_AXIS: usize = 6;
 const FREE_CAMERA_POSITION: usize = 9;
 const FREE_CAMERA_FRAME_FLOATS: usize = 12;
 const FREE_CAMERA_MIN_LENGTH_SQ: f32 = 0.000001;
+/// Converts a perspective-drag gesture delta (world-ish units) into radians for
+/// the managed camera sphere. Tunable feel constant.
+const REPLAY_CAMERA_PERSPECTIVE_SCALE: f32 = 0.012;
 const UI_CONTROL_BUTTON_SIZE: usize = 0x130;
 const UIFORM_CREATE_CAR_PANEL_X: c_int = 0x0d7;
 const UIFORM_CREATE_CAR_PANEL_Y: c_int = 0x07d;
@@ -1332,16 +1337,38 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
         FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
         FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
         reset_free_camera_car_follow();
+        replay_camera::invalidate();
         return;
     }
     if !FREE_CAMERA_ENABLED.load(Ordering::Acquire) {
         FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
         reset_free_camera_car_follow();
+        replay_camera::invalidate();
         return;
     }
 
     let camera = current_camera();
     if camera.is_null() {
+        return;
+    }
+    // Managed camera modes (Orbit / Helicopter / GoPro / Trackside) auto-activate
+    // and fully own the camera each frame.
+    if replay_camera::is_managed() {
+        if !FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
+            capture_free_camera_frame(camera);
+            replay_camera::invalidate();
+        }
+        let mut car = [0.0f32; 3];
+        if FREE_CAMERA_ACTIVE.load(Ordering::Acquire)
+            && free_camera_anchor_position(&mut car)
+            && replay_camera::update(
+                delta_seconds,
+                car,
+                &mut *ptr::addr_of_mut!(FREE_CAMERA_FRAME),
+            )
+        {
+            write_free_camera_frame(camera);
+        }
         return;
     }
     if FREE_CAMERA_CAPTURE_REQUESTED.swap(false, Ordering::AcqRel) {
@@ -1360,6 +1387,7 @@ unsafe extern "C" fn hooked_game_start_level_intro(game: *mut c_void, intro_type
     FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
     FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
     reset_free_camera_car_follow();
+    replay_camera::invalidate();
 }
 
 unsafe fn install_free_camera_hooks() -> bool {
@@ -2147,8 +2175,23 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_resetReplayFr
     _env: *mut c_void,
     _class: *mut c_void,
 ) {
+    if replay_camera::is_managed() {
+        // Managed modes stay active; restore the captured default framing.
+        replay_camera::reset();
+        return;
+    }
     FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
     FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
+}
+
+/// Select the active replay camera mode (see `replay_camera::MODE_*`).
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayCameraMode(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    mode: c_int,
+) {
+    replay_camera::set_mode(mode as i32);
 }
 
 #[no_mangle]
@@ -2185,6 +2228,20 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_gestureReplay
         || !FREE_CAMERA_IN_LEVEL_INTRO.load(Ordering::Acquire)
         || !game_show_replay_active()
     {
+        return;
+    }
+    if replay_camera::is_managed() {
+        // Constrained sphere model: gestures may only zoom (distance) or change
+        // perspective (which side of the car faces the camera). Pan/tilt/yaw are
+        // intentionally dropped so the car can never be dragged off-centre.
+        if forward != 0.0 {
+            replay_camera::zoom(forward);
+        }
+        let dx = (right + car_right) * REPLAY_CAMERA_PERSPECTIVE_SCALE;
+        let dy = (up + car_up) * REPLAY_CAMERA_PERSPECTIVE_SCALE;
+        if dx != 0.0 || dy != 0.0 {
+            replay_camera::perspective(dx, dy);
+        }
         return;
     }
     apply_free_camera_gesture(right, up, forward, yaw, pitch, car_right, car_up);
@@ -2717,6 +2774,15 @@ unsafe fn swarm_reset_catalog() {
 }
 
 unsafe fn ensure_swarm_symbols() -> bool {
+    if GHOST_SIZE.is_null() {
+        GHOST_SIZE = resolve(b"g_nGhostSize\0") as *mut c_int;
+    }
+    if SHOW_REPLAY.is_null() {
+        SHOW_REPLAY = resolve(b"g_bShowReplay\0") as *mut u8;
+    }
+    if GHOST_POS.is_null() {
+        GHOST_POS = resolve(b"g_nGhostPos\0") as *mut c_int;
+    }
     if REPLAY_POS.is_null() {
         REPLAY_POS = resolve(b"g_nReplayPos\0") as *mut c_int;
     }
@@ -2740,16 +2806,13 @@ unsafe fn ensure_swarm_symbols() -> bool {
             resolve(b"_ZN2TA11CarTemplate14SetOrientationERKNS_4Vec3ES3_\0");
     }
     if ORIENTATION_SCALE == 1.0 && !GHOST_SIZE.is_null() {
-        let ghost_size_addr = resolve(b"g_nGhostSize\0") as *mut c_int;
-        if !ghost_size_addr.is_null() {
-            let loaded = ptr::read_volatile(ghost_size_addr) as usize;
-            let module_base = loaded.wrapping_sub(0x5a0514);
-            if module_base > 0x1000 {
-                let scale_ptr = (module_base + 0x2abde0) as *const f32;
-                let scale = ptr::read_volatile(scale_ptr);
-                if scale > 0.0 && scale < 1000.0 {
-                    ORIENTATION_SCALE = scale;
-                }
+        let ghost_size_addr = GHOST_SIZE as usize;
+        let module_base = ghost_size_addr.wrapping_sub(0x5a0514);
+        if module_base > 0x1000 {
+            let scale_ptr = (module_base + 0x2abde0) as *const f32;
+            let scale = ptr::read_volatile(scale_ptr);
+            if scale > 0.0 && scale < 1000.0 {
+                ORIENTATION_SCALE = scale;
             }
         }
     }
