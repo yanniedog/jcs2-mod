@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Landroid/widget/AdapterView$OnItemSelectedListener;
+.implements Ljava/lang/Runnable;
 
 
 # annotations
@@ -20,18 +20,26 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
+.field final synthetic val$displaySliders:Landroid/widget/LinearLayout;
+
+.field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
+
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;)V
-    .registers 2
+.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/LinearLayout;)V
+    .registers 4
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 671
+    .line 741
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
+
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$splitOptions:Landroid/widget/LinearLayout;
+
+    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$displaySliders:Landroid/widget/LinearLayout;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -40,68 +48,19 @@
 
 
 # virtual methods
-.method public onItemSelected(Landroid/widget/AdapterView;Landroid/view/View;IJ)V
-    .registers 6
-    .annotation system Ldalvik/annotation/Signature;
-        value = {
-            "(",
-            "Landroid/widget/AdapterView<",
-            "*>;",
-            "Landroid/view/View;",
-            "IJ)V"
-        }
-    .end annotation
+.method public run()V
+    .registers 4
 
-    .line 674
-    add-int/lit8 p3, p3, 0x1
+    .line 743
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
 
-    .line 675
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$splitOptions:Landroid/widget/LinearLayout;
 
-    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$displaySliders:Landroid/widget/LinearLayout;
 
-    move-result-object p1
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;Landroid/view/View;)V
+    invoke-static {v0, v1, v2}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Landroid/view/View;Landroid/view/View;)V
 
-    invoke-interface {p1}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
-
-    move-result-object p1
-
-    const-string p2, "replay_camera_mode"
-
-    invoke-interface {p1, p2, p3}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
-
-    move-result-object p1
-
-    invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
-
-    .line 679
-    :try_start_15
-    invoke-static {p3}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayCameraMode(I)V
-    :try_end_18
-    .catchall {:try_start_15 .. :try_end_18} :catchall_19
-
-    .line 681
-    goto :goto_1a
-
-    .line 680
-    :catchall_19
-    move-exception p1
-
-    .line 682
-    :goto_1a
-    return-void
-.end method
-
-.method public onNothingSelected(Landroid/widget/AdapterView;)V
-    .registers 2
-    .annotation system Ldalvik/annotation/Signature;
-        value = {
-            "(",
-            "Landroid/widget/AdapterView<",
-            "*>;)V"
-        }
-    .end annotation
-
-    .line 685
+    .line 744
     return-void
 .end method

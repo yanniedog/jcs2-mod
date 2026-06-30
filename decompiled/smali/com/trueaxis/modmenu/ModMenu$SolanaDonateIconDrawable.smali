@@ -28,10 +28,10 @@
 .method constructor <init>()V
     .registers 5
 
-    .line 1323
+    .line 1374
     invoke-direct {p0}, Landroid/graphics/drawable/Drawable;-><init>()V
 
-    .line 1318
+    .line 1369
     new-instance v0, Landroid/graphics/Paint;
 
     const/4 v1, 0x1
@@ -40,35 +40,35 @@
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar1:Landroid/graphics/Paint;
 
-    .line 1319
+    .line 1370
     new-instance v0, Landroid/graphics/Paint;
 
     invoke-direct {v0, v1}, Landroid/graphics/Paint;-><init>(I)V
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar2:Landroid/graphics/Paint;
 
-    .line 1320
+    .line 1371
     new-instance v0, Landroid/graphics/Paint;
 
     invoke-direct {v0, v1}, Landroid/graphics/Paint;-><init>(I)V
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar3:Landroid/graphics/Paint;
 
-    .line 1321
+    .line 1372
     new-instance v0, Landroid/graphics/Path;
 
     invoke-direct {v0}, Landroid/graphics/Path;-><init>()V
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->path:Landroid/graphics/Path;
 
-    .line 1324
+    .line 1375
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar1:Landroid/graphics/Paint;
 
     sget-object v1, Landroid/graphics/Paint$Style;->FILL:Landroid/graphics/Paint$Style;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 1325
+    .line 1376
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar1:Landroid/graphics/Paint;
 
     const/16 v1, 0xa3
@@ -83,14 +83,14 @@
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 1326
+    .line 1377
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar2:Landroid/graphics/Paint;
 
     sget-object v1, Landroid/graphics/Paint$Style;->FILL:Landroid/graphics/Paint$Style;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 1327
+    .line 1378
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar2:Landroid/graphics/Paint;
 
     const/16 v1, 0x99
@@ -103,14 +103,14 @@
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 1328
+    .line 1379
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar3:Landroid/graphics/Paint;
 
     sget-object v1, Landroid/graphics/Paint$Style;->FILL:Landroid/graphics/Paint$Style;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 1329
+    .line 1380
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar3:Landroid/graphics/Paint;
 
     const/16 v1, 0xdc
@@ -123,73 +123,73 @@
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 1330
+    .line 1381
     return-void
 .end method
 
-.method private drawBar(Landroid/graphics/Canvas;FFFFFLandroid/graphics/Paint;)V
+.method private drawSolanaBar(Landroid/graphics/Canvas;FFFFFLandroid/graphics/Paint;)V
     .registers 9
 
-    .line 1345
+    .line 1397
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v0}, Landroid/graphics/Path;->reset()V
 
-    .line 1346
+    .line 1398
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->path:Landroid/graphics/Path;
 
-    invoke-virtual {v0, p2, p3}, Landroid/graphics/Path;->moveTo(FF)V
+    add-float/2addr p5, p3
 
-    .line 1347
+    invoke-virtual {v0, p2, p5}, Landroid/graphics/Path;->moveTo(FF)V
+
+    .line 1399
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->path:Landroid/graphics/Path;
 
-    add-float/2addr p4, p2
+    add-float/2addr p6, p2
 
-    sub-float p6, p3, p6
+    invoke-virtual {v0, p6, p3}, Landroid/graphics/Path;->lineTo(FF)V
 
-    invoke-virtual {v0, p4, p6}, Landroid/graphics/Path;->lineTo(FF)V
-
-    .line 1348
+    .line 1400
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->path:Landroid/graphics/Path;
 
-    sub-float/2addr p6, p5
+    add-float/2addr p6, p4
 
-    invoke-virtual {v0, p4, p6}, Landroid/graphics/Path;->lineTo(FF)V
+    invoke-virtual {v0, p6, p3}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1349
-    iget-object p4, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->path:Landroid/graphics/Path;
+    .line 1401
+    iget-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->path:Landroid/graphics/Path;
 
-    sub-float/2addr p3, p5
+    add-float/2addr p2, p4
 
-    invoke-virtual {p4, p2, p3}, Landroid/graphics/Path;->lineTo(FF)V
+    invoke-virtual {p3, p2, p5}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1350
+    .line 1402
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {p2}, Landroid/graphics/Path;->close()V
 
-    .line 1351
+    .line 1403
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {p1, p2, p7}, Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V
 
-    .line 1352
+    .line 1404
     return-void
 .end method
 
 
 # virtual methods
 .method public draw(Landroid/graphics/Canvas;)V
-    .registers 18
+    .registers 17
 
-    .line 1333
-    move-object/from16 v8, p0
+    .line 1384
+    move-object v8, p0
 
-    invoke-virtual/range {p0 .. p0}, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->getBounds()Landroid/graphics/Rect;
+    invoke-virtual {p0}, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->getBounds()Landroid/graphics/Rect;
 
     move-result-object v0
 
-    .line 1334
+    .line 1385
     invoke-virtual {v0}, Landroid/graphics/Rect;->width()I
 
     move-result v1
@@ -204,7 +204,7 @@
 
     int-to-float v1, v1
 
-    .line 1335
+    .line 1386
     iget v2, v0, Landroid/graphics/Rect;->left:I
 
     int-to-float v2, v2
@@ -223,7 +223,7 @@
 
     add-float v9, v2, v3
 
-    .line 1336
+    .line 1387
     iget v2, v0, Landroid/graphics/Rect;->top:I
 
     int-to-float v2, v2
@@ -240,94 +240,94 @@
 
     add-float v10, v2, v0
 
-    .line 1337
+    .line 1388
     const/high16 v0, 0x41c00000
 
     div-float v11, v1, v0
 
-    .line 1338
-    const/high16 v0, 0x40600000
+    .line 1390
+    mul-float v4, v4, v11
 
-    mul-float v12, v11, v0
+    add-float v2, v9, v4
 
-    add-float v2, v9, v12
-
-    const/high16 v0, 0x41600000
+    const/high16 v0, 0x40800000
 
     mul-float v0, v0, v11
 
     add-float v3, v10, v0
 
-    const/high16 v0, 0x41000000
+    const/high16 v0, 0x41500000
 
-    mul-float v5, v11, v0
+    mul-float v12, v11, v0
 
-    const v0, 0x400ccccd
+    const v0, 0x404ccccd
 
     mul-float v13, v11, v0
 
+    const/high16 v0, 0x40600000
+
+    mul-float v14, v11, v0
+
     iget-object v7, v8, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar1:Landroid/graphics/Paint;
 
-    move-object/from16 v0, p0
+    move-object v0, p0
 
     move-object/from16 v1, p1
 
     move v4, v12
 
-    move v6, v13
+    move v5, v13
 
-    invoke-direct/range {v0 .. v7}, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->drawBar(Landroid/graphics/Canvas;FFFFFLandroid/graphics/Paint;)V
+    move v6, v14
 
-    .line 1339
-    const/high16 v0, 0x41180000
+    invoke-direct/range {v0 .. v7}, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->drawSolanaBar(Landroid/graphics/Canvas;FFFFFLandroid/graphics/Paint;)V
+
+    .line 1391
+    const/high16 v0, 0x40b00000
 
     mul-float v0, v0, v11
 
     add-float v2, v9, v0
 
-    const/high16 v0, 0x41400000
-
-    mul-float v14, v11, v0
-
-    add-float v3, v10, v14
-
     const/high16 v0, 0x41200000
 
-    mul-float v15, v11, v0
+    mul-float v0, v0, v11
+
+    add-float v3, v10, v0
 
     iget-object v7, v8, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar2:Landroid/graphics/Paint;
 
-    move-object/from16 v0, p0
+    move-object v0, p0
 
-    move v5, v15
+    invoke-direct/range {v0 .. v7}, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->drawSolanaBar(Landroid/graphics/Canvas;FFFFFLandroid/graphics/Paint;)V
 
-    invoke-direct/range {v0 .. v7}, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->drawBar(Landroid/graphics/Canvas;FFFFFLandroid/graphics/Paint;)V
+    .line 1392
+    const/high16 v0, 0x41100000
 
-    .line 1340
-    const/high16 v0, 0x41780000
+    mul-float v0, v0, v11
+
+    add-float v2, v9, v0
+
+    const/high16 v0, 0x41800000
 
     mul-float v11, v11, v0
 
-    add-float v2, v9, v11
-
-    add-float v3, v10, v15
+    add-float v3, v10, v11
 
     iget-object v7, v8, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar3:Landroid/graphics/Paint;
 
-    move-object/from16 v0, p0
+    move-object v0, p0
 
-    move v5, v14
+    invoke-direct/range {v0 .. v7}, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->drawSolanaBar(Landroid/graphics/Canvas;FFFFFLandroid/graphics/Paint;)V
 
-    invoke-direct/range {v0 .. v7}, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->drawBar(Landroid/graphics/Canvas;FFFFFLandroid/graphics/Paint;)V
-
-    .line 1341
+    .line 1393
     return-void
 .end method
 
 .method public getIntrinsicHeight()I
     .registers 2
 
-    .line 1375
+    .line 1427
     const/16 v0, 0x18
 
     return v0
@@ -336,7 +336,7 @@
 .method public getIntrinsicWidth()I
     .registers 2
 
-    .line 1371
+    .line 1423
     const/16 v0, 0x18
 
     return v0
@@ -345,7 +345,7 @@
 .method public getOpacity()I
     .registers 2
 
-    .line 1367
+    .line 1419
     const/4 v0, -0x3
 
     return v0
@@ -354,43 +354,43 @@
 .method public setAlpha(I)V
     .registers 3
 
-    .line 1355
+    .line 1407
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar1:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setAlpha(I)V
 
-    .line 1356
+    .line 1408
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar2:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setAlpha(I)V
 
-    .line 1357
+    .line 1409
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar3:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setAlpha(I)V
 
-    .line 1358
+    .line 1410
     return-void
 .end method
 
 .method public setColorFilter(Landroid/graphics/ColorFilter;)V
     .registers 3
 
-    .line 1361
+    .line 1413
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar1:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setColorFilter(Landroid/graphics/ColorFilter;)Landroid/graphics/ColorFilter;
 
-    .line 1362
+    .line 1414
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar2:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setColorFilter(Landroid/graphics/ColorFilter;)Landroid/graphics/ColorFilter;
 
-    .line 1363
+    .line 1415
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;->bar3:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setColorFilter(Landroid/graphics/ColorFilter;)Landroid/graphics/ColorFilter;
 
-    .line 1364
+    .line 1416
     return-void
 .end method

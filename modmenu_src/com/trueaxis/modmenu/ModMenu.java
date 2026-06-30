@@ -169,6 +169,26 @@ public class ModMenu {
         return view;
     }
 
+    private static Button miniIconButton(final Activity a, Drawable icon,
+            String contentDescription, final View.OnClickListener listener) {
+        Button view = new Button(a);
+        view.setText("");
+        view.setContentDescription(contentDescription);
+        view.setGravity(Gravity.CENTER);
+        view.setMinHeight(0);
+        view.setMinimumHeight(0);
+        view.setMinWidth(0);
+        view.setMinimumWidth(0);
+        int pad = dp(a, 4);
+        view.setPadding(pad, pad, pad, pad);
+        view.setBackgroundDrawable(background(Color.rgb(40, 46, 54), dp(a, 6)));
+        int iconSize = dp(a, 16);
+        icon.setBounds(0, 0, iconSize, iconSize);
+        view.setCompoundDrawables(icon, null, null, null);
+        view.setOnClickListener(listener);
+        return view;
+    }
+
     private static void addButtonRow(Activity a, LinearLayout card, Button left, Button right) {
         LinearLayout row = new LinearLayout(a);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -620,33 +640,6 @@ public class ModMenu {
             });
             addButtonRow(a, card, liveries, updates);
 
-            Button uploadLogs = button(a, "Upload debug logs");
-            uploadLogs.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    ModDebugLog.module("launcher", "upload debug logs clicked");
-                    DebugLogExporter.uploadNow(a);
-                }
-            });
-            card.addView(uploadLogs, fill());
-
-            card.addView(sectionHeader(a, "Cloud sync (Play Games)"));
-            TextView playGamesSummary = label(a,
-                    PlayGamesAssessment.signInStatus(a) + "\n"
-                            + "Leaderboards: " + PlayGamesAssessment.leaderboardFeasibility()
-                            + " | Replays: " + PlayGamesAssessment.replayFeasibility() + "\n"
-                            + PlayGamesAssessment.localBackupStatus(a),
-                    10, Color.rgb(170, 178, 185));
-            playGamesSummary.setPadding(0, 0, 0, dp(a, 4));
-            card.addView(playGamesSummary);
-            Button exportData = button(a, "Export stats / replays");
-            exportData.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    ModDebugLog.module("launcher", "local game data export clicked");
-                    GameDataExporter.exportNow(a);
-                }
-            });
-            card.addView(exportData, fill());
-
             TextView coreNote = label(a,
                     "Always on: purchase compatibility, expanded checkpoints, blue flame ID.",
                     9, Color.rgb(150, 158, 165));
@@ -698,7 +691,41 @@ public class ModMenu {
                     "Enable replay swarm picker during passive replays",
                     K_REPLAY_SWARM, false);
 
-            card.addView(sectionHeader(a, "Replay split HUD"));
+            LinearLayout splitHeaderRow = new LinearLayout(a);
+            splitHeaderRow.setOrientation(LinearLayout.HORIZONTAL);
+            splitHeaderRow.setGravity(Gravity.CENTER_VERTICAL);
+            TextView splitHeader = label(a, "Replay split HUD", 12, Color.rgb(255, 128, 0));
+            splitHeader.setPadding(0, dp(a, 6), 0, dp(a, 2));
+            splitHeaderRow.addView(splitHeader, new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
+
+            final LinearLayout displaySliders = new LinearLayout(a);
+            displaySliders.setOrientation(LinearLayout.VERTICAL);
+            displaySliders.setPadding(dp(a, 12), 0, 0, 0);
+            displaySliders.setVisibility(View.GONE);
+            addSeek(a, displaySliders, "Text transparency", K_SPLIT_ALPHA,
+                    DEFAULT_SPLIT_ALPHA, 10, 100, "%");
+            addSeek(a, displaySliders, "Horizontal position", K_SPLIT_X,
+                    DEFAULT_SPLIT_X, 0, 360, " dp");
+            addSeek(a, displaySliders, "Vertical position", K_SPLIT_Y,
+                    DEFAULT_SPLIT_Y, 0, 180, " dp");
+
+            Button displayToggle = miniIconButton(a,
+                    new DisplayIconDrawable(Color.rgb(210, 216, 222)),
+                    "Show display position sliders",
+                    new View.OnClickListener() {
+                        public void onClick(View v) {
+                            boolean show = displaySliders.getVisibility() != View.VISIBLE;
+                            displaySliders.setVisibility(show ? View.VISIBLE : View.GONE);
+                            ModDebugLog.module("launcher", "split display sliders toggled visible="
+                                    + show);
+                        }
+                    });
+            splitHeaderRow.addView(displayToggle, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+            card.addView(splitHeaderRow, fill());
+
             TextView splitHelp = label(a,
                     "Compares your run with the saved replay ghost when timing is available.",
                     9, Color.rgb(170, 178, 185));
@@ -713,7 +740,7 @@ public class ModMenu {
                     "Enable checkpoint/sector deltas vs saved replay ghost",
                     K_CHECKPOINT_SPLITS, true, new Runnable() {
                         public void run() {
-                            updateSplitOptionsVisibility(a, splitOptions);
+                            updateSplitOptionsVisibility(a, splitOptions, displaySliders);
                         }
                     });
 
@@ -724,18 +751,9 @@ public class ModMenu {
                     "Use sector deltas instead of checkpoint deltas",
                     K_SPLIT_SECTOR_DELTA, false);
 
-            TextView displayLabel = label(a, "Display", 11, Color.rgb(210, 216, 222));
-            displayLabel.setPadding(0, dp(a, 6), 0, 0);
-            splitOptions.addView(displayLabel, fill());
-            addSeek(a, splitOptions, "Text transparency", K_SPLIT_ALPHA,
-                    DEFAULT_SPLIT_ALPHA, 10, 100, "%");
-            addSeek(a, splitOptions, "Horizontal position", K_SPLIT_X,
-                    DEFAULT_SPLIT_X, 0, 360, " dp");
-            addSeek(a, splitOptions, "Vertical position", K_SPLIT_Y,
-                    DEFAULT_SPLIT_Y, 0, 180, " dp");
-
-            updateSplitOptionsVisibility(a, splitOptions);
+            updateSplitOptionsVisibility(a, splitOptions, displaySliders);
             card.addView(splitOptions, fill());
+            card.addView(displaySliders, fill());
 
             scroll.addView(card, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -758,6 +776,22 @@ public class ModMenu {
                 }
             });
             root.addView(play, playLp);
+
+            LinearLayout footer = new LinearLayout(a);
+            footer.setGravity(Gravity.CENTER);
+            footer.setPadding(0, dp(a, 4), 0, 0);
+            footer.addView(miniIconButton(a,
+                    new BugIconDrawable(Color.rgb(180, 188, 195)),
+                    "Upload debug logs",
+                    new View.OnClickListener() {
+                        public void onClick(View v) {
+                            ModDebugLog.module("launcher", "upload debug logs clicked");
+                            DebugLogExporter.uploadNow(a);
+                        }
+                    }), new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+            root.addView(footer);
 
             a.setContentView(root);
         } catch (Throwable t) {
@@ -824,10 +858,14 @@ public class ModMenu {
         return checkBox;
     }
 
-    private static void updateSplitOptionsVisibility(Context c, View content) {
+    private static void updateSplitOptionsVisibility(Context c, View content,
+                                                     View displaySliders) {
         applyMenuDefaults(c);
-        content.setVisibility(prefs(c).getBoolean(K_CHECKPOINT_SPLITS, true)
-                ? View.VISIBLE : View.GONE);
+        boolean enabled = prefs(c).getBoolean(K_CHECKPOINT_SPLITS, true);
+        content.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        if (!enabled && displaySliders != null) {
+            displaySliders.setVisibility(View.GONE);
+        }
     }
 
     private static LinearLayout addSeek(final Context c, LinearLayout card, String label,
@@ -1233,39 +1271,51 @@ public class ModMenu {
             float y = b.top + (b.height() - size) / 2.0f;
             float s = size / 24.0f;
 
+            // GitHub mark: round head, cat ears, and lower tentacles (Simple Icons proportions).
             path.reset();
-            path.addCircle(x + 12.0f * s, y + 11.5f * s, 9.0f * s, Path.Direction.CW);
-            canvas.drawPath(path, paint);
-
-            path.reset();
-            path.moveTo(x + 6.5f * s, y + 5.5f * s);
-            path.lineTo(x + 3.5f * s, y + 1.5f * s);
-            path.lineTo(x + 10.0f * s, y + 4.0f * s);
+            path.moveTo(x + 12.0f * s, y + 2.2f * s);
+            path.cubicTo(x + 8.0f * s, y + 2.2f * s, x + 4.8f * s, y + 4.5f * s,
+                    x + 3.8f * s, y + 8.0f * s);
+            path.cubicTo(x + 2.0f * s, y + 8.3f * s, x + 0.8f * s, y + 9.0f * s,
+                    x + 0.5f * s, y + 10.0f * s);
+            path.cubicTo(x + 0.5f * s, y + 12.5f * s, x + 2.5f * s, y + 14.8f * s,
+                    x + 5.2f * s, y + 15.0f * s);
+            path.cubicTo(x + 5.8f * s, y + 16.0f * s, x + 6.8f * s, y + 17.0f * s,
+                    x + 8.2f * s, y + 17.5f * s);
+            path.cubicTo(x + 7.8f * s, y + 18.2f * s, x + 7.0f * s, y + 19.0f * s,
+                    x + 6.0f * s, y + 19.5f * s);
+            path.cubicTo(x + 7.5f * s, y + 19.8f * s, x + 9.0f * s, y + 19.2f * s,
+                    x + 10.2f * s, y + 18.5f * s);
+            path.cubicTo(x + 11.0f * s, y + 18.7f * s, x + 11.8f * s, y + 18.8f * s,
+                    x + 12.0f * s, y + 18.8f * s);
+            path.cubicTo(x + 12.2f * s, y + 18.8f * s, x + 13.0f * s, y + 18.7f * s,
+                    x + 13.8f * s, y + 18.5f * s);
+            path.cubicTo(x + 15.0f * s, y + 19.2f * s, x + 16.5f * s, y + 19.8f * s,
+                    x + 18.0f * s, y + 19.5f * s);
+            path.cubicTo(x + 17.0f * s, y + 19.0f * s, x + 16.2f * s, y + 18.2f * s,
+                    x + 15.8f * s, y + 17.5f * s);
+            path.cubicTo(x + 17.2f * s, y + 17.0f * s, x + 18.2f * s, y + 16.0f * s,
+                    x + 18.8f * s, y + 15.0f * s);
+            path.cubicTo(x + 21.5f * s, y + 14.8f * s, x + 23.5f * s, y + 12.5f * s,
+                    x + 23.5f * s, y + 10.0f * s);
+            path.cubicTo(x + 23.2f * s, y + 9.0f * s, x + 22.0f * s, y + 8.3f * s,
+                    x + 20.2f * s, y + 8.0f * s);
+            path.cubicTo(x + 19.2f * s, y + 4.5f * s, x + 16.0f * s, y + 2.2f * s,
+                    x + 12.0f * s, y + 2.2f * s);
             path.close();
             canvas.drawPath(path, paint);
 
             path.reset();
-            path.moveTo(x + 17.5f * s, y + 5.5f * s);
-            path.lineTo(x + 20.5f * s, y + 1.5f * s);
-            path.lineTo(x + 14.0f * s, y + 4.0f * s);
+            path.moveTo(x + 7.5f * s, y + 1.0f * s);
+            path.lineTo(x + 5.0f * s, y + 4.5f * s);
+            path.lineTo(x + 8.5f * s, y + 5.5f * s);
             path.close();
             canvas.drawPath(path, paint);
 
             path.reset();
-            path.moveTo(x + 4.5f * s, y + 14.5f * s);
-            path.cubicTo(x + 1.5f * s, y + 16.5f * s, x + 1.5f * s, y + 20.5f * s,
-                    x + 5.0f * s, y + 21.5f * s);
-            path.cubicTo(x + 7.0f * s, y + 19.0f * s, x + 7.0f * s, y + 16.0f * s,
-                    x + 5.5f * s, y + 14.5f * s);
-            path.close();
-            canvas.drawPath(path, paint);
-
-            path.reset();
-            path.moveTo(x + 19.5f * s, y + 14.5f * s);
-            path.cubicTo(x + 22.5f * s, y + 16.5f * s, x + 22.5f * s, y + 20.5f * s,
-                    x + 19.0f * s, y + 21.5f * s);
-            path.cubicTo(x + 17.0f * s, y + 19.0f * s, x + 17.0f * s, y + 16.0f * s,
-                    x + 18.5f * s, y + 14.5f * s);
+            path.moveTo(x + 16.5f * s, y + 1.0f * s);
+            path.lineTo(x + 19.0f * s, y + 4.5f * s);
+            path.lineTo(x + 15.5f * s, y + 5.5f * s);
             path.close();
             canvas.drawPath(path, paint);
         }
@@ -1283,34 +1333,35 @@ public class ModMenu {
             float y = b.top + (b.height() - size) / 2.0f;
             float s = size / 24.0f;
 
+            // Discord Clyde: wide rounded controller shape with eye cutouts.
             path.reset();
-            path.moveTo(x + 4.5f * s, y + 6.5f * s);
-            path.cubicTo(x + 4.5f * s, y + 4.5f * s, x + 6.0f * s, y + 3.0f * s,
-                    x + 8.5f * s, y + 3.0f * s);
-            path.cubicTo(x + 9.5f * s, y + 2.0f * s, x + 11.0f * s, y + 1.5f * s,
-                    x + 12.0f * s, y + 1.5f * s);
-            path.cubicTo(x + 13.0f * s, y + 1.5f * s, x + 14.5f * s, y + 2.0f * s,
-                    x + 15.5f * s, y + 3.0f * s);
-            path.cubicTo(x + 18.0f * s, y + 3.0f * s, x + 19.5f * s, y + 4.5f * s,
-                    x + 19.5f * s, y + 6.5f * s);
-            path.cubicTo(x + 20.5f * s, y + 8.0f * s, x + 21.0f * s, y + 10.0f * s,
-                    x + 20.5f * s, y + 12.0f * s);
-            path.cubicTo(x + 19.0f * s, y + 13.0f * s, x + 17.5f * s, y + 13.5f * s,
-                    x + 16.0f * s, y + 13.0f * s);
-            path.lineTo(x + 14.5f * s, y + 14.5f * s);
-            path.lineTo(x + 13.0f * s, y + 13.5f * s);
-            path.cubicTo(x + 12.5f * s, y + 13.7f * s, x + 11.5f * s, y + 13.7f * s,
-                    x + 11.0f * s, y + 13.5f * s);
-            path.lineTo(x + 9.5f * s, y + 14.5f * s);
-            path.lineTo(x + 8.0f * s, y + 13.0f * s);
-            path.cubicTo(x + 6.5f * s, y + 13.5f * s, x + 5.0f * s, y + 13.0f * s,
-                    x + 3.5f * s, y + 12.0f * s);
-            path.cubicTo(x + 3.0f * s, y + 10.0f * s, x + 3.5f * s, y + 8.0f * s,
-                    x + 4.5f * s, y + 6.5f * s);
+            path.moveTo(x + 4.0f * s, y + 6.5f * s);
+            path.cubicTo(x + 4.0f * s, y + 4.0f * s, x + 6.5f * s, y + 2.5f * s,
+                    x + 9.0f * s, y + 2.5f * s);
+            path.cubicTo(x + 10.0f * s, y + 1.5f * s, x + 11.5f * s, y + 1.0f * s,
+                    x + 12.0f * s, y + 1.0f * s);
+            path.cubicTo(x + 12.5f * s, y + 1.0f * s, x + 14.0f * s, y + 1.5f * s,
+                    x + 15.0f * s, y + 2.5f * s);
+            path.cubicTo(x + 17.5f * s, y + 2.5f * s, x + 20.0f * s, y + 4.0f * s,
+                    x + 20.0f * s, y + 6.5f * s);
+            path.cubicTo(x + 21.0f * s, y + 8.5f * s, x + 21.5f * s, y + 10.5f * s,
+                    x + 21.0f * s, y + 12.5f * s);
+            path.cubicTo(x + 19.5f * s, y + 13.5f * s, x + 18.0f * s, y + 14.0f * s,
+                    x + 16.5f * s, y + 13.5f * s);
+            path.lineTo(x + 15.0f * s, y + 15.0f * s);
+            path.lineTo(x + 13.5f * s, y + 13.8f * s);
+            path.cubicTo(x + 12.9f * s, y + 14.0f * s, x + 12.0f * s, y + 14.0f * s,
+                    x + 11.1f * s, y + 13.8f * s);
+            path.lineTo(x + 9.6f * s, y + 15.0f * s);
+            path.lineTo(x + 8.1f * s, y + 13.5f * s);
+            path.cubicTo(x + 6.6f * s, y + 14.0f * s, x + 5.1f * s, y + 13.5f * s,
+                    x + 3.6f * s, y + 12.5f * s);
+            path.cubicTo(x + 3.1f * s, y + 10.5f * s, x + 3.6f * s, y + 8.5f * s,
+                    x + 4.0f * s, y + 6.5f * s);
             path.close();
             canvas.drawPath(path, paint);
-            canvas.drawCircle(x + 9.0f * s, y + 9.5f * s, 1.4f * s, cutout);
-            canvas.drawCircle(x + 15.0f * s, y + 9.5f * s, 1.4f * s, cutout);
+            canvas.drawCircle(x + 8.8f * s, y + 9.0f * s, 1.6f * s, cutout);
+            canvas.drawCircle(x + 15.2f * s, y + 9.0f * s, 1.6f * s, cutout);
         }
     }
 
@@ -1335,18 +1386,19 @@ public class ModMenu {
             float x = b.left + (b.width() - size) / 2.0f;
             float y = b.top + (b.height() - size) / 2.0f;
             float s = size / 24.0f;
-            drawBar(canvas, x + 3.5f * s, y + 14.0f * s, 3.5f * s, 8.0f * s, 2.2f * s, bar1);
-            drawBar(canvas, x + 9.5f * s, y + 12.0f * s, 3.5f * s, 10.0f * s, 2.2f * s, bar2);
-            drawBar(canvas, x + 15.5f * s, y + 10.0f * s, 3.5f * s, 12.0f * s, 2.2f * s, bar3);
+            // Solana mark: three staggered horizontal parallelograms slanting up-right.
+            drawSolanaBar(canvas, x + 2.0f * s, y + 4.0f * s, 13.0f * s, 3.2f * s, 3.5f * s, bar1);
+            drawSolanaBar(canvas, x + 5.5f * s, y + 10.0f * s, 13.0f * s, 3.2f * s, 3.5f * s, bar2);
+            drawSolanaBar(canvas, x + 9.0f * s, y + 16.0f * s, 13.0f * s, 3.2f * s, 3.5f * s, bar3);
         }
 
-        private void drawBar(Canvas canvas, float left, float bottom, float width, float height,
-                float skew, Paint paint) {
+        private void drawSolanaBar(Canvas canvas, float left, float top, float width,
+                float height, float slant, Paint paint) {
             path.reset();
-            path.moveTo(left, bottom);
-            path.lineTo(left + width, bottom - skew);
-            path.lineTo(left + width, bottom - skew - height);
-            path.lineTo(left, bottom - height);
+            path.moveTo(left, top + height);
+            path.lineTo(left + slant, top);
+            path.lineTo(left + slant + width, top);
+            path.lineTo(left + width, top + height);
             path.close();
             canvas.drawPath(path, paint);
         }
@@ -1361,6 +1413,132 @@ public class ModMenu {
             bar1.setColorFilter(colorFilter);
             bar2.setColorFilter(colorFilter);
             bar3.setColorFilter(colorFilter);
+        }
+
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
+        }
+
+        public int getIntrinsicWidth() {
+            return 24;
+        }
+
+        public int getIntrinsicHeight() {
+            return 24;
+        }
+    }
+
+    private static class DisplayIconDrawable extends Drawable {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path path = new Path();
+
+        DisplayIconDrawable(int color) {
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(1.6f);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setStrokeJoin(Paint.Join.ROUND);
+            paint.setColor(color);
+        }
+
+        public void draw(Canvas canvas) {
+            Rect b = getBounds();
+            float size = Math.min(b.width(), b.height());
+            float x = b.left + (b.width() - size) / 2.0f;
+            float y = b.top + (b.height() - size) / 2.0f;
+            float s = size / 24.0f;
+            float stroke = 1.6f * s;
+            paint.setStrokeWidth(stroke);
+
+            RectF screen = new RectF(x + 3.0f * s, y + 4.0f * s,
+                    x + 21.0f * s, y + 15.0f * s);
+            canvas.drawRoundRect(screen, 1.5f * s, 1.5f * s, paint);
+
+            path.reset();
+            path.moveTo(x + 10.0f * s, y + 15.0f * s);
+            path.lineTo(x + 8.0f * s, y + 19.0f * s);
+            path.lineTo(x + 16.0f * s, y + 19.0f * s);
+            path.lineTo(x + 14.0f * s, y + 15.0f * s);
+            canvas.drawPath(path, paint);
+
+            path.reset();
+            path.moveTo(x + 7.0f * s, y + 19.0f * s);
+            path.lineTo(x + 17.0f * s, y + 19.0f * s);
+            canvas.drawPath(path, paint);
+        }
+
+        public void setAlpha(int alpha) {
+            paint.setAlpha(alpha);
+        }
+
+        public void setColorFilter(ColorFilter colorFilter) {
+            paint.setColorFilter(colorFilter);
+        }
+
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
+        }
+
+        public int getIntrinsicWidth() {
+            return 24;
+        }
+
+        public int getIntrinsicHeight() {
+            return 24;
+        }
+    }
+
+    private static class BugIconDrawable extends Drawable {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path path = new Path();
+
+        BugIconDrawable(int color) {
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(1.5f);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setColor(color);
+        }
+
+        public void draw(Canvas canvas) {
+            Rect b = getBounds();
+            float size = Math.min(b.width(), b.height());
+            float x = b.left + (b.width() - size) / 2.0f;
+            float y = b.top + (b.height() - size) / 2.0f;
+            float s = size / 24.0f;
+            float stroke = 1.5f * s;
+            paint.setStrokeWidth(stroke);
+
+            canvas.drawCircle(x + 12.0f * s, y + 13.0f * s, 4.5f * s, paint);
+            canvas.drawCircle(x + 12.0f * s, y + 6.5f * s, 2.2f * s, paint);
+
+            path.reset();
+            path.moveTo(x + 10.5f * s, y + 4.5f * s);
+            path.lineTo(x + 9.0f * s, y + 2.0f * s);
+            path.moveTo(x + 13.5f * s, y + 4.5f * s);
+            path.lineTo(x + 15.0f * s, y + 2.0f * s);
+            canvas.drawPath(path, paint);
+
+            path.reset();
+            path.moveTo(x + 8.0f * s, y + 11.0f * s);
+            path.lineTo(x + 4.5f * s, y + 9.0f * s);
+            path.moveTo(x + 8.0f * s, y + 13.5f * s);
+            path.lineTo(x + 4.0f * s, y + 13.5f * s);
+            path.moveTo(x + 8.0f * s, y + 16.0f * s);
+            path.lineTo(x + 4.5f * s, y + 18.0f * s);
+            path.moveTo(x + 16.0f * s, y + 11.0f * s);
+            path.lineTo(x + 19.5f * s, y + 9.0f * s);
+            path.moveTo(x + 16.0f * s, y + 13.5f * s);
+            path.lineTo(x + 20.0f * s, y + 13.5f * s);
+            path.moveTo(x + 16.0f * s, y + 16.0f * s);
+            path.lineTo(x + 19.5f * s, y + 18.0f * s);
+            canvas.drawPath(path, paint);
+        }
+
+        public void setAlpha(int alpha) {
+            paint.setAlpha(alpha);
+        }
+
+        public void setColorFilter(ColorFilter colorFilter) {
+            paint.setColorFilter(colorFilter);
         }
 
         public int getOpacity() {

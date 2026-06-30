@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Ljava/lang/Runnable;
+.implements Landroid/view/View$OnClickListener;
 
 
 # annotations
@@ -18,24 +18,20 @@
 
 
 # instance fields
-.field final synthetic val$a:Landroid/app/Activity;
-
-.field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
+.field final synthetic val$onPlay:Ljava/lang/Runnable;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;)V
-    .registers 3
+.method constructor <init>(Ljava/lang/Runnable;)V
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 714
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$a:Landroid/app/Activity;
-
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$splitOptions:Landroid/widget/LinearLayout;
+    .line 772
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$onPlay:Ljava/lang/Runnable;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -44,17 +40,21 @@
 
 
 # virtual methods
-.method public run()V
+.method public onClick(Landroid/view/View;)V
     .registers 3
 
-    .line 716
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$a:Landroid/app/Activity;
+    .line 774
+    const-string p1, "launcher"
 
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$splitOptions:Landroid/widget/LinearLayout;
+    const-string v0, "play button invoking onPlay"
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;)V
-    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Landroid/view/View;)V
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 717
+    .line 775
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$onPlay:Ljava/lang/Runnable;
+
+    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
+
+    .line 776
     return-void
 .end method
