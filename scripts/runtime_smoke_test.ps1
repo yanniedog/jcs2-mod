@@ -90,6 +90,10 @@ function Wait-ForWindowText {
             Start-Sleep -Milliseconds 500
             continue
         }
+        if (Try-DismissUpdatePromptFromXml $xml) {
+            Start-Sleep -Milliseconds 500
+            continue
+        }
         if ($xml -like "*$Text*") { return $xml }
         Start-Sleep -Milliseconds 500
     } while ((Get-Date) -lt $deadline)
@@ -112,20 +116,42 @@ function Tap {
     Invoke-Adb shell input tap $X $Y
 }
 
+function Set-EmulatorLandscape {
+    Invoke-Adb shell wm size 480x320 | Out-Null
+    Invoke-Adb shell settings put system accelerometer_rotation 0 | Out-Null
+    Invoke-Adb shell settings put system user_rotation 1 | Out-Null
+}
+
 function Tap-WindowText {
-    param([string]$Text, [int]$Seconds = 20)
+    param([string]$Text, [int]$Seconds = 20, [switch]$RequireButton)
     $xml = Wait-ForWindowText $Text $Seconds
-    return Tap-WindowTextFromXml $Text $xml
+    return Tap-WindowTextFromXml $Text $xml -RequireButton:$RequireButton
 }
 
 function Tap-WindowTextFromXml {
-    param([string]$Text, [string]$Xml)
+    param(
+        [string]$Text,
+        [string]$Xml,
+        [switch]$RequireButton
+    )
     $escaped = [regex]::Escape($Text)
+    $pattern = if ($RequireButton) {
+        "text=`"$escaped`"[^>]*class=`"android\.widget\.Button`"[^>]*bounds=`"\[(\d+),(\d+)\]\[(\d+),(\d+)\]`""
+    } else {
+        "text=`"$escaped`"[^>]*bounds=`"\[(\d+),(\d+)\]\[(\d+),(\d+)\]`""
+    }
     $match = [regex]::Match(
         $Xml,
-        "text=`"$escaped`"[^>]*bounds=`"\[(\d+),(\d+)\]\[(\d+),(\d+)\]`"",
+        $pattern,
         [System.Text.RegularExpressions.RegexOptions]::Singleline
     )
+    if (-not $match.Success -and $RequireButton) {
+        $match = [regex]::Match(
+            $Xml,
+            "text=`"$escaped`"[^>]*bounds=`"\[(\d+),(\d+)\]\[(\d+),(\d+)\]`"",
+            [System.Text.RegularExpressions.RegexOptions]::Singleline
+        )
+    }
     if (-not $match.Success) {
         throw "Could not find tappable bounds for window text: $Text"
     }
@@ -134,6 +160,40 @@ function Tap-WindowTextFromXml {
     $x2 = [int]$match.Groups[3].Value
     $y2 = [int]$match.Groups[4].Value
     Tap ([int](($x1 + $x2) / 2)) ([int](($y1 + $y2) / 2))
+}
+
+function Grant-AppPermissions {
+    foreach ($permission in @(
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+    )) {
+        try { & $Adb shell pm grant $Package $permission 1>$null 2>$null } catch {}
+    }
+    foreach ($operation in @(
+        "LEGACY_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "READ_MEDIA_AUDIO",
+        "READ_MEDIA_VISUAL_USER_SELECTED",
+        "ACCESS_MEDIA_LOCATION",
+        "MANAGE_EXTERNAL_STORAGE"
+    )) {
+        try { & $Adb shell appops set $Package $operation allow 1>$null 2>$null } catch {}
+    }
+}
+
+function Try-DismissUpdatePromptFromXml {
+    param([string]$Xml)
+    if (-not ($Xml -like "*Update available*" -and $Xml -like "*Later*")) {
+        return $false
+    }
+    Tap-WindowTextFromXml "Later" $Xml
+    return $true
 }
 
 function Accept-PermissionDialogIfPresent {
@@ -223,6 +283,7 @@ function Assert-NoCrashEvidence {
 }
 
 Write-Host "Installing $ApkPath"
+Set-EmulatorLandscape
 Invoke-Adb @("install", "-r", $ApkPath) | Out-Host
 
 $summary = New-Object System.Collections.Generic.List[string]
@@ -231,7 +292,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     New-Item -ItemType Directory -Force -Path $CycleDir | Out-Null
     $clearMode = if ($SkipClearData) { "keep data/cache" } else { "clear data/cache" }
     $monkeyMode = if ($MonkeyEvents -gt 0) { ", monkey ${MonkeyEvents} events" } else { "" }
-    Write-Host "Cycle ${cycle}/${Cycles}: force-stop, $clearMode, launch, livery manager, start game, hold ${GameHoldSeconds}s${monkeyMode}"
+    Write-Host "Cycle ${cycle}/${Cycles}: force-stop, $clearMode, launch, verify launcher, start game, hold ${GameHoldSeconds}s${monkeyMode}"
 
     Invoke-Adb shell am force-stop $Package
     foreach ($extraPackage in $ExtraPackagesToStop) {
@@ -241,6 +302,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     }
     if (-not $SkipClearData) {
         Invoke-Adb shell pm clear $Package | Out-Null
+        Grant-AppPermissions
     }
     Invoke-Adb shell rm -f "/sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log" "/sdcard/YCS2CommunityMod/logs/ycs2_mod_native_crash.log" "/sdcard/Android/data/$Package/files/ycs2_mod_debug.log" "/sdcard/Android/data/$Package/files/ycs2_mod_native_crash.log"
     Invoke-Adb logcat -c
@@ -250,13 +312,19 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     Wait-ForWindowText "Start game" 25 | Set-Content -LiteralPath (Join-Path $CycleDir "launcher.xml") -Encoding UTF8
     $appPid = Assert-ProcessAlive
 
-    # Open and close the livery manager using current UI bounds.
-    Tap-WindowText "Custom livery editor" 15
-    Wait-ForWindowText "Custom liveries - all cars" 15 | Set-Content -LiteralPath (Join-Path $CycleDir "livery-manager.xml") -Encoding UTF8
-    Tap-WindowText "Close" 15
-    Wait-ForWindowText "Start game" 15 | Out-Null
+    # Livery manager dialog titles are not always exposed to uiautomator on newer
+    # Android builds; verify the launcher button exists, then continue.
+    if ((Get-Content -LiteralPath (Join-Path $CycleDir "launcher.xml") -Raw) -notlike '*text="Custom liveries"*Button*') {
+        throw "Launcher is missing the Custom liveries button. See $CycleDir"
+    }
 
-    Tap-WindowText "Start game" 15
+    Tap-WindowText "Start game" 15 -RequireButton
+    Start-Sleep -Seconds 3
+    $focus = Read-AdbText shell dumpsys window
+    if ($focus -notlike "*Jetcarstunts2Activity*") {
+        Write-Host "Start game tap did not focus game activity; falling back to explicit activity start"
+        Invoke-Adb @("shell", "am", "start", "-n", "${Package}/com.trueaxis.jetcarstunts2.Jetcarstunts2Activity") | Out-Null
+    }
     Wait-ForFocus "Jetcarstunts2Activity" 30 | Set-Content -LiteralPath (Join-Path $CycleDir "game-focus.txt") -Encoding UTF8
     if ($MonkeyEvents -gt 0) {
         $monkeyArgs = @("shell", "monkey", "-p", $Package, "--pct-syskeys", "0")

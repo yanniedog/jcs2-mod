@@ -53,6 +53,7 @@ public class ModMenu {
     private static final String K_SPLIT_LIST = "split_list";
     private static final String K_SPLIT_SECTOR_DELTA = "split_sector_delta";
     private static final String K_REPLAY_FREE_CAMERA = "replay_free_camera";
+    private static final String K_REPLAY_SWARM = "replay_swarm";
     private static final String K_SPLIT_ALPHA = "split_alpha";
     private static final String K_SPLIT_X = "split_x";
     private static final String K_SPLIT_Y = "split_y";
@@ -62,7 +63,7 @@ public class ModMenu {
     private static final int REQUEST_IMPORT = 7301;
     private static final int REQUEST_EXPORT = 7302;
     private static final int TEXTURE_SIZE = 512;
-    private static final int MENU_DEFAULTS_VERSION = 4;
+    private static final int MENU_DEFAULTS_VERSION = 5;
     private static final int DEFAULT_SPLIT_ALPHA = 90;
     private static final int DEFAULT_SPLIT_X = 88;
     private static final int DEFAULT_SPLIT_Y = 39;
@@ -303,6 +304,11 @@ public class ModMenu {
         return prefs(c).getBoolean(K_REPLAY_FREE_CAMERA, true);
     }
 
+    public static boolean replaySwarmEnabled(Context c) {
+        applyMenuDefaults(c);
+        return prefs(c).getBoolean(K_REPLAY_SWARM, false);
+    }
+
     public static int splitAlphaPercent(Context c) {
         applyMenuDefaults(c);
         return clamp(prefs(c).getInt(K_SPLIT_ALPHA, DEFAULT_SPLIT_ALPHA), 10, 100);
@@ -501,8 +507,19 @@ public class ModMenu {
 
             card.addView(sectionHeader(a, "Replay free camera"));
             addCheckBox(a, card,
-                    "Enable gesture free camera for level fly-throughs",
+                    "Enable gesture free camera during replays",
                     K_REPLAY_FREE_CAMERA, true);
+
+            card.addView(sectionHeader(a, "Replay swarm mode"));
+            TextView swarmHelp = label(a,
+                    "Overlay multiple passive replays on the same track. Open a replay in-game, "
+                            + "tap Swarm, choose one primary replay and any extra ghost replays.",
+                    10, Color.rgb(170, 178, 185));
+            swarmHelp.setPadding(0, 0, 0, dp(a, 2));
+            card.addView(swarmHelp);
+            addCheckBox(a, card,
+                    "Enable replay swarm picker during passive replays",
+                    K_REPLAY_SWARM, false);
 
             card.addView(sectionHeader(a, "Replay split HUD"));
             TextView splitHelp = label(a,

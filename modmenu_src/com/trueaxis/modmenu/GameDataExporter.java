@@ -1,12 +1,13 @@
 package com.trueaxis.modmenu;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.support.v4.content.FileProvider;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
+import java.lang.reflect.Method;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -102,7 +103,7 @@ final class GameDataExporter {
     private static void shareZip(Activity activity, File zip) {
         try {
             String authority = activity.getPackageName() + AUTHORITY_SUFFIX;
-            Uri uri = FileProvider.getUriForFile(activity, authority, zip);
+            Uri uri = fileProviderUri(activity, authority, zip);
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.setType("application/zip");
             intent.putExtra(Intent.EXTRA_STREAM, uri);
@@ -117,6 +118,18 @@ final class GameDataExporter {
             ModDebugLog.module("game-data-export", "share failed", error);
             toast(activity, "Could not share export: " + readable(error));
         }
+    }
+
+    private static Uri fileProviderUri(Context context, String authority, File file)
+            throws Exception {
+        Class<?> providerClass = Class.forName("android.support.v4.content.FileProvider");
+        Method getUri = providerClass.getMethod(
+                "getUriForFile", Context.class, String.class, File.class);
+        Object result = getUri.invoke(null, context, authority, file);
+        if (!(result instanceof Uri)) {
+            throw new IllegalStateException("FileProvider returned no URI");
+        }
+        return (Uri) result;
     }
 
     private static String readable(Throwable error) {

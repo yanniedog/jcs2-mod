@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 747
+    .line 775
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$cars:Landroid/widget/Spinner;
@@ -45,9 +45,9 @@
 
 # virtual methods
 .method public onClick(Landroid/view/View;)V
-    .registers 8
+    .registers 5
 
-    .line 749
+    .line 777
     const-string p1, "livery"
 
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
@@ -57,116 +57,31 @@
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->access$200(Landroid/content/Context;Landroid/widget/Spinner;)V
 
-    .line 750
-    sget v0, Landroid/os/Build$VERSION;->SDK_INT:I
+    .line 779
+    :try_start_9
+    new-instance v0, Ljava/lang/StringBuilder;
 
-    const/16 v1, 0x13
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
 
-    if-ge v0, v1, :cond_17
+    const-string v1, "launch import picker car="
 
-    .line 751
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    const-string v0, "Export requires Android 4.4 or newer."
+    move-result-object v0
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$300(Landroid/content/Context;Ljava/lang/String;)V
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
 
-    .line 752
-    return-void
-
-    .line 754
-    :cond_17
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
-
+    .line 780
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->selectedCar(Landroid/content/Context;)I
-    invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->access$500(Landroid/content/Context;)I
+    invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->access$500(Landroid/content/Context;)I
 
-    move-result v0
+    move-result v1
 
-    .line 756
-    :try_start_1d
-    new-instance v1, Ljava/lang/StringBuilder;
-
-    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
-
-    const-string v2, "launch export picker car="
-
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->carName(I)Ljava/lang/String;
 
     move-result-object v1
 
-    invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->carName(I)Ljava/lang/String;
-
-    move-result-object v2
-
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v1
-
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object v1
-
-    invoke-static {p1, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
-
-    .line 757
-    new-instance v1, Landroid/content/Intent;
-
-    const-string v2, "android.intent.action.CREATE_DOCUMENT"
-
-    invoke-direct {v1, v2}, Landroid/content/Intent;-><init>(Ljava/lang/String;)V
-
-    .line 758
-    const-string v2, "android.intent.category.OPENABLE"
-
-    invoke-virtual {v1, v2}, Landroid/content/Intent;->addCategory(Ljava/lang/String;)Landroid/content/Intent;
-
-    .line 759
-    const-string v2, "image/png"
-
-    invoke-virtual {v1, v2}, Landroid/content/Intent;->setType(Ljava/lang/String;)Landroid/content/Intent;
-
-    .line 760
-    const-string v2, "android.intent.extra.TITLE"
-
-    new-instance v3, Ljava/lang/StringBuilder;
-
-    invoke-direct {v3}, Ljava/lang/StringBuilder;-><init>()V
-
-    const-string v4, "jcs2-"
-
-    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v3
-
-    .line 761
-    # getter for: Lcom/trueaxis/modmenu/ModMenu;->CAR_NAMES:[Ljava/lang/String;
-    invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->access$600()[Ljava/lang/String;
-
-    move-result-object v4
-
-    aget-object v0, v4, v0
-
-    invoke-virtual {v0}, Ljava/lang/String;->toLowerCase()Ljava/lang/String;
-
-    move-result-object v0
-
-    const/16 v4, 0x20
-
-    const/16 v5, 0x2d
-
-    invoke-virtual {v0, v4, v5}, Ljava/lang/String;->replace(CC)Ljava/lang/String;
-
-    move-result-object v0
-
-    invoke-virtual {v3, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v0
-
-    const-string v3, "-livery.png"
-
-    invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     move-result-object v0
 
@@ -174,31 +89,61 @@
 
     move-result-object v0
 
-    .line 760
-    invoke-virtual {v1, v2, v0}, Landroid/content/Intent;->putExtra(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;
+    .line 779
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 762
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
+    .line 781
+    new-instance v0, Landroid/content/Intent;
 
-    const/16 v2, 0x1c86
+    sget v1, Landroid/os/Build$VERSION;->SDK_INT:I
 
-    invoke-virtual {v0, v1, v2}, Landroid/app/Activity;->startActivityForResult(Landroid/content/Intent;I)V
-    :try_end_7f
-    .catchall {:try_start_1d .. :try_end_7f} :catchall_80
+    const/16 v2, 0x13
 
-    .line 766
-    goto :goto_8d
+    if-lt v1, v2, :cond_34
 
-    .line 763
-    :catchall_80
+    .line 782
+    const-string v1, "android.intent.action.OPEN_DOCUMENT"
+
+    goto :goto_36
+
+    :cond_34
+    const-string v1, "android.intent.action.GET_CONTENT"
+
+    :goto_36
+    invoke-direct {v0, v1}, Landroid/content/Intent;-><init>(Ljava/lang/String;)V
+
+    .line 783
+    const-string v1, "android.intent.category.OPENABLE"
+
+    invoke-virtual {v0, v1}, Landroid/content/Intent;->addCategory(Ljava/lang/String;)Landroid/content/Intent;
+
+    .line 784
+    const-string v1, "image/*"
+
+    invoke-virtual {v0, v1}, Landroid/content/Intent;->setType(Ljava/lang/String;)Landroid/content/Intent;
+
+    .line 785
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
+
+    const/16 v2, 0x1c85
+
+    invoke-virtual {v1, v0, v2}, Landroid/app/Activity;->startActivityForResult(Landroid/content/Intent;I)V
+    :try_end_4a
+    .catchall {:try_start_9 .. :try_end_4a} :catchall_4b
+
+    .line 789
+    goto :goto_58
+
+    .line 786
+    :catchall_4b
     move-exception v0
 
-    .line 764
-    const-string v1, "launch export picker failed"
+    .line 787
+    const-string v1, "launch import picker failed"
 
     invoke-static {p1, v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 765
+    .line 788
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
 
     const-string v0, "No file picker available on this device."
@@ -206,7 +151,7 @@
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$300(Landroid/content/Context;Ljava/lang/String;)V
 
-    .line 767
-    :goto_8d
+    .line 790
+    :goto_58
     return-void
 .end method

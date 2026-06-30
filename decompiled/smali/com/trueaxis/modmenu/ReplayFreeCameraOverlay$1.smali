@@ -48,7 +48,7 @@
         }
     .end annotation
 
-    .line 55
+    .line 62
     iput-object p1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$activity:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$added:[Z
@@ -123,9 +123,9 @@
 
 # virtual methods
 .method public run()V
-    .registers 15
+    .registers 11
 
-    .line 62
+    .line 69
     const-string v0, "freecam"
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$activity:Landroid/app/Activity;
@@ -134,15 +134,15 @@
 
     move-result v1
 
-    if-nez v1, :cond_147
+    if-nez v1, :cond_eb
 
     iget-boolean v1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->disabled:Z
 
     if-eqz v1, :cond_10
 
-    goto/16 :goto_147
+    goto/16 :goto_eb
 
-    .line 67
+    .line 74
     :cond_10
     const/16 v1, 0x8
 
@@ -155,7 +155,7 @@
 
     move-result v4
 
-    .line 68
+    .line 75
     and-int/lit8 v5, v4, 0x1
 
     if-eqz v5, :cond_1e
@@ -167,296 +167,207 @@
     :cond_1e
     const/4 v5, 0x0
 
-    .line 69
+    .line 76
     :goto_1f
-    and-int/lit8 v6, v4, 0x2
+    nop
 
-    if-eqz v6, :cond_25
+    .line 77
+    and-int/lit8 v6, v4, 0x8
+
+    if-eqz v6, :cond_26
 
     const/4 v6, 0x1
 
-    goto :goto_26
+    goto :goto_27
 
-    :cond_25
+    :cond_26
     const/4 v6, 0x0
 
-    .line 70
-    :goto_26
-    if-eqz v5, :cond_2c
-
-    if-eqz v6, :cond_2c
-
-    const/4 v7, 0x1
-
-    goto :goto_2d
-
-    :cond_2c
-    const/4 v7, 0x0
-
-    .line 71
-    :goto_2d
-    and-int/lit8 v8, v4, 0x4
-
-    if-eqz v8, :cond_33
-
-    const/4 v8, 0x1
-
-    goto :goto_34
-
-    :cond_33
-    const/4 v8, 0x0
-
-    .line 72
-    :goto_34
-    if-eqz v7, :cond_80
-
-    iget-object v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$added:[Z
-
-    aget-boolean v9, v9, v3
-
-    if-nez v9, :cond_80
-
-    .line 73
-    iget-object v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layout:Landroid/view/WindowManager$LayoutParams;
-
-    iget-object v10, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$activity:Landroid/app/Activity;
-
-    invoke-virtual {v10}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
-
-    move-result-object v10
-
-    invoke-virtual {v10}, Landroid/view/Window;->getDecorView()Landroid/view/View;
-
-    move-result-object v10
-
-    invoke-virtual {v10}, Landroid/view/View;->getWindowToken()Landroid/os/IBinder;
-
-    move-result-object v10
-
-    iput-object v10, v9, Landroid/view/WindowManager$LayoutParams;->token:Landroid/os/IBinder;
-
-    .line 74
-    iget-object v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layout:Landroid/view/WindowManager$LayoutParams;
-
-    iget-object v9, v9, Landroid/view/WindowManager$LayoutParams;->token:Landroid/os/IBinder;
-
-    if-eqz v9, :cond_6e
-
-    .line 75
-    iget-object v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$windowManager:Landroid/view/WindowManager;
-
-    iget-object v10, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layer:Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;
-
-    iget-object v11, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layout:Landroid/view/WindowManager$LayoutParams;
-
-    invoke-interface {v9, v10, v11}, Landroid/view/WindowManager;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
-
-    .line 76
-    iget-object v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$added:[Z
-
-    aput-boolean v2, v9, v3
-
-    .line 77
-    iput v3, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->attachAttempts:I
-
     .line 78
-    iget-object v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layer:Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;
+    :goto_27
+    if-eqz v5, :cond_2d
 
-    invoke-virtual {v9, v3}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->setOverlayPassThrough(Z)V
+    if-eqz v6, :cond_2d
+
+    const/4 v5, 0x1
+
+    goto :goto_2e
+
+    :cond_2d
+    const/4 v5, 0x0
 
     .line 79
-    const-string v9, "gesture layer installed"
+    :goto_2e
+    and-int/lit8 v6, v4, 0x4
 
-    invoke-static {v0, v9}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    if-eqz v6, :cond_34
 
-    goto :goto_8b
+    const/4 v6, 0x1
+
+    goto :goto_35
+
+    :cond_34
+    const/4 v6, 0x0
 
     .line 80
-    :cond_6e
-    iget v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->attachAttempts:I
+    :goto_35
+    if-eqz v5, :cond_7c
 
-    add-int/lit8 v10, v9, 0x1
+    iget-object v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$added:[Z
 
-    iput v10, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->attachAttempts:I
+    aget-boolean v7, v7, v3
 
-    const/16 v10, 0x14
-
-    if-le v9, v10, :cond_8b
+    if-nez v7, :cond_7c
 
     .line 81
-    const-string v9, "gesture layer waiting for window token"
+    iget-object v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layout:Landroid/view/WindowManager$LayoutParams;
 
-    invoke-static {v0, v9}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    iget-object v8, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$activity:Landroid/app/Activity;
+
+    invoke-virtual {v8}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
+
+    move-result-object v8
+
+    invoke-virtual {v8}, Landroid/view/Window;->getDecorView()Landroid/view/View;
+
+    move-result-object v8
+
+    invoke-virtual {v8}, Landroid/view/View;->getWindowToken()Landroid/os/IBinder;
+
+    move-result-object v8
+
+    iput-object v8, v7, Landroid/view/WindowManager$LayoutParams;->token:Landroid/os/IBinder;
 
     .line 82
-    iput v3, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->attachAttempts:I
+    iget-object v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layout:Landroid/view/WindowManager$LayoutParams;
 
-    goto :goto_8b
+    iget-object v7, v7, Landroid/view/WindowManager$LayoutParams;->token:Landroid/os/IBinder;
+
+    if-eqz v7, :cond_6a
+
+    .line 83
+    iget-object v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$windowManager:Landroid/view/WindowManager;
+
+    iget-object v8, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layer:Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;
+
+    iget-object v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layout:Landroid/view/WindowManager$LayoutParams;
+
+    invoke-interface {v7, v8, v9}, Landroid/view/WindowManager;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
     .line 84
-    :cond_80
-    if-nez v7, :cond_8b
+    iget-object v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$added:[Z
 
-    iget-object v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$added:[Z
-
-    aget-boolean v9, v9, v3
-
-    if-eqz v9, :cond_8b
+    aput-boolean v2, v7, v3
 
     .line 85
-    invoke-direct {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->removeLayer()V
+    iput v3, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->attachAttempts:I
+
+    .line 86
+    const-string v7, "gesture layer installed"
+
+    invoke-static {v0, v7}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+
+    goto :goto_87
 
     .line 87
-    :cond_8b
-    :goto_8b
-    iget-object v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layer:Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;
+    :cond_6a
+    iget v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->attachAttempts:I
 
-    invoke-virtual {v9, v7}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->setReplayTouchable(Z)V
+    add-int/lit8 v8, v7, 0x1
+
+    iput v8, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->attachAttempts:I
+
+    const/16 v8, 0x14
+
+    if-le v7, v8, :cond_87
 
     .line 88
-    iget-object v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layer:Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;
+    const-string v7, "gesture layer waiting for window token"
 
-    if-eqz v7, :cond_96
-
-    const/4 v10, 0x0
-
-    goto :goto_98
-
-    :cond_96
-    const/16 v10, 0x8
-
-    :goto_98
-    invoke-virtual {v9, v10}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->setVisibility(I)V
+    invoke-static {v0, v7}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
     .line 89
-    iget-boolean v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->lastTouchable:Z
+    iput v3, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->attachAttempts:I
 
-    if-ne v7, v9, :cond_a3
+    goto :goto_87
 
-    iget-boolean v9, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->lastActive:Z
+    .line 91
+    :cond_7c
+    if-nez v5, :cond_87
 
-    if-eq v8, v9, :cond_129
+    iget-object v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$added:[Z
 
-    .line 90
-    :cond_a3
-    new-instance v9, Ljava/lang/StringBuilder;
+    aget-boolean v7, v7, v3
 
-    invoke-direct {v9}, Ljava/lang/StringBuilder;-><init>()V
+    if-eqz v7, :cond_87
 
-    const-string v10, "gesture_layer touchable="
-
-    invoke-virtual {v9, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v9
-
-    invoke-virtual {v9, v7}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
-
-    move-result-object v9
-
-    const-string v10, " active="
-
-    invoke-virtual {v9, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v9
-
-    invoke-virtual {v9, v8}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
-
-    move-result-object v9
-
-    const-string v10, " status="
-
-    invoke-virtual {v9, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v9
-
-    invoke-virtual {v9, v4}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    move-result-object v9
-
-    invoke-virtual {v9}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object v9
-
-    invoke-static {v0, v9}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    .line 92
+    invoke-direct {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->removeLayer()V
 
     .line 94
-    const-string v9, "B"
+    :cond_87
+    :goto_87
+    iget-object v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layer:Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;
 
-    const-string v10, "ReplayFreeCameraOverlay.java:poll"
+    invoke-virtual {v7, v5}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->setReplayTouchable(Z)V
 
-    const-string v11, "overlay_visibility"
+    .line 95
+    iget-object v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$layer:Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;
 
-    new-instance v12, Ljava/lang/StringBuilder;
+    if-eqz v5, :cond_92
 
-    invoke-direct {v12}, Ljava/lang/StringBuilder;-><init>()V
+    const/4 v8, 0x0
 
-    const-string v13, "{\"visible\":"
+    goto :goto_94
 
-    invoke-virtual {v12, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    :cond_92
+    const/16 v8, 0x8
 
-    move-result-object v12
+    :goto_94
+    invoke-virtual {v7, v8}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->setVisibility(I)V
 
-    invoke-virtual {v12, v7}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+    .line 96
+    iget-boolean v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->lastTouchable:Z
 
-    move-result-object v12
+    if-ne v5, v7, :cond_9f
 
-    const-string v13, ",\"active\":"
+    iget-boolean v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->lastActive:Z
 
-    invoke-virtual {v12, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    if-eq v6, v7, :cond_cd
 
-    move-result-object v12
+    .line 97
+    :cond_9f
+    new-instance v7, Ljava/lang/StringBuilder;
 
-    invoke-virtual {v12, v8}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+    invoke-direct {v7}, Ljava/lang/StringBuilder;-><init>()V
 
-    move-result-object v12
+    const-string v8, "gesture_layer touchable="
 
-    const-string v13, ",\"enabled\":"
+    invoke-virtual {v7, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v12, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v7
 
-    move-result-object v12
+    invoke-virtual {v7, v5}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v12, v5}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+    move-result-object v7
 
-    move-result-object v5
+    const-string v8, " active="
 
-    const-string v12, ",\"inIntro\":"
+    invoke-virtual {v7, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v5, v12}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v7
 
-    move-result-object v5
+    invoke-virtual {v7, v6}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v5, v6}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+    move-result-object v7
 
-    move-result-object v5
+    const-string v8, " status="
 
-    const-string v6, ",\"added\":"
+    invoke-virtual {v7, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v5, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v7
 
-    move-result-object v5
-
-    iget-object v6, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$added:[Z
-
-    aget-boolean v6, v6, v3
-
-    invoke-virtual {v5, v6}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
-
-    move-result-object v5
-
-    const-string v6, ",\"bits\":"
-
-    invoke-virtual {v5, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v5
-
-    invoke-virtual {v5, v4}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    move-result-object v4
-
-    const-string v5, "}"
-
-    invoke-virtual {v4, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v7, v4}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
     move-result-object v4
 
@@ -464,30 +375,29 @@
 
     move-result-object v4
 
-    # invokes: Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay;->agentLog(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    invoke-static {v9, v10, v11, v4}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay;->access$000(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {v0, v4}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
     .line 100
-    iput-boolean v7, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->lastTouchable:Z
+    iput-boolean v5, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->lastTouchable:Z
 
     .line 101
-    iput-boolean v8, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->lastActive:Z
+    iput-boolean v6, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->lastActive:Z
 
     .line 103
-    :cond_129
+    :cond_cd
     iget-object v4, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->val$handler:Landroid/os/Handler;
 
     const-wide/16 v5, 0x32
 
     invoke-virtual {v4, p0, v5, v6}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
-    :try_end_130
-    .catchall {:try_start_14 .. :try_end_130} :catchall_131
+    :try_end_d4
+    .catchall {:try_start_14 .. :try_end_d4} :catchall_d5
 
     .line 110
-    goto :goto_146
+    goto :goto_ea
 
     .line 104
-    :catchall_131
+    :catchall_d5
     move-exception v4
 
     .line 105
@@ -512,14 +422,14 @@
     invoke-static {v0, v1, v4}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
     .line 111
-    :goto_146
+    :goto_ea
     return-void
 
-    .line 63
-    :cond_147
-    :goto_147
+    .line 70
+    :cond_eb
+    :goto_eb
     invoke-direct {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$1;->removeLayer()V
 
-    .line 64
+    .line 71
     return-void
 .end method

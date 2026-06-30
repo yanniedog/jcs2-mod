@@ -30,9 +30,22 @@ if (-not $status) {
     Write-Host "No file changes to commit."
 } else {
     if (-not $CommitMessage) {
-        $CommitMessage = "Fix gesture overlay tap pass-through ($versionName)"
+        $CommitMessage = "Gate replay freecam to post-race replay and fix smoke test ($versionName)"
     }
-    git add -A
+    git add `
+        decompiled/apktool.yml `
+        decompiled/lib/arm64-v8a/libjcs2mod.so `
+        decompiled/smali/com/trueaxis/modmenu `
+        decompiled/res `
+        modmenu_src `
+        mod_assets `
+        native_bridge `
+        scripts/audit_mod_surface.py `
+        scripts/runtime_smoke_test.ps1 `
+        scripts/runtime_replay_freecam_gesture_test.ps1 `
+        publish_mod_release.ps1 `
+        pull_mod_debug_log.ps1 `
+        rebuild_install_mod.ps1
     git commit -m $CommitMessage
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }

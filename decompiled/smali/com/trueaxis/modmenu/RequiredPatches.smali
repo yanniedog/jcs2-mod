@@ -342,58 +342,144 @@
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
     .line 71
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->replaySwarmEnabled(Landroid/content/Context;)Z
+
+    move-result v1
+
+    if-eqz v1, :cond_11b
+
+    .line 73
+    :try_start_ed
+    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->installReplaySwarmHooks()Z
+
+    move-result v1
+
+    .line 74
+    const/4 v2, 0x1
+
+    invoke-static {v2}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplaySwarmEnabled(Z)V
+
+    .line 75
+    new-instance v2, Ljava/lang/StringBuilder;
+
+    invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v3, "replay swarm hooks installed="
+
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v2
+
+    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+
+    move-result-object v2
+
+    invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v2
+
+    invoke-static {v2}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
+
+    .line 76
+    if-eqz v1, :cond_11a
+
+    .line 77
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->install(Landroid/app/Activity;)V
+    :try_end_110
+    .catchall {:try_start_ed .. :try_end_110} :catchall_111
+
+    goto :goto_11a
+
+    .line 79
+    :catchall_111
+    move-exception v1
+
+    .line 80
+    const-string v2, "Could not install replay swarm mode"
+
+    invoke-static {v0, v2, v1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+
+    .line 81
+    invoke-static {v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
+
+    .line 82
+    :cond_11a
+    :goto_11a
+    goto :goto_121
+
+    .line 85
+    :cond_11b
+    const/4 v1, 0x0
+
+    :try_start_11c
+    invoke-static {v1}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplaySwarmEnabled(Z)V
+    :try_end_11f
+    .catchall {:try_start_11c .. :try_end_11f} :catchall_120
+
+    .line 87
+    goto :goto_121
+
+    .line 86
+    :catchall_120
+    move-exception v1
+
+    .line 89
+    :goto_121
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->checkpointSplitsEnabled(Landroid/content/Context;)Z
 
     move-result v1
 
-    if-eqz v1, :cond_100
+    if-eqz v1, :cond_13a
 
-    .line 72
+    .line 90
     const-string v1, "checkpoint split HUD enabled"
 
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 74
-    :try_start_f2
+    .line 92
+    :try_start_12c
     invoke-static {p0}, Lcom/trueaxis/modmenu/SplitTimeHud;->install(Landroid/app/Activity;)V
-    :try_end_f5
-    .catchall {:try_start_f2 .. :try_end_f5} :catchall_f6
+    :try_end_12f
+    .catchall {:try_start_12c .. :try_end_12f} :catchall_130
 
-    .line 78
-    :goto_f5
-    goto :goto_105
+    .line 96
+    :goto_12f
+    goto :goto_13f
 
-    .line 75
-    :catchall_f6
+    .line 93
+    :catchall_130
     move-exception p0
 
-    .line 76
+    .line 94
     const-string v1, "Could not install checkpoint split HUD"
 
     invoke-static {v0, v1, p0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 77
+    .line 95
     invoke-static {v1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    goto :goto_f5
+    goto :goto_12f
 
-    .line 80
-    :cond_100
+    .line 98
+    :cond_13a
     const-string p0, "checkpoint split HUD disabled"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 82
-    :goto_105
+    .line 100
+    :goto_13f
     const-string p0, "after RequiredPatches.apply"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->logRuntime(Ljava/lang/String;)V
 
-    .line 83
+    .line 101
     return-void
 .end method
 
 .method private static native applyUnlimitedCheckpoints()Z
+.end method
+
+.method static native clearReplaySwarm()V
 .end method
 
 .method static native gestureReplayFreeCamera(FFFFFFF)V
@@ -403,6 +489,9 @@
 .end method
 
 .method private static native installReplayFreeCameraHooks()Z
+.end method
+
+.method private static native installReplaySwarmHooks()Z
 .end method
 
 .method private static native installUserTrackFeatureHooks()Z
@@ -424,6 +513,21 @@
 .end method
 
 .method static native readReplayFreeCameraStatus()I
+.end method
+
+.method static native readReplaySwarmActive()I
+.end method
+
+.method static native readReplaySwarmCatalogCount()I
+.end method
+
+.method static native readReplaySwarmCatalogPath(I[B)I
+.end method
+
+.method static native readReplaySwarmGhostCount()I
+.end method
+
+.method static native readReplaySwarmPrimaryIndex()I
 .end method
 
 .method static native readSplitDecodedEngineCheckpointIndex()I
@@ -514,4 +618,10 @@
 .end method
 
 .method static native setReplayFreeCameraLocked(Z)V
+.end method
+
+.method static native setReplaySwarmEnabled(Z)V
+.end method
+
+.method static native setReplaySwarmSelection(I[I)V
 .end method

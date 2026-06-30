@@ -2,8 +2,20 @@ param(
     [string]$ApkPath = "jcs2-mod.apk",
     [string]$Package = "modded.ycs2",
     [string]$LauncherActivity = "com.trueaxis.modmenu.ModLauncherActivity",
+    [ValidateSet("LandscapeRight", "LandscapeLeft")]
+    [string]$LandscapeSide = "LandscapeLeft",
+    [string]$StraightAcceleration = "9.80665:0:0",
+    [string]$StraightOrientation = "0:0:90",
     [int]$GameStartupWaitSeconds = 60,
+    [int]$DriveHoldMs = 70000,
+    [int]$ClearAcceleratorTutorialMs = 2500,
+    [int]$AcceleratorX = 444,
+    [int]$AcceleratorY = 204,
+    [int]$BoostX = 36,
+    [int]$BoostY = 204,
+    [bool]$EnableAccelerateWithJet = $true,
     [bool]$ClearAppDataBeforeRun = $true,
+    [bool]$ForceLoginDismissTap = $true,
     [string]$Adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe",
     [string]$OutDir = "_apk_build\runtime-freecam-gestures"
 )
@@ -111,7 +123,12 @@ function Wait-ForLog {
 
 function Tap {
     param([int]$X, [int]$Y)
-    Invoke-Adb shell input tap $X $Y
+    Send-EmuTapDevice $X $Y
+}
+
+function Tap-Menu {
+    param([int]$X, [int]$Y)
+    Send-EmuTapLandscape $X $Y
 }
 
 function Get-DisplayViewportOrientation {
@@ -265,6 +282,115 @@ function Tap-WindowText {
     Tap-WindowTextFromXml $Text $xml
 }
 
+function Dismiss-PermissionDialogIfPresent {
+    $xml = Dump-WindowXml
+    if ($xml -like "*permissioncontroller*" -and $xml -like "*Allow*") {
+        $xml | Set-Content -LiteralPath (Join-Path $RunDir "permission-dialog.xml") -Encoding UTF8
+        Tap-WindowTextFromXml "Allow" $xml
+        Start-Sleep -Seconds 1
+        return $true
+    }
+    return $false
+}
+
+function Dismiss-UpdatePromptIfPresent {
+    $xml = Dump-WindowXml
+    if ($xml -like "*Update available*" -and $xml -like "*Later*") {
+        $xml | Set-Content -LiteralPath (Join-Path $RunDir "update-prompt.xml") -Encoding UTF8
+        Tap-WindowTextFromXml "Later" $xml
+        Start-Sleep -Seconds 1
+        return $true
+    }
+    return $false
+}
+
+function Send-EmuTouchHold {
+    param(
+        [double]$X,
+        [double]$Y,
+        [int]$DurationMs
+    )
+    $point = New-TouchPoint $X $Y
+    Send-EmuTouchFrame -Points @($point) -Down $true -Up $false
+    Start-Sleep -Milliseconds $DurationMs
+    Send-EmuTouchFrame -Points @($point) -Down $false -Up $true
+    $script:NextTrackingId += 10
+}
+
+function Start-TouchHold {
+    param(
+        [string]$Name,
+        [int]$X,
+        [int]$Y,
+        [int]$DurationMs
+    )
+    Start-Job -Name $Name -ScriptBlock {
+        param([string]$AdbPath, [double]$TouchX, [double]$TouchY, [int]$HoldMs, [int]$TrackingId)
+        function Send-HoldFrame {
+            param([object[]]$Points, [bool]$Down, [bool]$Up)
+            $events = New-Object System.Collections.Generic.List[string]
+            for ($slot = 0; $slot -lt $Points.Count; $slot++) {
+                $point = $Points[$slot]
+                $absX = [int]([Math]::Max(0.0, [Math]::Min(479.0, [double]$point.X)) * 32767.0 / 480.0)
+                $absY = [int]([Math]::Max(0.0, [Math]::Min(319.0, [double]$point.Y)) * 32767.0 / 320.0)
+                [void]$events.Add("EV_ABS:ABS_MT_SLOT:$slot")
+                if ($Down) {
+                    [void]$events.Add("EV_ABS:ABS_MT_TRACKING_ID:$($TrackingId + $slot)")
+                }
+                [void]$events.Add("EV_ABS:ABS_MT_POSITION_X:$absX")
+                [void]$events.Add("EV_ABS:ABS_MT_POSITION_Y:$absY")
+                [void]$events.Add("EV_ABS:ABS_MT_PRESSURE:900")
+            }
+            if ($Down) { [void]$events.Add("EV_KEY:BTN_TOUCH:1") }
+            if ($Up) {
+                for ($slot = 0; $slot -lt $Points.Count; $slot++) {
+                    [void]$events.Add("EV_ABS:ABS_MT_SLOT:$slot")
+                    [void]$events.Add("EV_ABS:ABS_MT_TRACKING_ID:-1")
+                    [void]$events.Add("EV_ABS:ABS_MT_PRESSURE:0")
+                }
+                [void]$events.Add("EV_KEY:BTN_TOUCH:0")
+            }
+            [void]$events.Add("EV_SYN:0:0")
+            & $AdbPath emu event send @($events.ToArray()) | Out-Null
+        }
+        $point = [pscustomobject]@{ X = $TouchX; Y = $TouchY }
+        Send-HoldFrame -Points @($point) -Down $true -Up $false
+        Start-Sleep -Milliseconds $HoldMs
+        Send-HoldFrame -Points @($point) -Down $false -Up $true
+    } -ArgumentList $Adb, $X, $Y, $DurationMs, $script:NextTrackingId
+    $script:NextTrackingId += 10
+}
+
+function Wait-TouchHold {
+    param([object[]]$Jobs)
+    foreach ($job in $Jobs) {
+        if ($null -eq $job) { continue }
+        Wait-Job -Job $job | Out-Null
+        Receive-Job -Job $job | Out-Null
+        Remove-Job -Job $job
+    }
+}
+
+function Enable-AccelerateWithJetOption {
+    if (-not $EnableAccelerateWithJet) { return }
+    Write-Host "Enabling stock Accelerate with jet"
+    Tap-Menu 270 195
+    Start-Sleep -Seconds 2
+    Save-Screenshot "01c-help-and-options.png"
+    Tap-Menu 220 135
+    Start-Sleep -Seconds 2
+    Save-Screenshot "01d-settings-top.png"
+    Save-Screenshot "01e-accelerate-with-jet-before.png"
+    Tap-Menu 235 145
+    Start-Sleep -Seconds 1
+    Save-Screenshot "01f-accelerate-with-jet-after.png"
+    Tap 88 292
+    Start-Sleep -Seconds 1
+    Tap 88 292
+    Start-Sleep -Seconds 2
+    Save-Screenshot "01h-main-menu-after-accelerate-with-jet.png"
+}
+
 function Grant-StoragePermissions {
     foreach ($permission in @(
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -301,13 +427,88 @@ function Dismiss-LoginOverlayIfPresent {
     return $false
 }
 
+function Set-LandscapeNeutralSensors {
+    $rotation = if ($LandscapeSide -eq "LandscapeLeft") { 1 } else { 3 }
+    Invoke-Adb shell wm size 480x320
+    Invoke-Adb shell settings put system accelerometer_rotation 0
+    Invoke-Adb shell settings put system user_rotation $rotation
+    Invoke-Adb emu sensor set acceleration $StraightAcceleration
+    Invoke-Adb emu sensor set gyroscope "0:0:0"
+    Invoke-Adb emu sensor set orientation $StraightOrientation
+}
+
 function Dismiss-StartupLoginOverlay {
     if (Dismiss-LoginOverlayIfPresent) { return }
+    if (-not $ForceLoginDismissTap) { return }
     Dump-WindowXml | Set-Content -LiteralPath (Join-Path $RunDir "login-overlay-fallback-window.xml") -Encoding UTF8
-    # The GL prompt is rotated relative to raw Android input coordinates.
-    # This maps to the visible PLAY button on the first-run Facebook prompt.
-    Tap 50 50
+    Tap 414 299
     Start-Sleep -Seconds 3
+}
+
+function Enable-LauncherOptions {
+    $initialXml = ""
+    for ($i = 0; $i -lt 40; $i++) {
+        if (Dismiss-PermissionDialogIfPresent) {
+            Start-Sleep -Milliseconds 800
+            continue
+        }
+        if (Dismiss-UpdatePromptIfPresent) {
+            Start-Sleep -Milliseconds 800
+            continue
+        }
+        $xml = Dump-WindowXml
+        if ($xml -like "*Start game*") {
+            $initialXml = $xml
+            break
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    if ($initialXml -notlike "*Start game*") {
+        $initialXml = Dump-WindowXml
+        $initialXml | Set-Content -LiteralPath (Join-Path $RunDir "launcher-start-missing.xml") -Encoding UTF8
+        throw "Timed out waiting for window text: Start game"
+    }
+    $initialXml | Set-Content -LiteralPath (Join-Path $RunDir "launcher-initial.xml") -Encoding UTF8
+    Dismiss-PermissionDialogIfPresent | Out-Null
+    foreach ($text in @(
+        "Enable checkpoint/sector deltas vs saved replay ghost",
+        "Show consecutive splits as an on-screen list"
+    )) {
+        $xml = Dump-WindowXml
+        if ($xml -notlike "*$text*") { continue }
+        $node = [regex]::Match(
+            $xml,
+            "text=`"$([regex]::Escape($text))`"[^>]*checked=`"(true|false)`"",
+            [System.Text.RegularExpressions.RegexOptions]::Singleline
+        )
+        if (-not $node.Success -or $node.Groups[1].Value -ne "true") {
+            Tap-WindowTextFromXml $text $xml
+            Dismiss-PermissionDialogIfPresent | Out-Null
+            Start-Sleep -Milliseconds 400
+        }
+    }
+    Start-Sleep -Milliseconds 500
+    $xml = Wait-ForWindowText "Start game" 10
+    $xml | Set-Content -LiteralPath (Join-Path $RunDir "launcher-before-start.xml") -Encoding UTF8
+    Tap-WindowTextFromXml "Start game" $xml
+    Start-Sleep -Seconds 2
+}
+
+function Start-GameActivity {
+    Invoke-Adb shell am start -n "${Package}/com.trueaxis.jetcarstunts2.Jetcarstunts2Activity" | Out-Null
+}
+
+function Wait-ForGameActivity {
+    param([int]$Seconds = 30)
+    $deadline = (Get-Date).AddSeconds($Seconds)
+    do {
+        $debug = Read-AdbText shell cat /sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log
+        if ($debug -match "Jetcarstunts2Activity created") { return }
+        $state = Read-AdbText shell dumpsys activity activities
+        if ($state -match "Jetcarstunts2Activity" -and $state -match "ResumedActivity") { return }
+        Start-Sleep -Milliseconds 500
+    } while ((Get-Date) -lt $deadline)
+    throw "Timed out waiting for Jetcarstunts2Activity"
 }
 
 function Close-ExternalBrowserIfPresent {
@@ -317,35 +518,74 @@ function Close-ExternalBrowserIfPresent {
         Start-Sleep -Seconds 1
         Invoke-Adb shell am start -n "${Package}/com.trueaxis.jetcarstunts2.Jetcarstunts2Activity" | Out-Null
         Start-Sleep -Seconds 2
+        Set-LandscapeNeutralSensors
         return $true
     }
     return $false
 }
 
-function Enable-LauncherOptions {
-    Wait-ForWindowText "Start game" 25 | Set-Content -LiteralPath (Join-Path $RunDir "launcher.xml") -Encoding UTF8
-}
-
-function Start-GameActivity {
-    Invoke-Adb shell am start -n "${Package}/com.trueaxis.jetcarstunts2.Jetcarstunts2Activity" | Out-Null
-}
-
-function Open-RegularStraightOnPassiveReplay {
-    Write-Host "Opening regular Straight On passive replay"
-    Send-EmuTapDevice 310 100
+function Open-RegularStraightOnLevelDetail {
+    Write-Host "Opening regular Straight On level detail"
+    Tap-Menu 310 58
     Start-Sleep -Seconds 4
     Dismiss-LoginOverlayIfPresent | Out-Null
     Close-ExternalBrowserIfPresent | Out-Null
     Save-Screenshot "02-regular-play-open.png"
 
-    Send-EmuTapDevice 300 100
+    Tap 115 84
     Start-Sleep -Seconds 4
     Dismiss-LoginOverlayIfPresent | Out-Null
     Close-ExternalBrowserIfPresent | Out-Null
     Save-Screenshot "03-straight-on-detail.png"
+}
 
-    Start-Sleep -Seconds 2
-    Save-Screenshot "04-passive-replay-before-gestures.png"
+function Run-StraightOnRace {
+    Write-Host "Starting race against replay ghost"
+    Tap 414 302
+    Start-Sleep -Seconds 6
+    Set-LandscapeNeutralSensors
+    Close-ExternalBrowserIfPresent | Out-Null
+    Save-Screenshot "04-race-start.png"
+    $debug = Read-AdbText shell cat /sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log
+    if ($debug -notmatch "split armed") {
+        Write-Host "Race may not have started yet; retrying PLAY tap on level detail"
+        Tap 430 295
+        Start-Sleep -Seconds 6
+        Set-LandscapeNeutralSensors
+        Save-Screenshot "04a-race-retry.png"
+    }
+
+    if ($ClearAcceleratorTutorialMs -gt 0) {
+        Write-Host "Clearing first-run accelerator tutorial gate for ${ClearAcceleratorTutorialMs}ms"
+        $tutorialHold = @(Start-TouchHold "tutorial-accelerator-clear" $AcceleratorX $AcceleratorY $ClearAcceleratorTutorialMs)
+        Wait-TouchHold $tutorialHold
+        Start-Sleep -Seconds 1
+        Set-LandscapeNeutralSensors
+        Save-Screenshot "04b-tutorial-clear.png"
+    }
+
+    $driveMode = "boost only with Accelerate with jet"
+    $holdJobs = @(Start-TouchHold "boost-hold" $BoostX $BoostY $DriveHoldMs)
+    Write-Host "Holding $driveMode for ${DriveHoldMs}ms"
+    $driveStart = Get-Date
+    try {
+        while (((Get-Date) - $driveStart).TotalMilliseconds -lt $DriveHoldMs) {
+            Set-LandscapeNeutralSensors
+            Close-ExternalBrowserIfPresent | Out-Null
+            Start-Sleep -Milliseconds 500
+        }
+    } finally {
+        Wait-TouchHold $holdJobs
+    }
+    Save-Screenshot "05-race-finished.png"
+}
+
+function Open-RegularStraightOnPassiveReplay {
+    Open-RegularStraightOnLevelDetail
+    Write-Host "Starting passive replay fly-through (must not enable freecam)"
+    Tap 217 298
+    Start-Sleep -Seconds 15
+    Save-Screenshot "04-passive-replay-before-race.png"
 }
 
 function Write-UiautomatorGestureSource {
@@ -668,8 +908,8 @@ function Run-UiautomatorTap {
 
 function Run-EmuFreecamGestures {
     Send-EmuGesture `
-        -Starts @((New-TouchPoint 120 160)) `
-        -Ends @((New-TouchPoint 210 160))
+        -Starts @((New-TouchPoint 130 160), (New-TouchPoint 190 160)) `
+        -Ends @((New-TouchPoint 210 160), (New-TouchPoint 270 160))
 
     Send-EmuGesture `
         -Starts @((New-TouchPoint 130 160), (New-TouchPoint 190 160)) `
@@ -691,6 +931,8 @@ function Run-EmuFreecamGestures {
 function Collect-Evidence {
     Save-AdbText (Join-Path $RunDir "public_ycs2_mod_debug.log") shell cat /sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log | Out-Null
     Save-AdbText (Join-Path $RunDir "public_ycs2_mod_native_crash.log") shell cat /sdcard/YCS2CommunityMod/logs/ycs2_mod_native_crash.log | Out-Null
+    Save-AdbText (Join-Path $RunDir "debug-04e8a3.log") shell cat /sdcard/YCS2CommunityMod/logs/debug-04e8a3.log | Out-Null
+    Copy-Item -LiteralPath (Join-Path $RunDir "debug-04e8a3.log") -Destination (Join-Path $Root "debug-04e8a3.log") -Force -ErrorAction SilentlyContinue
     Save-AdbText (Join-Path $RunDir "logcat.txt") logcat -d -t 5000 | Out-Null
     Dump-WindowXml | Set-Content -LiteralPath (Join-Path $RunDir "window.xml") -Encoding UTF8
 }
@@ -704,6 +946,7 @@ function Assert-FreecamEvidence {
     foreach ($required in @(
         "gesture layer installed",
         "gesture_layer touchable=true",
+        'inReplay":true',
         "gesture=pan",
         "gesture=pinch_rotate",
         "gesture=car_drag"
@@ -712,8 +955,8 @@ function Assert-FreecamEvidence {
             throw "Missing freecam runtime evidence '$required'. See $RunDir\public_ycs2_mod_debug.log"
         }
     }
-    if ($debug -notmatch "gesture=pan[^\n]+r=[1-9]") {
-        throw "Single-finger drag did not produce the expected right/left pan sign. See $RunDir\public_ycs2_mod_debug.log"
+    if ($debug -notmatch "gesture=pan[^\n]+r=[1-9]|gesture=pan[^\n]+u=[1-9]") {
+        throw "Two-finger drag did not produce the expected pan evidence. See $RunDir\public_ycs2_mod_debug.log"
     }
     if ($debug -notmatch "gesture=pinch_rotate[^\n]+f=[1-9]") {
         throw "Two-finger pinch did not produce positive forward dolly evidence. See $RunDir\public_ycs2_mod_debug.log"
@@ -752,7 +995,7 @@ if ($ClearAppDataBeforeRun) {
 }
 Invoke-Adb shell am force-stop $Package
 Invoke-Adb shell am force-stop com.android.chrome
-Invoke-Adb shell rm -f /sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log /sdcard/YCS2CommunityMod/logs/ycs2_mod_native_crash.log
+Invoke-Adb shell rm -f /sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log /sdcard/YCS2CommunityMod/logs/ycs2_mod_native_crash.log /sdcard/YCS2CommunityMod/logs/debug-04e8a3.log
 Invoke-Adb logcat -c
 Prepare-EmulatorDisplay
 
@@ -760,20 +1003,25 @@ Write-Host "Launching YCS2"
 Invoke-Adb shell am start -n "${Package}/${LauncherActivity}" | Out-Null
 Enable-LauncherOptions
 Start-GameActivity
-Start-Sleep -Seconds 4
-Set-EmulatorLandscape
+Wait-ForGameActivity 30
 Start-Sleep -Seconds $GameStartupWaitSeconds
+Set-LandscapeNeutralSensors
 Save-Screenshot "01-main-menu.png"
+Enable-AccelerateWithJetOption
 Dismiss-StartupLoginOverlay
 Close-ExternalBrowserIfPresent | Out-Null
 Start-Sleep -Seconds 2
 Save-Screenshot "01b-main-menu-after-login-dismiss.png"
 
-Open-RegularStraightOnPassiveReplay
-Wait-ForLog "gesture_layer touchable=true" 20 | Out-Null
+Open-RegularStraightOnLevelDetail
+Run-StraightOnRace
+Collect-Evidence
+Write-Host "Waiting for post-finish replay (g_bShowReplay)"
+Wait-ForLog 'inReplay":true' 120 | Out-Null
+Wait-ForLog "gesture_layer touchable=true" 30 | Out-Null
 Run-EmuFreecamGestures
 Start-Sleep -Seconds 2
-Save-Screenshot "05-passive-replay-after-gestures.png"
+Save-Screenshot "06-post-race-replay-after-gestures.png"
 Collect-Evidence
 Assert-FreecamEvidence
 
@@ -781,7 +1029,8 @@ $summary = @(
     "runtime_freecam_gestures=passed",
     "apk=$ApkPath",
     "package=$Package",
-    "gestures=single_pan,two_finger_pinch,two_finger_rotate,three_finger_car_drag,four_pointer_reset_edge",
+    "scenario=post_race_replay_straight_on",
+    "gestures=two_finger_pan,two_finger_pinch,two_finger_rotate,three_finger_car_drag",
     "artifacts=$RunDir"
 )
 $summary | Set-Content -LiteralPath (Join-Path $RunDir "summary.txt") -Encoding UTF8

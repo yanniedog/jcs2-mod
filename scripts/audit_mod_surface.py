@@ -175,6 +175,14 @@ def check_sources(skip_local_assets=False):
         "g_pGhost",
         "g_ghostTransform",
         "g_ghostTransformLast",
+        "g_nReplayPos",
+        "_ZN4Game11RenderGhostEv",
+        "_ZN4Game10ViewReplayEPhPc",
+        "_ZN6Replay6UpdateEP3Carfi",
+        "_ZN6Replay4LoadEPKc",
+        "_ZN6Replay29ReplayDecompressAndSetUpGhostEv",
+        "_ZN3Car11RenderGhostERKN2TA6MFrameE",
+        "_ZN2TA11CarTemplate14SetOrientationERKNS_4Vec3ES3_",
         "g_checkPointTransfrom",
         "_Z19Levels_GetUserLevelj",
         "_Z27Levels_GetUserLevelFileNamej",
@@ -187,7 +195,10 @@ def check_sources(skip_local_assets=False):
         "_ZN9UiControl27SetRenderBackgroundFunctionEPFvPS_RK11UiRectangleE",
         "_ZN12UiFormCreate28OnRenderButtonBackgroundStubEP9UiControlRK11UiRectangle",
         "_ZN17InGameLevelEditor4SaveEPc",
+        "_ZN17InGameLevelEditor4LoadEPKc",
         "_ZN12UiFormCreateC1Ev",
+        "_ZN11UiFormPauseC1Ev",
+        "g_pInGameLevelEditor",
         "_ZN5World4LoadEPKcbj",
         "_ZN4Game9LoadLevelEjNS_10DifficultyE",
         "_ZN4Game12OnCheckPointERKN2TA4Vec3Ei",
@@ -347,19 +358,29 @@ def check_sources(skip_local_assets=False):
         ok = fail("checkpoint split HUD no longer records the full raced ghost checkpoint table when armed") and ok
 
     if (
-        "USER_TRACK_FLAGS_MAGIC" not in bridge
+        "USER_TRACK_FLAGS_MAGIC_V1" not in bridge
+        or "USER_TRACK_FLAGS_MAGIC_V2" not in bridge
         or "YCS2TRACKFLAGS:1:" not in bridge
+        or "YCS2TRACKFLAGS:2:" not in bridge
         or "append_user_track_flags_marker" not in bridge
-        or "parse_user_track_flags" not in bridge
+        or "parse_user_track_marker" not in bridge
     ):
         ok = fail("user-track laps/boost choices are no longer hardcoded into saved user-track data") and ok
     if (
         "USER_TRACK_FLAG_LAPS" not in bridge
         or "USER_TRACK_FLAG_BOOST_REGEN" not in bridge
         or "LEVEL_TYPE_LAPS: c_int = 3" not in bridge
+        or "LEVEL_LAP_COUNT_OFFSET: usize = 0x58" not in bridge
+        or "cycle_user_track_lap_count" not in bridge
         or "refill_current_car_boost" not in bridge
     ):
         ok = fail("user-track laps or stock-style checkpoint boost regeneration handling is missing") and ok
+    if (
+        "hooked_ingame_level_editor_load" not in bridge
+        or "hooked_uiform_pause_ctor" not in bridge
+        or "g_pInGameLevelEditor" not in bridge
+    ):
+        ok = fail("user-track laps/boost switches are missing edit-mode load and pause-menu hooks") and ok
     if (
         "hooked_uiform_create_ctor" not in bridge
         or "add_user_track_create_switches" not in bridge
@@ -401,8 +422,9 @@ def check_sources(skip_local_assets=False):
         or "GAME_LEVEL_INTRO_CAMERA_FLAG_OFFSET: usize = 0x1c5" not in bridge
         or "FREE_CAMERA_LEVEL_INTRO_STARTED" not in bridge
         or "FREE_CAMERA_IN_LEVEL_INTRO.store(in_level_intro" not in bridge
+        or "game_show_replay_active()" not in bridge
     ):
-        ok = fail("native replay free camera hook is not gated to explicit level-intro sessions") and ok
+        ok = fail("native replay free camera hook is not gated to explicit replay level-intro sessions") and ok
     if (
         "write_free_camera_frame" not in bridge
         or "ptr::copy_nonoverlapping" not in bridge
@@ -429,7 +451,7 @@ def check_sources(skip_local_assets=False):
     if (
         "K_REPLAY_FREE_CAMERA" not in mod_menu
         or "replayFreeCameraEnabled" not in mod_menu
-        or "Enable gesture free camera for level fly-throughs" not in mod_menu
+        or "Enable gesture free camera during replays" not in mod_menu
         or 'prefs(c).getBoolean(K_REPLAY_FREE_CAMERA, true)' not in mod_menu
     ):
         ok = fail("mod menu no longer exposes replay free camera as an enabled-by-default option") and ok
@@ -441,17 +463,20 @@ def check_sources(skip_local_assets=False):
         ok = fail("required patches no longer install the replay free camera hook/overlay") and ok
     if (
         "STATUS_IN_LEVEL_INTRO" not in replay_free_camera_text
+        or "STATUS_IN_REPLAY" not in replay_free_camera_text
         or "GestureLayer" not in replay_free_camera_text
         or "RequiredPatches.gestureReplayFreeCamera" not in replay_free_camera_text
         or "TYPE_APPLICATION_PANEL" not in replay_free_camera_text
         or "windowManager.addView(layer, layout)" not in replay_free_camera_text
         or "windowManager.removeView(layer)" not in replay_free_camera_text
+        or "pointerCount < 2" not in replay_free_camera_text
         or "ACTION_POINTER_DOWN" not in replay_free_camera_text
         or "ACTION_POINTER_UP" not in replay_free_camera_text
         or "DOLLY_UNITS_PER_DP" not in replay_free_camera_text
         or "CAR_UNITS_PER_DP" not in replay_free_camera_text
+        or "GESTURE_MARGIN_X_RATIO" not in replay_free_camera_text
     ):
-        ok = fail("replay free camera overlay no longer provides replay-gated tactile gestures") and ok
+        ok = fail("replay free camera overlay no longer provides replay-gated tactile gestures with UI-safe pass-through") and ok
     for forbidden_camera_ui in ("new Button", "TextView", '"Lock"', '"Reset"', '"FWD"', '"LOOK"'):
         if forbidden_camera_ui in replay_free_camera_text:
             ok = fail("replay free camera must not show visible button/dialog controls") and ok
@@ -501,6 +526,24 @@ def check_sources(skip_local_assets=False):
         ok = fail("continuous split refresh feature must stay removed") and ok
     if "K_GHOST_ROUTE" in mod_menu or "Draw ghost track line" in mod_menu:
         ok = fail("ghost route line controls must stay removed from the mod menu") and ok
+    if "Enable replay swarm picker during passive replays" not in mod_menu:
+        ok = fail("mod menu no longer exposes replay swarm mode") and ok
+    replay_swarm = ROOT / "modmenu_src/com/trueaxis/modmenu/ReplaySwarmOverlay.java"
+    if not replay_swarm.exists():
+        ok = fail("replay swarm overlay source is missing") and ok
+    if (
+        "RequiredPatches_installReplaySwarmHooks" not in bridge
+        or "hooked_game_view_replay" not in bridge
+        or "hooked_replay_update" not in bridge
+        or "RequiredPatches_setReplaySwarmSelection" not in bridge
+    ):
+        ok = fail("native replay swarm hooks or JNI entry points are missing") and ok
+    if (
+        "installReplaySwarmHooks" not in required_patches_for_user_tracks
+        or "ReplaySwarmOverlay.install" not in required_patches_for_user_tracks
+        or "replay visual marker disabled; replay data is not modified" not in required_patches_for_user_tracks
+    ):
+        ok = fail("required patches do not install replay swarm overlay/hooks") and ok
     if "Enable checkpoint/sector deltas vs saved replay ghost" not in mod_menu:
         ok = fail("mod menu no longer exposes the requested split HUD label") and ok
     if "DISCORD_URL = \"https://discord.gg/stBdE2Tfs2\"" not in mod_menu:
@@ -525,12 +568,13 @@ def check_sources(skip_local_assets=False):
         ok = fail("updater no longer clears stale download state after the downloaded version is installed") and ok
     if "shouldSuppressUpdatePrompt(activity, latest)" not in update_manager:
         ok = fail("silent updater no longer suppresses already-handled update prompts") and ok
-    if bridge.count("ptr::write_volatile(") != 4:
-        ok = fail("native bridge must only write retained values, user-level lap type, and boost refill") and ok
+    if bridge.count("ptr::write_volatile(") != 5:
+        ok = fail("native bridge must only write retained values, user-level lap type/count, and boost refill") and ok
     if (
         "ptr::write_volatile(CHECKPOINT_LIMIT_ADDRESS, CHECKPOINT_LIMIT)" not in bridge
         or "DLC_CONNECTIONS.add(index * DLC_ITEM_SIZE + DLC_PURCHASED_OFFSET)" not in bridge
         or "ptr::write_volatile(level.add(LEVEL_TYPE_OFFSET) as *mut c_int, LEVEL_TYPE_LAPS)" not in bridge
+        or "ptr::write_volatile(level.add(LEVEL_LAP_COUNT_OFFSET) as *mut c_int, lap_total)" not in bridge
         or "ptr::write_volatile(car.add(CAR_FUEL_OFFSET) as *mut f32, 1.0f32)" not in bridge
     ):
         ok = fail("native bridge value writes no longer match the approved retained/user-track patch set") and ok

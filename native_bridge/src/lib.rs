@@ -23,20 +23,39 @@ const REPLAY_HEADER_CHECKPOINT_COUNT_OFFSET: usize = 0x08;
 const REPLAY_HEADER_FINISH_SECONDS_OFFSET: usize = 0x14;
 const USER_TRACK_FLAG_LAPS: u8 = 0x01;
 const USER_TRACK_FLAG_BOOST_REGEN: u8 = 0x02;
-const USER_TRACK_FLAGS_MAGIC: &[u8] = b"YCS2TRACKFLAGS:1:";
+const USER_TRACK_FLAGS_MAGIC_V1: &[u8] = b"YCS2TRACKFLAGS:1:";
+const USER_TRACK_FLAGS_MAGIC_V2: &[u8] = b"YCS2TRACKFLAGS:2:";
 const USER_TRACK_FLAGS_MAX_SCAN: usize = 256;
 const LEVEL_TYPE_OFFSET: usize = 0x50;
+const LEVEL_LAP_COUNT_OFFSET: usize = 0x58;
 const LEVEL_TYPE_LAPS: c_int = 3;
+const DEFAULT_LAP_COUNT: c_int = 3;
+const MIN_LAP_COUNT: u8 = 2;
+const MAX_LAP_COUNT: u8 = 9;
 const GAME_CURRENT_CAR_OFFSET: usize = 0xb0;
 const CAR_FUEL_OFFSET: usize = 0x128;
 const INGAME_LEVEL_EDITOR_SAVE_HOOK_BYTES: usize = 16;
+const INGAME_LEVEL_EDITOR_LOAD_HOOK_BYTES: usize = 16;
 const UIFORM_CREATE_CTOR_HOOK_BYTES: usize = 16;
+const UIFORM_PAUSE_CTOR_HOOK_BYTES: usize = 16;
 const WORLD_LOAD_HOOK_BYTES: usize = 16;
 const GAME_LOAD_LEVEL_HOOK_BYTES: usize = 16;
 const GAME_ON_CHECKPOINT_HOOK_BYTES: usize = 16;
 const GAME_UPDATE_CAMERA_HOOK_BYTES: usize = 16;
 const GAME_START_LEVEL_INTRO_HOOK_BYTES: usize = 16;
+const GAME_RENDER_GHOST_HOOK_BYTES: usize = 16;
+const GAME_VIEW_REPLAY_HOOK_BYTES: usize = 16;
+const REPLAY_UPDATE_HOOK_BYTES: usize = 16;
 const HOOK_STUB_BYTES: usize = 16;
+const GHOST_NODE_SIZE: usize = 0x14;
+const GHOST_NODE_FLAGS_OFFSET: usize = 1;
+const GHOST_NODE_ORIENT_HALF_OFFSET: usize = 2;
+const GHOST_NODE_VECTOR_OFFSET: usize = 8;
+const GHOST_TRANSFORM_BYTES: usize = 0x40;
+const SWARM_MAX_GHOSTS: usize = 7;
+const SWARM_CATALOG_LIMIT: usize = 32;
+const SWARM_CATALOG_PATH_BYTES: usize = 192;
+const GAME_REPLAY_OBJECT_OFFSET: usize = 0xc0;
 const TRAMPOLINE_BYTES: usize = 32;
 const PAGE_SIZE: usize = 4096;
 const GAME_LEVEL_INTRO_CAMERA_FLAG_OFFSET: usize = 0x1c5;
@@ -61,12 +80,21 @@ const UI_LABEL_FLAG_DEFAULT: c_int = 0x101;
 
 type ThreadStart = unsafe extern "C" fn(*mut c_void) -> *mut c_void;
 type InGameLevelEditorSaveFn = unsafe extern "C" fn(*mut c_void, *mut c_char) -> c_int;
+type InGameLevelEditorLoadFn = unsafe extern "C" fn(*mut c_void, *const c_char);
 type UiFormCreateCtorFn = unsafe extern "C" fn(*mut c_void);
+type UiFormPauseCtorFn = unsafe extern "C" fn(*mut c_void);
 type WorldLoadFn = unsafe extern "C" fn(*mut c_void, *const c_char, u8, c_uint) -> c_int;
 type GameLoadLevelFn = unsafe extern "C" fn(*mut c_void, c_uint, c_int) -> c_int;
 type GameOnCheckpointFn = unsafe extern "C" fn(*mut c_void, *const c_void, c_int);
 type GameUpdateCameraFn = unsafe extern "C" fn(*mut c_void, f32);
 type GameStartLevelIntroFn = unsafe extern "C" fn(*mut c_void, c_int);
+type GameRenderGhostFn = unsafe extern "C" fn(*mut c_void);
+type GameViewReplayFn = unsafe extern "C" fn(*mut c_void, *mut u8, *const c_char) -> u8;
+type ReplayUpdateFn = unsafe extern "C" fn(*mut c_void, *mut c_void, c_int, c_int);
+type CarRenderGhostFn = unsafe extern "C" fn(*mut c_void, *const f32);
+type ReplayLoadPathFn = unsafe extern "C" fn(*mut c_void, *const c_char) -> c_int;
+type ReplayDecompressGhostFn = unsafe extern "C" fn(*mut c_void);
+type CarTemplateSetOrientationFn = unsafe extern "C" fn(*mut f32, *const f32, *const f32);
 type LevelsGetUserLevelFn = unsafe extern "C" fn(c_uint) -> *mut u8;
 type LevelsGetUserLevelFileNameFn = unsafe extern "C" fn(c_uint) -> *const c_char;
 type OperatorNewFn = unsafe extern "C" fn(usize) -> *mut c_void;
@@ -177,12 +205,38 @@ static mut UI_CONTROL_ADD_CONTROL: *mut c_void = ptr::null_mut();
 static mut UI_CONTROL_SET_RENDER_BACKGROUND: *mut c_void = ptr::null_mut();
 static mut UIFORM_CREATE_RENDER_BUTTON_BACKGROUND_STUB: *mut c_void = ptr::null_mut();
 static mut UIFORM_CREATE_CTOR_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut UIFORM_PAUSE_CTOR_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut INGAME_LEVEL_EDITOR_SAVE_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut INGAME_LEVEL_EDITOR_LOAD_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut G_P_INGAME_LEVEL_EDITOR: *mut *mut c_void = ptr::null_mut();
 static mut WORLD_LOAD_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut GAME_LOAD_LEVEL_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut GAME_ON_CHECKPOINT_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut GAME_UPDATE_CAMERA_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut GAME_START_LEVEL_INTRO_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut GAME_RENDER_GHOST_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut GAME_VIEW_REPLAY_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut REPLAY_UPDATE_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static mut REPLAY_POS: *mut c_int = ptr::null_mut();
+static mut GHOST_POINTER: *mut *mut u8 = ptr::null_mut();
+static mut GHOST_TRANSFORM: *mut f32 = ptr::null_mut();
+static mut REPLAY_LOAD_PATH: *mut c_void = ptr::null_mut();
+static mut REPLAY_DECOMPRESS_GHOST: *mut c_void = ptr::null_mut();
+static mut CAR_RENDER_GHOST: *mut c_void = ptr::null_mut();
+static mut CAR_TEMPLATE_SET_ORIENTATION: *mut c_void = ptr::null_mut();
+static mut ORIENTATION_SCALE: f32 = 1.0;
+static mut CURRENT_GAME: *mut c_void = ptr::null_mut();
+static mut SWARM_CATALOG_LEN: usize = 0;
+static mut SWARM_CATALOG_PATHS: [[u8; SWARM_CATALOG_PATH_BYTES]; SWARM_CATALOG_LIMIT] =
+    [[0; SWARM_CATALOG_PATH_BYTES]; SWARM_CATALOG_LIMIT];
+static mut SWARM_CATALOG_PATH_LEN: [usize; SWARM_CATALOG_LIMIT] = [0; SWARM_CATALOG_LIMIT];
+static mut SWARM_GHOST_NODE_COUNT: [i32; SWARM_MAX_GHOSTS] = [0; SWARM_MAX_GHOSTS];
+static mut SWARM_GHOST_NODES: [*mut u8; SWARM_MAX_GHOSTS] = [ptr::null_mut(); SWARM_MAX_GHOSTS];
+static mut SWARM_GHOST_COUNT: usize = 0;
+static mut SWARM_PRIMARY_CATALOG_INDEX: i32 = -1;
+static REPLAY_SWARM_HOOKS_INSTALLED: AtomicBool = AtomicBool::new(false);
+static REPLAY_SWARM_ENABLED: AtomicBool = AtomicBool::new(false);
+static REPLAY_SWARM_ACTIVE: AtomicBool = AtomicBool::new(false);
 static mut USER_TRACK_LAPS_BUTTON: *mut c_void = ptr::null_mut();
 static mut USER_TRACK_BOOST_REGEN_BUTTON: *mut c_void = ptr::null_mut();
 static mut FREE_CAMERA_FRAME: [f32; FREE_CAMERA_FRAME_FLOATS] = [0.0; FREE_CAMERA_FRAME_FLOATS];
@@ -196,8 +250,11 @@ static RETAINED_PATCH_WORKER_STARTED: AtomicBool = AtomicBool::new(false);
 static NATIVE_SIGNAL_HANDLER_STARTED: AtomicBool = AtomicBool::new(false);
 static USER_TRACK_HOOKS_INSTALLED: AtomicBool = AtomicBool::new(false);
 static USER_TRACK_CREATE_FLAGS_ARMED: AtomicBool = AtomicBool::new(false);
+static USER_TRACK_FLAGS_TOUCHED: AtomicBool = AtomicBool::new(false);
 static USER_TRACK_PENDING_FLAGS: AtomicU8 = AtomicU8::new(0);
+static USER_TRACK_PENDING_LAP_COUNT: AtomicU8 = AtomicU8::new(0);
 static CURRENT_USER_TRACK_FLAGS: AtomicU8 = AtomicU8::new(0);
+static CURRENT_USER_TRACK_LAP_COUNT: AtomicU8 = AtomicU8::new(0);
 static FREE_CAMERA_HOOKS_INSTALLED: AtomicBool = AtomicBool::new(false);
 static FREE_CAMERA_ENABLED: AtomicBool = AtomicBool::new(false);
 static FREE_CAMERA_ACTIVE: AtomicBool = AtomicBool::new(false);
@@ -572,14 +629,22 @@ unsafe fn set_switch_button_label(button: *mut c_void, text: *const c_char) {
 }
 
 unsafe fn refresh_user_track_create_switch_labels() {
-    set_switch_button_label(
-        USER_TRACK_LAPS_BUTTON,
-        label_for_switch(
-            USER_TRACK_FLAG_LAPS,
-            b"LAPS: ON\0".as_ptr() as *const c_char,
-            b"LAPS: OFF\0".as_ptr() as *const c_char,
-        ),
-    );
+    static mut LAPS_LABEL: [u8; 16] = [0; 16];
+    let laps_text = if (USER_TRACK_PENDING_FLAGS.load(Ordering::Acquire) & USER_TRACK_FLAG_LAPS) == 0 {
+        b"LAPS: OFF\0".as_ptr()
+    } else {
+        let count = USER_TRACK_PENDING_LAP_COUNT.load(Ordering::Acquire);
+        LAPS_LABEL[0] = b'L';
+        LAPS_LABEL[1] = b'A';
+        LAPS_LABEL[2] = b'P';
+        LAPS_LABEL[3] = b'S';
+        LAPS_LABEL[4] = b':';
+        LAPS_LABEL[5] = b' ';
+        LAPS_LABEL[6] = b'0' + count;
+        LAPS_LABEL[7] = 0;
+        ptr::addr_of!(LAPS_LABEL).cast::<c_char>()
+    };
+    set_switch_button_label(USER_TRACK_LAPS_BUTTON, laps_text as *const c_char);
     set_switch_button_label(
         USER_TRACK_BOOST_REGEN_BUTTON,
         label_for_switch(
@@ -590,15 +655,35 @@ unsafe fn refresh_user_track_create_switch_labels() {
     );
 }
 
+unsafe fn cycle_user_track_lap_count() {
+    let flags = USER_TRACK_PENDING_FLAGS.load(Ordering::Acquire);
+    if (flags & USER_TRACK_FLAG_LAPS) == 0 {
+        USER_TRACK_PENDING_FLAGS.store(flags | USER_TRACK_FLAG_LAPS, Ordering::Release);
+        USER_TRACK_PENDING_LAP_COUNT.store(MIN_LAP_COUNT, Ordering::Release);
+    } else {
+        let count = USER_TRACK_PENDING_LAP_COUNT.load(Ordering::Acquire);
+        if count < MAX_LAP_COUNT {
+            USER_TRACK_PENDING_LAP_COUNT.store(count + 1, Ordering::Release);
+        } else {
+            USER_TRACK_PENDING_FLAGS.store(flags & !USER_TRACK_FLAG_LAPS, Ordering::Release);
+            USER_TRACK_PENDING_LAP_COUNT.store(0, Ordering::Release);
+        }
+    }
+    USER_TRACK_CREATE_FLAGS_ARMED.store(true, Ordering::Release);
+    USER_TRACK_FLAGS_TOUCHED.store(true, Ordering::Release);
+    refresh_user_track_create_switch_labels();
+}
+
 unsafe fn toggle_user_track_create_flag(flag: u8) {
     let current = USER_TRACK_PENDING_FLAGS.load(Ordering::Acquire);
     USER_TRACK_PENDING_FLAGS.store(current ^ flag, Ordering::Release);
     USER_TRACK_CREATE_FLAGS_ARMED.store(true, Ordering::Release);
+    USER_TRACK_FLAGS_TOUCHED.store(true, Ordering::Release);
     refresh_user_track_create_switch_labels();
 }
 
 unsafe extern "C" fn on_laps_create_switch_clicked(_button: *mut c_void) {
-    toggle_user_track_create_flag(USER_TRACK_FLAG_LAPS);
+    cycle_user_track_lap_count();
 }
 
 unsafe extern "C" fn on_boost_regen_create_switch_clicked(_button: *mut c_void) {
@@ -642,11 +727,16 @@ unsafe fn add_create_switch_button(
     button
 }
 
-unsafe fn add_user_track_create_switches(form: *mut c_void) {
+unsafe fn add_user_track_switches(form: *mut c_void, reset_flags: bool) {
     if form.is_null() {
         return;
     }
-    begin_user_track_create_flags();
+    if reset_flags {
+        begin_user_track_create_flags();
+    } else {
+        USER_TRACK_CREATE_FLAGS_ARMED.store(true, Ordering::Release);
+        USER_TRACK_FLAGS_TOUCHED.store(false, Ordering::Release);
+    }
     // These must be root children. A later stock sibling covers the car panel in hit-testing.
     USER_TRACK_LAPS_BUTTON = add_create_switch_button(
         form,
@@ -662,24 +752,111 @@ unsafe fn add_user_track_create_switches(form: *mut c_void) {
         b"BOOST REGEN: OFF\0".as_ptr() as *const c_char,
         on_boost_regen_create_switch_clicked,
     );
+    if !reset_flags {
+        refresh_user_track_create_switch_labels();
+    }
+}
+
+unsafe fn add_user_track_create_switches(form: *mut c_void) {
+    add_user_track_switches(form, true);
+}
+
+unsafe fn ingame_level_editor_active() -> bool {
+    if G_P_INGAME_LEVEL_EDITOR.is_null() {
+        G_P_INGAME_LEVEL_EDITOR = resolve(b"g_pInGameLevelEditor\0") as *mut *mut c_void;
+    }
+    !G_P_INGAME_LEVEL_EDITOR.is_null() && !ptr::read_volatile(G_P_INGAME_LEVEL_EDITOR).is_null()
 }
 
 unsafe fn begin_user_track_create_flags() {
     USER_TRACK_PENDING_FLAGS.store(0, Ordering::Release);
+    USER_TRACK_PENDING_LAP_COUNT.store(0, Ordering::Release);
     USER_TRACK_CREATE_FLAGS_ARMED.store(true, Ordering::Release);
+    USER_TRACK_FLAGS_TOUCHED.store(false, Ordering::Release);
 }
 
 unsafe fn cancel_user_track_create_flags() {
     USER_TRACK_PENDING_FLAGS.store(0, Ordering::Release);
+    USER_TRACK_PENDING_LAP_COUNT.store(0, Ordering::Release);
     USER_TRACK_CREATE_FLAGS_ARMED.store(false, Ordering::Release);
+    USER_TRACK_FLAGS_TOUCHED.store(false, Ordering::Release);
 }
 
-unsafe fn marker_flags_byte(flags: u8) -> u8 {
+unsafe fn store_user_track_settings(flags: u8, lap_count: u8) {
+    CURRENT_USER_TRACK_FLAGS.store(flags, Ordering::Release);
+    CURRENT_USER_TRACK_LAP_COUNT.store(lap_count, Ordering::Release);
+}
+
+fn normalized_lap_count(lap_count: u8) -> u8 {
+    if lap_count >= MIN_LAP_COUNT && lap_count <= MAX_LAP_COUNT {
+        lap_count
+    } else {
+        DEFAULT_LAP_COUNT as u8
+    }
+}
+
+fn effective_lap_count(lap_count: u8) -> c_int {
+    normalized_lap_count(lap_count) as c_int
+}
+
+fn marker_flags_byte(flags: u8) -> u8 {
     b'0' + (flags & (USER_TRACK_FLAG_LAPS | USER_TRACK_FLAG_BOOST_REGEN))
 }
 
-unsafe fn append_user_track_flags_marker(path: *const c_char, flags: u8) -> bool {
-    if path.is_null() || flags == 0 {
+fn marker_lap_count_byte(flags: u8, lap_count: u8) -> u8 {
+    if (flags & USER_TRACK_FLAG_LAPS) == 0 {
+        b'0'
+    } else {
+        b'0' + normalized_lap_count(lap_count)
+    }
+}
+
+fn parse_marker_flags(value: u8) -> u8 {
+    if value >= b'0' && value <= b'3' {
+        value - b'0'
+    } else {
+        0
+    }
+}
+
+fn parse_marker_lap_count(value: u8) -> u8 {
+    if value >= b'2' && value <= b'9' {
+        value - b'0'
+    } else {
+        0
+    }
+}
+
+fn parse_user_track_marker(buffer: &[u8], len: usize) -> (u8, u8) {
+    if len <= USER_TRACK_FLAGS_MAGIC_V1.len() {
+        return (0, 0);
+    }
+    let mut index = len - USER_TRACK_FLAGS_MAGIC_V1.len();
+    loop {
+        if buffer[index..].starts_with(USER_TRACK_FLAGS_MAGIC_V2) {
+            let value_index = index + USER_TRACK_FLAGS_MAGIC_V2.len();
+            if value_index + 1 < len {
+                let flags = parse_marker_flags(buffer[value_index]);
+                let lap_count = parse_marker_lap_count(buffer[value_index + 1]);
+                return (flags, lap_count);
+            }
+        } else if buffer[index..].starts_with(USER_TRACK_FLAGS_MAGIC_V1) {
+            let value_index = index + USER_TRACK_FLAGS_MAGIC_V1.len();
+            if value_index < len {
+                let flags = parse_marker_flags(buffer[value_index]);
+                return (flags, 0);
+            }
+        }
+        if index == 0 {
+            break;
+        }
+        index -= 1;
+    }
+    (0, 0)
+}
+
+unsafe fn append_user_track_flags_marker(path: *const c_char, flags: u8, lap_count: u8) -> bool {
+    if path.is_null() {
         return false;
     }
     let fd = open(path, O_WRONLY | O_APPEND, 0o600);
@@ -688,13 +865,16 @@ unsafe fn append_user_track_flags_marker(path: *const c_char, flags: u8) -> bool
     }
     let prefix = b"\n";
     let suffix = b"\n";
-    let value = [marker_flags_byte(flags)];
+    let value = [
+        marker_flags_byte(flags),
+        marker_lap_count_byte(flags, lap_count),
+    ];
     let mut ok = write(fd, prefix.as_ptr() as *const c_void, prefix.len()) == prefix.len() as isize;
     ok = write(
         fd,
-        USER_TRACK_FLAGS_MAGIC.as_ptr() as *const c_void,
-        USER_TRACK_FLAGS_MAGIC.len(),
-    ) == USER_TRACK_FLAGS_MAGIC.len() as isize
+        USER_TRACK_FLAGS_MAGIC_V2.as_ptr() as *const c_void,
+        USER_TRACK_FLAGS_MAGIC_V2.len(),
+    ) == USER_TRACK_FLAGS_MAGIC_V2.len() as isize
         && ok;
     ok = write(fd, value.as_ptr() as *const c_void, value.len()) == value.len() as isize && ok;
     ok = write(fd, suffix.as_ptr() as *const c_void, suffix.len()) == suffix.len() as isize && ok;
@@ -702,50 +882,18 @@ unsafe fn append_user_track_flags_marker(path: *const c_char, flags: u8) -> bool
     ok
 }
 
-unsafe fn parse_user_track_flags(buffer: &[u8], len: usize) -> u8 {
-    if len <= USER_TRACK_FLAGS_MAGIC.len() {
-        return 0;
-    }
-    let mut index = len - USER_TRACK_FLAGS_MAGIC.len();
-    loop {
-        let mut matched = true;
-        let mut marker_index = 0usize;
-        while marker_index < USER_TRACK_FLAGS_MAGIC.len() {
-            if buffer[index + marker_index] != USER_TRACK_FLAGS_MAGIC[marker_index] {
-                matched = false;
-                break;
-            }
-            marker_index += 1;
-        }
-        if matched {
-            let value_index = index + USER_TRACK_FLAGS_MAGIC.len();
-            if value_index < len {
-                let value = buffer[value_index];
-                if value >= b'0' && value <= b'3' {
-                    return value - b'0';
-                }
-            }
-        }
-        if index == 0 {
-            break;
-        }
-        index -= 1;
-    }
-    0
-}
-
-unsafe fn read_user_track_flags_marker(path: *const c_char) -> u8 {
+unsafe fn read_user_track_flags_marker(path: *const c_char) -> (u8, u8) {
     if path.is_null() {
-        return 0;
+        return (0, 0);
     }
     let fd = open(path, O_RDONLY, 0);
     if fd < 0 {
-        return 0;
+        return (0, 0);
     }
     let end = lseek(fd, 0, SEEK_END);
     if end <= 0 {
         let _ = close(fd);
-        return 0;
+        return (0, 0);
     }
     let read_len = if end as usize > USER_TRACK_FLAGS_MAX_SCAN {
         USER_TRACK_FLAGS_MAX_SCAN
@@ -755,15 +903,15 @@ unsafe fn read_user_track_flags_marker(path: *const c_char) -> u8 {
     let start = end - read_len as c_long;
     if lseek(fd, start, SEEK_SET) < 0 {
         let _ = close(fd);
-        return 0;
+        return (0, 0);
     }
     let mut buffer = [0u8; USER_TRACK_FLAGS_MAX_SCAN];
     let count = read(fd, buffer.as_mut_ptr() as *mut c_void, read_len);
     let _ = close(fd);
     if count <= 0 {
-        return 0;
+        return (0, 0);
     }
-    parse_user_track_flags(&buffer, count as usize)
+    parse_user_track_marker(&buffer, count as usize)
 }
 
 unsafe fn level_for_id(level_id: c_uint) -> *mut u8 {
@@ -784,14 +932,14 @@ unsafe fn file_name_for_level_id(level_id: c_uint) -> *const c_char {
     get_name(level_id)
 }
 
-unsafe fn flags_for_level_id(level_id: c_uint) -> u8 {
+unsafe fn settings_for_level_id(level_id: c_uint) -> (u8, u8) {
     if (level_id & 0x8000_0000) == 0 {
-        return 0;
+        return (0, 0);
     }
     read_user_track_flags_marker(file_name_for_level_id(level_id))
 }
 
-unsafe fn apply_lap_type_for_level(level_id: c_uint, flags: u8) {
+unsafe fn apply_user_track_level_settings(level_id: c_uint, flags: u8, lap_count: u8) {
     if (flags & USER_TRACK_FLAG_LAPS) == 0 {
         return;
     }
@@ -800,6 +948,8 @@ unsafe fn apply_lap_type_for_level(level_id: c_uint, flags: u8) {
         return;
     }
     ptr::write_volatile(level.add(LEVEL_TYPE_OFFSET) as *mut c_int, LEVEL_TYPE_LAPS);
+    let lap_total = effective_lap_count(lap_count);
+    ptr::write_volatile(level.add(LEVEL_LAP_COUNT_OFFSET) as *mut c_int, lap_total);
 }
 
 unsafe fn refill_current_car_boost(game: *mut c_void) {
@@ -835,6 +985,10 @@ unsafe fn current_camera() -> *mut f32 {
 unsafe fn game_is_level_intro(game: *mut c_void) -> bool {
     !game.is_null()
         && ptr::read_volatile((game as *mut u8).add(GAME_LEVEL_INTRO_CAMERA_FLAG_OFFSET)) != 0
+}
+
+unsafe fn game_show_replay_active() -> bool {
+    ensure_split_symbols() && !SHOW_REPLAY.is_null() && ptr::read_volatile(SHOW_REPLAY) != 0
 }
 
 unsafe fn capture_free_camera_frame(camera: *mut f32) {
@@ -1136,8 +1290,8 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
     if !intro_camera_flag {
         FREE_CAMERA_LEVEL_INTRO_STARTED.store(false, Ordering::Release);
     }
-    let in_level_intro =
-        intro_camera_flag && FREE_CAMERA_LEVEL_INTRO_STARTED.load(Ordering::Acquire);
+    let in_replay = game_show_replay_active();
+    let in_level_intro = in_replay;
     FREE_CAMERA_IN_LEVEL_INTRO.store(in_level_intro, Ordering::Release);
     if !in_level_intro {
         FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
@@ -1209,12 +1363,26 @@ unsafe extern "C" fn hooked_ingame_level_editor_save(
     let result = original(editor, path);
     if USER_TRACK_CREATE_FLAGS_ARMED.load(Ordering::Acquire) {
         let flags = USER_TRACK_PENDING_FLAGS.load(Ordering::Acquire);
-        if flags != 0 {
-            append_user_track_flags_marker(path, flags);
+        if USER_TRACK_FLAGS_TOUCHED.load(Ordering::Acquire) || flags != 0 {
+            append_user_track_flags_marker(
+                path,
+                flags,
+                USER_TRACK_PENDING_LAP_COUNT.load(Ordering::Acquire),
+            );
         }
         cancel_user_track_create_flags();
     }
     result
+}
+
+unsafe extern "C" fn hooked_ingame_level_editor_load(editor: *mut c_void, path: *const c_char) {
+    let (flags, lap_count) = read_user_track_flags_marker(path);
+    USER_TRACK_PENDING_FLAGS.store(flags, Ordering::Release);
+    USER_TRACK_PENDING_LAP_COUNT.store(lap_count, Ordering::Release);
+    store_user_track_settings(flags, lap_count);
+    USER_TRACK_FLAGS_TOUCHED.store(false, Ordering::Release);
+    let original: InGameLevelEditorLoadFn = mem::transmute(INGAME_LEVEL_EDITOR_LOAD_TRAMPOLINE);
+    original(editor, path);
 }
 
 unsafe extern "C" fn hooked_uiform_create_ctor(form: *mut c_void) {
@@ -1223,17 +1391,25 @@ unsafe extern "C" fn hooked_uiform_create_ctor(form: *mut c_void) {
     add_user_track_create_switches(form);
 }
 
+unsafe extern "C" fn hooked_uiform_pause_ctor(form: *mut c_void) {
+    let original: UiFormPauseCtorFn = mem::transmute(UIFORM_PAUSE_CTOR_TRAMPOLINE);
+    original(form);
+    if ingame_level_editor_active() {
+        add_user_track_switches(form, false);
+    }
+}
+
 unsafe extern "C" fn hooked_world_load(
     world: *mut c_void,
     path: *const c_char,
     flag: u8,
     value: c_uint,
 ) -> c_int {
-    let flags = read_user_track_flags_marker(path);
-    CURRENT_USER_TRACK_FLAGS.store(flags, Ordering::Release);
+    let (flags, lap_count) = read_user_track_flags_marker(path);
+    store_user_track_settings(flags, lap_count);
     let original: WorldLoadFn = mem::transmute(WORLD_LOAD_TRAMPOLINE);
     let result = original(world, path, flag, value);
-    CURRENT_USER_TRACK_FLAGS.store(flags, Ordering::Release);
+    store_user_track_settings(flags, lap_count);
     result
 }
 
@@ -1242,12 +1418,16 @@ unsafe extern "C" fn hooked_game_load_level(
     level_id: c_uint,
     difficulty: c_int,
 ) -> c_int {
-    let flags = flags_for_level_id(level_id);
-    CURRENT_USER_TRACK_FLAGS.store(flags, Ordering::Release);
-    apply_lap_type_for_level(level_id, flags);
+    let (flags, lap_count) = settings_for_level_id(level_id);
+    store_user_track_settings(flags, lap_count);
+    apply_user_track_level_settings(level_id, flags, lap_count);
     let original: GameLoadLevelFn = mem::transmute(GAME_LOAD_LEVEL_TRAMPOLINE);
     let result = original(game, level_id, difficulty);
-    apply_lap_type_for_level(level_id, CURRENT_USER_TRACK_FLAGS.load(Ordering::Acquire));
+    apply_user_track_level_settings(
+        level_id,
+        CURRENT_USER_TRACK_FLAGS.load(Ordering::Acquire),
+        CURRENT_USER_TRACK_LAP_COUNT.load(Ordering::Acquire),
+    );
     result
 }
 
@@ -1270,12 +1450,16 @@ unsafe fn install_user_track_hooks() -> bool {
     }
 
     let save = resolve(b"_ZN17InGameLevelEditor4SaveEPc\0");
+    let load = resolve(b"_ZN17InGameLevelEditor4LoadEPKc\0");
     let create_ctor = resolve(b"_ZN12UiFormCreateC1Ev\0");
+    let pause_ctor = resolve(b"_ZN11UiFormPauseC1Ev\0");
     let world_load = resolve(b"_ZN5World4LoadEPKcbj\0");
     let game_load_level = resolve(b"_ZN4Game9LoadLevelEjNS_10DifficultyE\0");
     let game_on_checkpoint = resolve(b"_ZN4Game12OnCheckPointERKN2TA4Vec3Ei\0");
     if save.is_null()
+        || load.is_null()
         || create_ctor.is_null()
+        || pause_ctor.is_null()
         || world_load.is_null()
         || game_load_level.is_null()
         || game_on_checkpoint.is_null()
@@ -1290,10 +1474,20 @@ unsafe fn install_user_track_hooks() -> bool {
         hooked_ingame_level_editor_save as *const c_void,
         INGAME_LEVEL_EDITOR_SAVE_HOOK_BYTES,
     );
+    INGAME_LEVEL_EDITOR_LOAD_TRAMPOLINE = install_inline_hook(
+        load,
+        hooked_ingame_level_editor_load as *const c_void,
+        INGAME_LEVEL_EDITOR_LOAD_HOOK_BYTES,
+    );
     UIFORM_CREATE_CTOR_TRAMPOLINE = install_inline_hook(
         create_ctor,
         hooked_uiform_create_ctor as *const c_void,
         UIFORM_CREATE_CTOR_HOOK_BYTES,
+    );
+    UIFORM_PAUSE_CTOR_TRAMPOLINE = install_inline_hook(
+        pause_ctor,
+        hooked_uiform_pause_ctor as *const c_void,
+        UIFORM_PAUSE_CTOR_HOOK_BYTES,
     );
     WORLD_LOAD_TRAMPOLINE = install_inline_hook(
         world_load,
@@ -1312,7 +1506,9 @@ unsafe fn install_user_track_hooks() -> bool {
     );
 
     let ok = !(INGAME_LEVEL_EDITOR_SAVE_TRAMPOLINE.is_null()
+        || INGAME_LEVEL_EDITOR_LOAD_TRAMPOLINE.is_null()
         || UIFORM_CREATE_CTOR_TRAMPOLINE.is_null()
+        || UIFORM_PAUSE_CTOR_TRAMPOLINE.is_null()
         || WORLD_LOAD_TRAMPOLINE.is_null()
         || GAME_LOAD_LEVEL_TRAMPOLINE.is_null()
         || GAME_ON_CHECKPOINT_TRAMPOLINE.is_null());
@@ -1948,6 +2144,7 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_gestureReplay
 ) {
     if !FREE_CAMERA_ENABLED.load(Ordering::Acquire)
         || !FREE_CAMERA_IN_LEVEL_INTRO.load(Ordering::Acquire)
+        || !game_show_replay_active()
     {
         return;
     }
@@ -1968,6 +2165,9 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplayFre
     }
     if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
         status |= 4;
+    }
+    if game_show_replay_active() {
+        status |= 8;
     }
     status
 }
@@ -2393,4 +2593,617 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readSplitShow
         return -1;
     }
     ptr::read_volatile(SHOW_REPLAY) as i32
+}
+
+// --- Replay swarm mode (multi-replay passive overlay) ---------------------------
+
+extern "C" {
+    fn malloc(size: usize) -> *mut c_void;
+    fn free(ptr: *mut c_void);
+}
+
+unsafe fn c_strlen(text: *const u8) -> usize {
+    if text.is_null() {
+        return 0;
+    }
+    let mut index = 0usize;
+    while *text.add(index) != 0 {
+        index += 1;
+        if index >= SWARM_CATALOG_PATH_BYTES {
+            break;
+        }
+    }
+    index
+}
+
+unsafe fn swarm_catalog_find(path: *const u8, len: usize) -> i32 {
+    let mut index = 0usize;
+    while index < SWARM_CATALOG_LEN {
+        let existing_len = SWARM_CATALOG_PATH_LEN[index];
+        if existing_len == len && len > 0 {
+            let mut same = true;
+            let mut byte = 0usize;
+            while byte < len {
+                if SWARM_CATALOG_PATHS[index][byte] != *path.add(byte) {
+                    same = false;
+                    break;
+                }
+                byte += 1;
+            }
+            if same {
+                return index as i32;
+            }
+        }
+        index += 1;
+    }
+    -1
+}
+
+unsafe fn swarm_catalog_note_path(path: *const c_char) {
+    if path.is_null() {
+        return;
+    }
+    let bytes = path as *const u8;
+    let len = c_strlen(bytes);
+    if len == 0 || SWARM_CATALOG_LEN >= SWARM_CATALOG_LIMIT {
+        return;
+    }
+    if swarm_catalog_find(bytes, len) >= 0 {
+        return;
+    }
+    let slot = SWARM_CATALOG_LEN;
+    ptr::copy_nonoverlapping(bytes, SWARM_CATALOG_PATHS[slot].as_mut_ptr(), len);
+    SWARM_CATALOG_PATH_LEN[slot] = len;
+    SWARM_CATALOG_LEN += 1;
+}
+
+unsafe fn swarm_reset_ghosts() {
+    let mut index = 0usize;
+    while index < SWARM_GHOST_COUNT {
+        if !SWARM_GHOST_NODES[index].is_null() {
+            free(SWARM_GHOST_NODES[index] as *mut c_void);
+            SWARM_GHOST_NODES[index] = ptr::null_mut();
+        }
+        SWARM_GHOST_NODE_COUNT[index] = 0;
+        index += 1;
+    }
+    SWARM_GHOST_COUNT = 0;
+    SWARM_PRIMARY_CATALOG_INDEX = -1;
+    REPLAY_SWARM_ACTIVE.store(false, Ordering::Release);
+}
+
+unsafe fn swarm_reset_catalog() {
+    swarm_reset_ghosts();
+    SWARM_CATALOG_LEN = 0;
+}
+
+unsafe fn ensure_swarm_symbols() -> bool {
+    if REPLAY_POS.is_null() {
+        REPLAY_POS = resolve(b"g_nReplayPos\0") as *mut c_int;
+    }
+    if GHOST_POINTER.is_null() {
+        GHOST_POINTER = resolve(b"g_pGhost\0") as *mut *mut u8;
+    }
+    if GHOST_TRANSFORM.is_null() {
+        GHOST_TRANSFORM = resolve(b"g_ghostTransform\0") as *mut f32;
+    }
+    if REPLAY_LOAD_PATH.is_null() {
+        REPLAY_LOAD_PATH = resolve(b"_ZN6Replay4LoadEPKc\0");
+    }
+    if REPLAY_DECOMPRESS_GHOST.is_null() {
+        REPLAY_DECOMPRESS_GHOST = resolve(b"_ZN6Replay29ReplayDecompressAndSetUpGhostEv\0");
+    }
+    if CAR_RENDER_GHOST.is_null() {
+        CAR_RENDER_GHOST = resolve(b"_ZN3Car11RenderGhostERKN2TA6MFrameE\0");
+    }
+    if CAR_TEMPLATE_SET_ORIENTATION.is_null() {
+        CAR_TEMPLATE_SET_ORIENTATION =
+            resolve(b"_ZN2TA11CarTemplate14SetOrientationERKNS_4Vec3ES3_\0");
+    }
+    if ORIENTATION_SCALE == 1.0 && !GHOST_SIZE.is_null() {
+        let ghost_size_addr = resolve(b"g_nGhostSize\0") as *mut c_int;
+        if !ghost_size_addr.is_null() {
+            let loaded = ptr::read_volatile(ghost_size_addr) as usize;
+            let module_base = loaded.wrapping_sub(0x5a0514);
+            if module_base > 0x1000 {
+                let scale_ptr = (module_base + 0x2abde0) as *const f32;
+                let scale = ptr::read_volatile(scale_ptr);
+                if scale > 0.0 && scale < 1000.0 {
+                    ORIENTATION_SCALE = scale;
+                }
+            }
+        }
+    }
+    !(REPLAY_POS.is_null()
+        || GHOST_POINTER.is_null()
+        || GHOST_TRANSFORM.is_null()
+        || GHOST_SIZE.is_null()
+        || SHOW_REPLAY.is_null()
+        || REPLAY_LOAD_PATH.is_null()
+        || REPLAY_DECOMPRESS_GHOST.is_null()
+        || CAR_RENDER_GHOST.is_null()
+        || CAR_TEMPLATE_SET_ORIENTATION.is_null())
+}
+
+unsafe fn swarm_replay_object(game: *mut c_void) -> *mut c_void {
+    if game.is_null() {
+        return ptr::null_mut();
+    }
+    ptr::read_volatile((game as *mut u8).add(GAME_REPLAY_OBJECT_OFFSET) as *mut *mut c_void)
+}
+
+unsafe fn swarm_snapshot_ghost_globals(
+    ghost_ptr: *mut *mut u8,
+    ghost_size: *mut c_int,
+    ghost_pos: *mut c_int,
+) {
+    if !GHOST_POINTER.is_null() {
+        *ghost_ptr = ptr::read_volatile(GHOST_POINTER);
+    }
+    if !GHOST_SIZE.is_null() {
+        *ghost_size = ptr::read_volatile(GHOST_SIZE);
+    }
+    if !GHOST_POS.is_null() {
+        *ghost_pos = ptr::read_volatile(GHOST_POS);
+    }
+}
+
+unsafe fn swarm_restore_ghost_globals(
+    ghost_ptr: *mut *mut u8,
+    ghost_size: c_int,
+    ghost_pos: c_int,
+) {
+    if !GHOST_POINTER.is_null() {
+        ptr::write(GHOST_POINTER, *ghost_ptr);
+    }
+    if !GHOST_SIZE.is_null() {
+        ptr::write(GHOST_SIZE, ghost_size);
+    }
+    if !GHOST_POS.is_null() {
+        ptr::write(GHOST_POS, ghost_pos);
+    }
+}
+
+unsafe fn swarm_load_ghost_nodes_from_path(path: *const c_char) -> (*mut u8, i32) {
+    let game = CURRENT_GAME;
+    let replay = swarm_replay_object(game);
+    if replay.is_null() {
+        return (ptr::null_mut(), 0);
+    }
+
+    let mut saved_ptr: *mut u8 = ptr::null_mut();
+    let mut saved_size: c_int = 0;
+    let mut saved_pos: c_int = 0;
+    swarm_snapshot_ghost_globals(&mut saved_ptr, &mut saved_size, &mut saved_pos);
+
+    let load: ReplayLoadPathFn = mem::transmute(REPLAY_LOAD_PATH);
+    let decompress: ReplayDecompressGhostFn = mem::transmute(REPLAY_DECOMPRESS_GHOST);
+    if load(replay, path) == 0 {
+        swarm_restore_ghost_globals(&mut saved_ptr, saved_size, saved_pos);
+        return (ptr::null_mut(), 0);
+    }
+    decompress(replay);
+
+    let node_count = if GHOST_SIZE.is_null() {
+        0
+    } else {
+        ptr::read_volatile(GHOST_SIZE).max(0)
+    };
+    let source = if GHOST_POINTER.is_null() {
+        ptr::null_mut()
+    } else {
+        ptr::read_volatile(GHOST_POINTER)
+    };
+    if node_count < 2 || source.is_null() {
+        swarm_restore_ghost_globals(&mut saved_ptr, saved_size, saved_pos);
+        return (ptr::null_mut(), 0);
+    }
+
+    let byte_len = (node_count as usize) * GHOST_NODE_SIZE;
+    let copy = malloc(byte_len) as *mut u8;
+    if copy.is_null() {
+        swarm_restore_ghost_globals(&mut saved_ptr, saved_size, saved_pos);
+        return (ptr::null_mut(), 0);
+    }
+    ptr::copy_nonoverlapping(source, copy, byte_len);
+    swarm_restore_ghost_globals(&mut saved_ptr, saved_size, saved_pos);
+    (copy, node_count)
+}
+
+unsafe fn swarm_apply_orientation(transform: *mut f32, node: *const u8) {
+    if transform.is_null() || node.is_null() {
+        return;
+    }
+    let half0 = ptr::read_volatile(node.add(GHOST_NODE_ORIENT_HALF_OFFSET) as *const u16);
+    let half1 = ptr::read_volatile(node.add(GHOST_NODE_ORIENT_HALF_OFFSET + 2) as *const u16);
+    let half2 = ptr::read_volatile(node.add(GHOST_NODE_ORIENT_HALF_OFFSET + 4) as *const u16);
+    let mut angles = [0.0f32; 3];
+    angles[0] = half0 as f32 * ORIENTATION_SCALE;
+    angles[1] = half1 as f32 * ORIENTATION_SCALE;
+    angles[2] = half2 as f32 * ORIENTATION_SCALE;
+    let set_orientation: CarTemplateSetOrientationFn = mem::transmute(CAR_TEMPLATE_SET_ORIENTATION);
+    set_orientation(transform, angles.as_ptr(), angles.as_ptr());
+}
+
+unsafe fn swarm_integrate_transform(
+    nodes: *const u8,
+    node_count: i32,
+    target_index: i32,
+    transform: *mut f32,
+) -> bool {
+    if nodes.is_null() || transform.is_null() || node_count < 1 || target_index < 0 {
+        return false;
+    }
+    ptr::write_bytes(transform, 0, GHOST_TRANSFORM_BYTES);
+    ptr::write(transform.add(GHOST_TRANSFORM_POS_FLOAT + 2), 1.0f32);
+    let limit = target_index.min(node_count - 1);
+    let mut velocity = [0.0f32; 3];
+    let mut index = 0i32;
+    while index <= limit {
+        let node = nodes.add((index as usize) * GHOST_NODE_SIZE);
+        let flags = ptr::read_volatile(node.add(GHOST_NODE_FLAGS_OFFSET));
+        if (flags & 0x08) != 0 {
+            velocity[0] = 0.0;
+            velocity[1] = 0.0;
+            velocity[2] = 0.0;
+            ptr::write(
+                transform.add(GHOST_TRANSFORM_POS_FLOAT),
+                ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET) as *const f32),
+            );
+            ptr::write(
+                transform.add(GHOST_TRANSFORM_POS_FLOAT + 1),
+                ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 4) as *const f32),
+            );
+            ptr::write(
+                transform.add(GHOST_TRANSFORM_POS_FLOAT + 2),
+                ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 8) as *const f32),
+            );
+        } else {
+            velocity[0] += ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET) as *const f32);
+            velocity[1] +=
+                ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 4) as *const f32);
+            velocity[2] +=
+                ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 8) as *const f32);
+            ptr::write(
+                transform.add(GHOST_TRANSFORM_POS_FLOAT),
+                ptr::read(transform.add(GHOST_TRANSFORM_POS_FLOAT)) + velocity[0],
+            );
+            ptr::write(
+                transform.add(GHOST_TRANSFORM_POS_FLOAT + 1),
+                ptr::read(transform.add(GHOST_TRANSFORM_POS_FLOAT + 1)) + velocity[1],
+            );
+            ptr::write(
+                transform.add(GHOST_TRANSFORM_POS_FLOAT + 2),
+                ptr::read(transform.add(GHOST_TRANSFORM_POS_FLOAT + 2)) + velocity[2],
+            );
+        }
+        swarm_apply_orientation(transform, node);
+        index += 1;
+    }
+    true
+}
+
+unsafe fn swarm_master_node_index() -> i32 {
+    if REPLAY_POS.is_null() {
+        return -1;
+    }
+    let pos = ptr::read_volatile(REPLAY_POS);
+    if pos < 0 {
+        read_i32_pointer(LAST_REPLAY_SIZE)
+    } else {
+        pos
+    }
+}
+
+unsafe fn swarm_render_extra_ghosts(game: *mut c_void) {
+    if !REPLAY_SWARM_ACTIVE.load(Ordering::Acquire) || SWARM_GHOST_COUNT == 0 {
+        return;
+    }
+    if SHOW_REPLAY.is_null() || ptr::read_volatile(SHOW_REPLAY) == 0 {
+        return;
+    }
+    let master = swarm_master_node_index();
+    if master < 1 {
+        return;
+    }
+    let car = ptr::read_volatile((game as *mut u8).add(GAME_CURRENT_CAR_OFFSET) as *mut *mut c_void);
+    if car.is_null() {
+        return;
+    }
+    let render: CarRenderGhostFn = mem::transmute(CAR_RENDER_GHOST);
+    let mut transform = [0.0f32; GHOST_TRANSFORM_BYTES / 4];
+    if !GHOST_TRANSFORM.is_null() {
+        ptr::copy_nonoverlapping(GHOST_TRANSFORM, transform.as_mut_ptr(), transform.len());
+    }
+    let mut index = 0usize;
+    while index < SWARM_GHOST_COUNT {
+        let nodes = SWARM_GHOST_NODES[index];
+        let count = SWARM_GHOST_NODE_COUNT[index];
+        if !nodes.is_null() && count > 1 {
+            if swarm_integrate_transform(nodes, count, master, transform.as_mut_ptr()) {
+                render(car, transform.as_ptr());
+            }
+        }
+        index += 1;
+    }
+}
+
+unsafe extern "C" fn hooked_replay_update(
+    replay: *mut c_void,
+    car: *mut c_void,
+    a: c_int,
+    b: c_int,
+) {
+    let original: ReplayUpdateFn = mem::transmute(REPLAY_UPDATE_TRAMPOLINE);
+    original(replay, car, a, b);
+    if !CURRENT_GAME.is_null() {
+        swarm_render_extra_ghosts(CURRENT_GAME);
+    }
+}
+
+unsafe extern "C" fn hooked_game_render_ghost(game: *mut c_void) {
+    let original: GameRenderGhostFn = mem::transmute(GAME_RENDER_GHOST_TRAMPOLINE);
+    original(game);
+}
+
+unsafe extern "C" fn hooked_game_view_replay(
+    game: *mut c_void,
+    saved: *mut u8,
+    path: *const c_char,
+) -> u8 {
+    CURRENT_GAME = game;
+    swarm_catalog_note_path(path);
+    if REPLAY_SWARM_ENABLED.load(Ordering::Acquire) && !path.is_null() {
+        let index = swarm_catalog_find(path as *const u8, c_strlen(path as *const u8));
+        if index >= 0 {
+            SWARM_PRIMARY_CATALOG_INDEX = index;
+        }
+    }
+    let original: GameViewReplayFn = mem::transmute(GAME_VIEW_REPLAY_TRAMPOLINE);
+    original(game, saved, path)
+}
+
+unsafe fn install_replay_swarm_hooks() -> bool {
+    if REPLAY_SWARM_HOOKS_INSTALLED.load(Ordering::Acquire) {
+        return true;
+    }
+    if REPLAY_SWARM_HOOKS_INSTALLED.swap(true, Ordering::AcqRel) {
+        return true;
+    }
+    if !ensure_swarm_symbols() {
+        REPLAY_SWARM_HOOKS_INSTALLED.store(false, Ordering::Release);
+        return false;
+    }
+    let render_ghost = resolve(b"_ZN4Game11RenderGhostEv\0");
+    let view_replay = resolve(b"_ZN4Game10ViewReplayEPhPc\0");
+    let replay_update = resolve(b"_ZN6Replay6UpdateEP3Carfi\0");
+    if render_ghost.is_null() || view_replay.is_null() || replay_update.is_null() {
+        REPLAY_SWARM_HOOKS_INSTALLED.store(false, Ordering::Release);
+        return false;
+    }
+    GAME_RENDER_GHOST_TRAMPOLINE = install_inline_hook(
+        render_ghost,
+        hooked_game_render_ghost as *const c_void,
+        GAME_RENDER_GHOST_HOOK_BYTES,
+    );
+    GAME_VIEW_REPLAY_TRAMPOLINE = install_inline_hook(
+        view_replay,
+        hooked_game_view_replay as *const c_void,
+        GAME_VIEW_REPLAY_HOOK_BYTES,
+    );
+    REPLAY_UPDATE_TRAMPOLINE = install_inline_hook(
+        replay_update,
+        hooked_replay_update as *const c_void,
+        REPLAY_UPDATE_HOOK_BYTES,
+    );
+    let ok = !GAME_RENDER_GHOST_TRAMPOLINE.is_null()
+        && !GAME_VIEW_REPLAY_TRAMPOLINE.is_null()
+        && !REPLAY_UPDATE_TRAMPOLINE.is_null();
+    if !ok {
+        REPLAY_SWARM_HOOKS_INSTALLED.store(false, Ordering::Release);
+    }
+    ok
+}
+
+unsafe fn jni_copy_bytes_to_array(env: *mut c_void, array: *mut c_void, data: *const u8, len: usize) -> i32 {
+    if env.is_null() || array.is_null() || data.is_null() || len == 0 {
+        return 0;
+    }
+    let env_table = env as *mut *const *const c_void;
+    let functions = *env_table;
+    if functions.is_null() {
+        return 0;
+    }
+    let get_length: unsafe extern "C" fn(*mut c_void, *mut c_void) -> i32 =
+        mem::transmute(*functions.add(171));
+    let get_elements: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut u8) -> *mut i8 =
+        mem::transmute(*functions.add(184));
+    let release_elements: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut i8, i32) =
+        mem::transmute(*functions.add(185));
+    let capacity = get_length(env, array);
+    if capacity <= 0 {
+        return 0;
+    }
+    let write_len = if len > capacity as usize {
+        capacity as usize
+    } else {
+        len
+    };
+    let elements = get_elements(env, array, ptr::null_mut());
+    if elements.is_null() {
+        return 0;
+    }
+    ptr::copy_nonoverlapping(data, elements as *mut u8, write_len);
+    release_elements(env, array, elements, 0);
+    write_len as i32
+}
+
+unsafe fn jni_read_int_array(env: *mut c_void, array: *mut c_void, out: *mut i32, max: usize) -> i32 {
+    if env.is_null() || array.is_null() || out.is_null() || max == 0 {
+        return 0;
+    }
+    let env_table = env as *mut *const *const c_void;
+    let functions = *env_table;
+    if functions.is_null() {
+        return 0;
+    }
+    let get_length: unsafe extern "C" fn(*mut c_void, *mut c_void) -> i32 =
+        mem::transmute(*functions.add(171));
+    let get_elements: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut u8) -> *mut i32 =
+        mem::transmute(*functions.add(184));
+    let release_elements: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut i32, i32) =
+        mem::transmute(*functions.add(185));
+    let length = get_length(env, array).max(0) as usize;
+    if length == 0 {
+        return 0;
+    }
+    let read_len = if length > max { max } else { length };
+    let elements = get_elements(env, array, ptr::null_mut());
+    if elements.is_null() {
+        return 0;
+    }
+    ptr::copy_nonoverlapping(elements, out, read_len);
+    release_elements(env, array, elements, 0);
+    read_len as i32
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_installReplaySwarmHooks(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> u8 {
+    install_replay_swarm_hooks() as u8
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplaySwarmEnabled(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    enabled: u8,
+) {
+    let on = enabled != 0;
+    REPLAY_SWARM_ENABLED.store(on, Ordering::Release);
+    if !on {
+        swarm_reset_catalog();
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_clearReplaySwarm(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) {
+    swarm_reset_ghosts();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplaySwarmActive(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> i32 {
+    if !REPLAY_SWARM_ENABLED.load(Ordering::Acquire) {
+        return 0;
+    }
+    if REPLAY_SWARM_ACTIVE.load(Ordering::Acquire) {
+        return 2;
+    }
+    if !ensure_swarm_symbols() || SHOW_REPLAY.is_null() || ptr::read_volatile(SHOW_REPLAY) == 0 {
+        return 0;
+    }
+    1
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplaySwarmCatalogCount(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> i32 {
+    SWARM_CATALOG_LEN as i32
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplaySwarmPrimaryIndex(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> i32 {
+    SWARM_PRIMARY_CATALOG_INDEX
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplaySwarmGhostCount(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> i32 {
+    SWARM_GHOST_COUNT as i32
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplaySwarmCatalogPath(
+    env: *mut c_void,
+    _class: *mut c_void,
+    index: i32,
+    out: *mut c_void,
+) -> i32 {
+    if index < 0 || index as usize >= SWARM_CATALOG_LEN {
+        return 0;
+    }
+    let slot = index as usize;
+    jni_copy_bytes_to_array(
+        env,
+        out,
+        SWARM_CATALOG_PATHS[slot].as_ptr(),
+        SWARM_CATALOG_PATH_LEN[slot],
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplaySwarmSelection(
+    env: *mut c_void,
+    _class: *mut c_void,
+    primary_index: i32,
+    secondary_indices: *mut c_void,
+) {
+    if !REPLAY_SWARM_ENABLED.load(Ordering::Acquire) || !ensure_swarm_symbols() {
+        return;
+    }
+    swarm_reset_ghosts();
+    if primary_index < 0 || primary_index as usize >= SWARM_CATALOG_LEN {
+        return;
+    }
+    SWARM_PRIMARY_CATALOG_INDEX = primary_index;
+
+    let mut indices = [0i32; SWARM_MAX_GHOSTS];
+    let count = jni_read_int_array(env, secondary_indices, indices.as_mut_ptr(), SWARM_MAX_GHOSTS);
+    if count <= 0 {
+        return;
+    }
+
+    let mut ghost_slot = 0usize;
+    let mut read = 0i32;
+    while read < count && ghost_slot < SWARM_MAX_GHOSTS {
+        let catalog_index = indices[read as usize];
+        read += 1;
+        if catalog_index < 0 || catalog_index as usize >= SWARM_CATALOG_LEN {
+            continue;
+        }
+        if catalog_index == primary_index {
+            continue;
+        }
+        let path_bytes = SWARM_CATALOG_PATHS[catalog_index as usize].as_ptr();
+        let mut path = [0u8; SWARM_CATALOG_PATH_BYTES + 1];
+        let path_len = SWARM_CATALOG_PATH_LEN[catalog_index as usize];
+        if path_len == 0 || path_len > SWARM_CATALOG_PATH_BYTES {
+            continue;
+        }
+        ptr::copy_nonoverlapping(path_bytes, path.as_mut_ptr(), path_len);
+        let (nodes, node_count) = swarm_load_ghost_nodes_from_path(path.as_ptr() as *const c_char);
+        if nodes.is_null() || node_count < 2 {
+            continue;
+        }
+        SWARM_GHOST_NODES[ghost_slot] = nodes;
+        SWARM_GHOST_NODE_COUNT[ghost_slot] = node_count;
+        ghost_slot += 1;
+    }
+    SWARM_GHOST_COUNT = ghost_slot;
+    REPLAY_SWARM_ACTIVE.store(SWARM_GHOST_COUNT > 0, Ordering::Release);
 }

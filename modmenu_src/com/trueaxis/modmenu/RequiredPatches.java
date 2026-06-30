@@ -68,6 +68,24 @@ public final class RequiredPatches {
             ModDebugLog.log("Could not install replay free camera", error);
         }
         ModDebugLog.log("replay visual marker disabled; replay data is not modified");
+        if (ModMenu.replaySwarmEnabled(activity)) {
+            try {
+                boolean installed = installReplaySwarmHooks();
+                setReplaySwarmEnabled(true);
+                ModDebugLog.log("replay swarm hooks installed=" + installed);
+                if (installed) {
+                    ReplaySwarmOverlay.install(activity);
+                }
+            } catch (Throwable error) {
+                Log.e(TAG, "Could not install replay swarm mode", error);
+                ModDebugLog.log("Could not install replay swarm mode", error);
+            }
+        } else {
+            try {
+                setReplaySwarmEnabled(false);
+            } catch (Throwable ignored) {
+            }
+        }
         if (ModMenu.checkpointSplitsEnabled(activity)) {
             ModDebugLog.log("checkpoint split HUD enabled");
             try {
@@ -126,4 +144,13 @@ public final class RequiredPatches {
     static native int readSplitGhostRetrySkipCount();
     static native int readSplitGhostSize();
     static native int readSplitShowReplayFlag();
+    private static native boolean installReplaySwarmHooks();
+    static native void setReplaySwarmEnabled(boolean enabled);
+    static native void clearReplaySwarm();
+    static native int readReplaySwarmActive();
+    static native int readReplaySwarmCatalogCount();
+    static native int readReplaySwarmPrimaryIndex();
+    static native int readReplaySwarmGhostCount();
+    static native int readReplaySwarmCatalogPath(int index, byte[] buffer);
+    static native void setReplaySwarmSelection(int primaryIndex, int[] secondaryIndices);
 }
