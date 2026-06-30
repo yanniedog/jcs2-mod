@@ -33,13 +33,14 @@ public final class QrCodeEncoder {
     private static int chooseVersion(int byteLen) {
         for (int version = 1; version <= 10; version++) {
             int capacity = DATA_CODEWORDS[version - 1];
-            int neededBits = 4 + 8 + byteLen * 8 + 4;
+            int lengthBits = version <= 9 ? 8 : 16;
+            int neededBits = 4 + lengthBits + byteLen * 8 + 4;
             int neededCodewords = (neededBits + 7) / 8;
             if (neededCodewords <= capacity) {
                 return version;
             }
         }
-        return 10;
+        throw new IllegalArgumentException("QR payload too large for version 10 (" + byteLen + " bytes)");
     }
 
     private static boolean[][] encodeVersion(int version, byte[] data) {
@@ -84,7 +85,8 @@ public final class QrCodeEncoder {
             }
             dataCodewords[i] = value;
         }
-        for (int i = data.length; i < dataCapacity; i++) {
+        int codewordsUsed = (bitLen + 7) / 8;
+        for (int i = codewordsUsed; i < dataCapacity; i++) {
             dataCodewords[i] = (i % 2 == 0) ? 0xEC : 0x11;
         }
 
@@ -257,12 +259,20 @@ public final class QrCodeEncoder {
         if (version == 1) {
             return new int[0];
         }
+        int size = version * 4 + 17;
         int count = version / 7 + 2;
-        int step = version == 32 ? 26 : (version * 4 + count * 2 + 1) / (count * 2 - 2) * 2;
         int[] result = new int[count];
         result[0] = 6;
-        for (int i = count - 1; i >= 1; i--) {
-            result[i] = result[0] + step * (count - 1 - i);
+        result[count - 1] = size - 7;
+        if (count == 2) {
+            return result;
+        }
+        int step = (result[count - 1] - result[0]) / (count - 1);
+        if ((step & 1) != 0) {
+            step++;
+        }
+        for (int i = 1; i < count - 1; i++) {
+            result[i] = result[0] + i * step;
         }
         return result;
     }
@@ -402,19 +412,23 @@ public final class QrCodeEncoder {
         int modulePx = Math.max(1, sizePx / dim);
         int bmpSize = modulePx * dim;
         Bitmap bitmap = Bitmap.createBitmap(bmpSize, bmpSize, Bitmap.Config.ARGB_8888);
+        int[] pixels = new int[bmpSize * bmpSize];
         for (int y = 0; y < dim; y++) {
             for (int x = 0; x < dim; x++) {
                 int mx = x - quiet;
                 int my = y - quiet;
                 boolean dark = mx >= 0 && my >= 0 && mx < count && my < count && modules[my][mx];
                 int color = dark ? Color.BLACK : Color.WHITE;
+                int base = (y * modulePx) * bmpSize + x * modulePx;
                 for (int py = 0; py < modulePx; py++) {
+                    int row = base + py * bmpSize;
                     for (int px = 0; px < modulePx; px++) {
-                        bitmap.setPixel(x * modulePx + px, y * modulePx + py, color);
+                        pixels[row + px] = color;
                     }
                 }
             }
         }
+        bitmap.setPixels(pixels, 0, bmpSize, 0, 0, bmpSize, bmpSize);
         return bitmap;
     }
 }

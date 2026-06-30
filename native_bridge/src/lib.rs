@@ -2808,7 +2808,7 @@ unsafe fn ensure_swarm_symbols() -> bool {
     if ORIENTATION_SCALE == 1.0 && !GHOST_SIZE.is_null() {
         let ghost_size_addr = GHOST_SIZE as usize;
         let module_base = ghost_size_addr.wrapping_sub(0x5a0514);
-        if module_base > 0x1000 && module_base < 0x8000_0000 {
+        if module_base > 0x1000 {
             let scale_ptr = (module_base + 0x2abde0) as *const f32;
             let scale = ptr::read_volatile(scale_ptr);
             if scale > 0.0 && scale < 1000.0 {
