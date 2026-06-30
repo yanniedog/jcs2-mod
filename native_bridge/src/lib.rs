@@ -1009,6 +1009,8 @@ unsafe fn ensure_free_camera_symbols() -> bool {
     if LAST_ON_GROUND_POS.is_null() {
         LAST_ON_GROUND_POS = resolve(b"g_v3LastOnGroundPos\0") as *mut f32;
     }
+    // g_v3LastOnGroundPos is optional. When absent or not yet populated, the
+    // replay camera falls back to a fixed chase distance instead of failing hooks.
     !CAMERA_POINTER.is_null()
 }
 
@@ -1261,10 +1263,7 @@ unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
 /// forward axis; a missing/out-of-range sample keeps the last good (or default)
 /// distance. The chase camera axes also double as a car-orientation proxy for
 /// GoPro/Helicopter.
-unsafe fn replay_follow_frame(
-    _game: *mut c_void,
-    camera: *const f32,
-) -> Option<replay_camera::CarFrame> {
+unsafe fn replay_follow_frame(camera: *const f32) -> Option<replay_camera::CarFrame> {
     let read3 = |base: *const f32, offset: usize| -> [f32; 3] {
         [
             ptr::read_volatile(base.add(offset)),
@@ -1291,7 +1290,9 @@ unsafe fn replay_follow_frame(
     // is the stale take-off point. Calibration is reset when the mode activates.
     if !FREE_CAMERA_FOLLOW_CALIBRATED && !LAST_ON_GROUND_POS.is_null() {
         let ground = read3(LAST_ON_GROUND_POS, 0);
-        if ground.iter().all(|&v| finite_camera_value(v)) {
+        let ground_is_valid = ground.iter().all(|&v| finite_camera_value(v))
+            && ground.iter().any(|&v| v.abs() > FREE_CAMERA_MIN_LENGTH_SQ);
+        if ground_is_valid {
             let proj = (ground[0] - cam_pos[0]) * fwd[0]
                 + (ground[1] - cam_pos[1]) * fwd[1]
                 + (ground[2] - cam_pos[2]) * fwd[2];
@@ -1507,7 +1508,7 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
             FREE_CAMERA_FOLLOW_CALIBRATED = false;
         }
         if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
-            if let Some(car) = replay_follow_frame(game, camera) {
+            if let Some(car) = replay_follow_frame(camera) {
                 if replay_camera::update(
                     delta_seconds,
                     &car,

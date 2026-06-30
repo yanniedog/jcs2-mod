@@ -203,6 +203,7 @@ def check_sources(skip_local_assets=False):
         "_ZN4Game9LoadLevelEjNS_10DifficultyE",
         "_ZN4Game12OnCheckPointERKN2TA4Vec3Ei",
         "g_pCamera",
+        "g_v3LastOnGroundPos",
         "_ZN4Game12UpdateCameraEf",
         "_ZN4Game15StartLevelIntroEi",
     )
@@ -419,12 +420,19 @@ def check_sources(skip_local_assets=False):
         or 'resolve(b"_ZN4Game12UpdateCameraEf\\0")' not in bridge
         or 'resolve(b"_ZN4Game15StartLevelIntroEi\\0")' not in bridge
         or 'CAMERA_POINTER = resolve(b"g_pCamera\\0") as *mut *mut f32' not in bridge
+        or 'LAST_ON_GROUND_POS = resolve(b"g_v3LastOnGroundPos\\0") as *mut f32' not in bridge
         or "GAME_LEVEL_INTRO_CAMERA_FLAG_OFFSET: usize = 0x1c5" not in bridge
         or "FREE_CAMERA_LEVEL_INTRO_STARTED" not in bridge
         or "FREE_CAMERA_IN_LEVEL_INTRO.store(in_level_intro" not in bridge
         or "game_show_replay_active()" not in bridge
     ):
         ok = fail("native replay free camera hook is not gated to explicit replay level-intro sessions") and ok
+    if (
+        "ground_is_valid" not in bridge
+        or "ground.iter().any(|&v| v.abs() > FREE_CAMERA_MIN_LENGTH_SQ)" not in bridge
+        or "FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE" not in bridge
+    ):
+        ok = fail("replay follow distance calibration no longer rejects zero/unresolved ground-position samples") and ok
     if (
         "write_free_camera_frame" not in bridge
         or "ptr::copy_nonoverlapping" not in bridge
