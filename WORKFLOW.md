@@ -1,6 +1,6 @@
 # jcs2-mod PR workflow
 
-Human work flows: **PR → CI + bot QA gates → squash merge → automatic APK release**.
+Human workflows: **PR → CI + bot QA gates → squash merge → automatic APK release**.
 
 ## 1. Open a PR
 

@@ -138,10 +138,13 @@ function isKnownBotLogin(login, knownSet) {
 
 function fetchBotActivity(owner, name, prNumber) {
   const r = gh(
-    ['api', 'graphql', '-f', `query=${COMMENTS_QUERY}`, '-F', `owner=${owner}`, '-F', `name=${name}`, '-F', `num=${prNumber}`],
+    ['api', 'graphql', '-f', `query=${COMMENTS_QUERY}`, '-f', `owner=${owner}`, '-f', `name=${name}`, '-F', `num=${prNumber}`],
     { json: true },
   );
   if (!r.ok) return { error: r.error, events: [] };
+  if (Array.isArray(r.data?.errors) && r.data.errors.length) {
+    return { error: r.data.errors.map((e) => e.message).join('; '), events: [] };
+  }
 
   const pr = r.data?.data?.repository?.pullRequest;
   if (!pr) return { error: 'GraphQL: pull request not found', events: [] };
@@ -212,43 +215,44 @@ function fetchChecks(prNumber) {
     ['pr', 'checks', String(prNumber), '--required', '--json', 'name,bucket,state'],
     { encoding: 'utf8' },
   );
+  const stdout = (r.stdout || '').trim();
+  if (stdout) {
+    try {
+      const checks = JSON.parse(stdout);
+      const ignore = ignoredCheckNames();
+      let pending = false;
+      let failed = false;
+      const failedNames = [];
+      if (Array.isArray(checks)) {
+        for (const c of checks) {
+          if (checkNameMatchesIgnore(c.name, ignore)) continue;
+          if (c.bucket === 'pending') pending = true;
+          if (
+            c.bucket === 'fail' ||
+            c.bucket === 'cancel' ||
+            c.state === 'FAILURE' ||
+            c.state === 'ERROR' ||
+            c.state === 'CANCELLED'
+          ) {
+            failed = true;
+            failedNames.push(c.name);
+          }
+        }
+      }
+      return { pending, failed, failedNames };
+    } catch (e) {
+      return checksPendingShape({ error: `Invalid JSON from gh pr checks: ${e.message}` });
+    }
+  }
   if (r.status === 8) return checksPendingShape();
   if (r.status !== 0) {
     const msg = (r.stderr || '').trim() || `gh pr checks exit ${r.status}`;
-    // PR branches often have no required checks registered until branch protection applies.
     if (/no required checks reported/i.test(msg) || /no checks reported/i.test(msg)) {
       return { pending: false, failed: false, failedNames: [] };
     }
     return checksPendingShape({ error: msg });
   }
-  const stdout = (r.stdout || '').trim();
-  if (!stdout) return checksPendingShape();
-  try {
-    const checks = JSON.parse(stdout);
-    const ignore = ignoredCheckNames();
-    let pending = false;
-    let failed = false;
-    const failedNames = [];
-    if (Array.isArray(checks)) {
-      for (const c of checks) {
-        if (checkNameMatchesIgnore(c.name, ignore)) continue;
-        if (c.bucket === 'pending') pending = true;
-        if (
-          c.bucket === 'fail' ||
-          c.bucket === 'cancel' ||
-          c.state === 'FAILURE' ||
-          c.state === 'ERROR' ||
-          c.state === 'CANCELLED'
-        ) {
-          failed = true;
-          failedNames.push(c.name);
-        }
-      }
-    }
-    return { pending, failed, failedNames };
-  } catch (e) {
-    return checksPendingShape({ error: `Invalid JSON from gh pr checks: ${e.message}` });
-  }
+  return checksPendingShape();
 }
 
 function formatDuration(ms) {

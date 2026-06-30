@@ -47,7 +47,7 @@ function buildProtectionPayload(existing, mergedContexts) {
     required_status_checks: { strict, contexts: mergedContexts },
     enforce_admins: enforceAdmins,
     required_pull_request_reviews: null,
-    restrictions: null,
+    restrictions: existing?.restrictions ?? null,
     required_conversation_resolution: existing?.required_conversation_resolution?.enabled ?? true,
     allow_force_pushes: existing?.allow_force_pushes?.enabled ?? false,
     allow_deletions: existing?.allow_deletions?.enabled ?? false,

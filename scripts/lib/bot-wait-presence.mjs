@@ -11,12 +11,18 @@ export function readBotWaitState(prNumber, cwd) {
   return readBotWaitStateFile(prNumber, cwd || gitRepoRoot());
 }
 
+function parseAnchorMs(iso) {
+  if (iso == null || String(iso).trim() === '') return NaN;
+  const ms = new Date(iso).getTime();
+  if (!Number.isFinite(ms) || ms <= 0) return NaN;
+  return ms;
+}
+
 export function resolveAnchorIso(anchorIso, fallbackIso) {
-  const ms = new Date(anchorIso).getTime();
-  if (Number.isFinite(ms)) return new Date(ms).toISOString();
-  const fbMs = new Date(fallbackIso).getTime();
-  if (Number.isFinite(fbMs)) return new Date(fbMs).toISOString();
-  throw new Error(`Invalid anchor time: ${anchorIso ?? '(none)'}`);
+  let ms = parseAnchorMs(anchorIso);
+  if (!Number.isFinite(ms)) ms = parseAnchorMs(fallbackIso);
+  if (!Number.isFinite(ms)) throw new Error(`Invalid anchor time: ${anchorIso ?? '(none)'}`);
+  return new Date(ms).toISOString();
 }
 
 const COMMENTS_QUERY =
@@ -30,23 +36,32 @@ function ghGraphql(owner, name, prNumber) {
       'graphql',
       '-f',
       `query=${COMMENTS_QUERY}`,
-      '-F',
+      '-f',
       `owner=${owner}`,
-      '-F',
+      '-f',
       `name=${name}`,
       '-F',
       `num=${prNumber}`,
     ],
     { encoding: 'utf8' },
   );
-  if (r.status !== 0) {
-    throw new Error((r.stderr || r.stdout || 'gh api graphql failed').trim());
+  const text = (r.stdout || '').trim();
+  if (!text) {
+    throw new Error((r.stderr || 'gh api graphql failed').trim());
   }
+  let data;
   try {
-    return JSON.parse(r.stdout || '{}');
+    data = JSON.parse(text);
   } catch (e) {
     throw new Error(`Invalid JSON from gh api graphql: ${e.message}`);
   }
+  if (Array.isArray(data.errors) && data.errors.length) {
+    throw new Error(data.errors.map((e) => e.message).join('; '));
+  }
+  if (r.status !== 0) {
+    throw new Error((r.stderr || text || 'gh api graphql failed').trim());
+  }
+  return data;
 }
 
 export function collectBotEvents(prPayload, knownBots, anchorIso, fallbackIso) {

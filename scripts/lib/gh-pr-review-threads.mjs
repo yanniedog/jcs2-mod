@@ -2,10 +2,8 @@
  * Fetch and classify PR review threads via GitHub GraphQL (gh api).
  */
 import { spawnSync } from 'node:child_process';
+import { isKnownBotLogin } from './bot-wait-config.mjs';
 import { isBotNoise } from './bot-noise.mjs';
-
-const BOT_LOGIN_RE =
-  /(?:gemini|codex|sourcery|claude|coderabbit|copilot|greptile|chatgpt|anthropic|github-actions\[bot\])/i;
 
 const DISPOSITION_BODY_RE =
   /\b(deferred|declin(?:ed|ing)|won'?t\s*fix|wontfix|will\s*not\s*fix|by\s*design|as\s*designed|no\s*change|not\s*a\s*bug|post[- ]?merge|follow[- ]?up|not\s*applicable|n\/a)\b/i;
@@ -64,17 +62,41 @@ export function repoSlugFromEnv() {
   return { owner, name };
 }
 
+function parseGhJsonStdout(stdout, stderr, status, errorMessage) {
+  const text = (stdout || '').trim();
+  if (!text) {
+    const err = (stderr || errorMessage || 'gh failed').trim();
+    if (isGithubRateLimitError(err)) throw new GhRateLimitError(err);
+    throw new Error(err);
+  }
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    throw new Error(`Invalid JSON from gh: ${e.message}`);
+  }
+  if (Array.isArray(data.errors) && data.errors.length) {
+    throw new Error(data.errors.map((e) => e.message).join('; '));
+  }
+  if (status !== 0) {
+    const err = (stderr || text || errorMessage || `gh exit ${status}`).trim();
+    if (isGithubRateLimitError(err)) throw new GhRateLimitError(err);
+    throw new Error(err);
+  }
+  return data;
+}
+
 export function ghJson(args, { timeout = 120_000, maxBuffer = 4 * 1024 * 1024 } = {}) {
   const r = spawnSync('gh', args, { encoding: 'utf8', timeout, maxBuffer });
   if (r.error?.code === 'ETIMEDOUT') {
     throw new Error(`gh timed out after ${timeout}ms`);
   }
-  if (r.error || r.status !== 0) {
-    const err = (r.stderr || r.stdout || r.error?.message || 'gh failed').trim();
+  if (r.error) {
+    const err = (r.error.message || 'gh failed').trim();
     if (isGithubRateLimitError(err)) throw new GhRateLimitError(err);
     throw new Error(err);
   }
-  return JSON.parse(r.stdout || '{}');
+  return parseGhJsonStdout(r.stdout, r.stderr, r.status, 'gh failed');
 }
 
 export function repoSlug() {
@@ -87,7 +109,7 @@ export function repoSlug() {
 }
 
 export function isBotLogin(login) {
-  return BOT_LOGIN_RE.test(login || '');
+  return isKnownBotLogin(login);
 }
 
 export function isClosureReply(body) {

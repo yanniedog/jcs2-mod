@@ -54,7 +54,13 @@ function prForBranch(branch) {
 
 function mergedPrs(limit) {
   const raw = sh(`gh pr list --state merged --limit ${limit} --json number,title,mergedAt`);
-  return raw ? JSON.parse(raw) : [];
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function checkOne(owner, name, prNumber, { mergedAudit = false } = {}) {

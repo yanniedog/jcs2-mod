@@ -55,12 +55,25 @@ export function loginsForKey(key) {
   return [key];
 }
 
+export function allBotLoginAliases() {
+  const set = new Set(['github-actions[bot]']);
+  for (const aliases of Object.values(BOT_ALIASES)) {
+    for (const login of aliases) set.add(login.toLowerCase());
+  }
+  for (const login of OPTIONAL_BOT_LOGINS) set.add(login.toLowerCase());
+  return set;
+}
+
+export function isKnownBotLogin(login) {
+  if (!login) return false;
+  return allBotLoginAliases().has(String(login).toLowerCase());
+}
+
 export function allKnownBotLogins(requiredKeys) {
-  const set = new Set();
+  const set = allBotLoginAliases();
   for (const key of requiredKeys) {
     for (const login of loginsForKey(key)) set.add(login.toLowerCase());
   }
-  for (const login of OPTIONAL_BOT_LOGINS) set.add(login.toLowerCase());
   return set;
 }
 
