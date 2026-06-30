@@ -24,6 +24,7 @@ query($owner: String!, $name: String!, $number: Int!, $after: String) {
       reviewThreads(first: 100, after: $after) {
         pageInfo { hasNextPage endCursor }
         nodes {
+          id
           isResolved
           comments(first: 50) {
             nodes {
