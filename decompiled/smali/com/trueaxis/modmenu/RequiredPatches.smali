@@ -396,6 +396,9 @@
 .method private static native applyUnlimitedCheckpoints()Z
 .end method
 
+.method static native gestureReplayFreeCamera(FFFFFFF)V
+.end method
+
 .method private static native installNativeCrashLogger()Z
 .end method
 

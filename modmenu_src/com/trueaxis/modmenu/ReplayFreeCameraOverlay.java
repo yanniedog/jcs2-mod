@@ -1,10 +1,7 @@
 package com.trueaxis.modmenu;
 
 import android.app.Activity;
-import android.graphics.Color;
 import android.graphics.PixelFormat;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -13,345 +10,332 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
-/** Small replay-intro camera control panel backed by the native g_pCamera hook. */
+/** Transparent replay-intro gesture layer backed by the native g_pCamera hook. */
 final class ReplayFreeCameraOverlay {
-    private static final int POLL_MS = 100;
-    private static final int REPEAT_MS = 45;
+    private static final int POLL_MS = 50;
     private static final int STATUS_ENABLED = 1;
     private static final int STATUS_IN_LEVEL_INTRO = 2;
     private static final int STATUS_ACTIVE = 4;
-    private static final float NORMAL_STEP = 18.0f;
-    private static final float FAST_STEP = 55.0f;
-    private static final float ROTATE_STEP = 0.045f;
-    private static final float DRAG_ROTATE_SCALE = 0.004f;
-
-    private interface Step {
-        void run();
-    }
 
     private ReplayFreeCameraOverlay() {
     }
 
     static void install(final Activity activity) {
-        final WindowManager windowManager = (WindowManager) activity.getSystemService(Activity.WINDOW_SERVICE);
+        final WindowManager windowManager =
+                (WindowManager) activity.getSystemService(Activity.WINDOW_SERVICE);
         if (windowManager == null) return;
 
-        final LinearLayout panel = new LinearLayout(activity);
-        panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setPadding(dp(activity, 8), dp(activity, 7), dp(activity, 8), dp(activity, 7));
-        panel.setBackgroundDrawable(background(Color.argb(170, 8, 10, 14), dp(activity, 8)));
-        panel.setVisibility(View.GONE);
-
-        final TextView status = label(activity, "FREE CAM", 11, Color.rgb(255, 220, 0));
-        status.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
-        status.setGravity(Gravity.CENTER);
-        panel.addView(status, fill());
-
-        final Handler handler = new Handler(Looper.getMainLooper());
-        final float[] moveStep = new float[] { NORMAL_STEP };
-
-        final Button mode = button(activity, "Lock");
-        final Button reset = button(activity, "Reset");
-        final Button speed = button(activity, "Fast");
-        mode.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                int bits = RequiredPatches.readReplayFreeCameraStatus();
-                boolean active = (bits & STATUS_ACTIVE) != 0;
-                RequiredPatches.setReplayFreeCameraLocked(!active);
-                ModDebugLog.module("freecam", active ? "return to stock path" : "lock camera");
-            }
-        });
-        reset.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                RequiredPatches.resetReplayFreeCamera();
-                ModDebugLog.module("freecam", "reset to stock path");
-            }
-        });
-        speed.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                moveStep[0] = moveStep[0] == NORMAL_STEP ? FAST_STEP : NORMAL_STEP;
-                speed.setText(moveStep[0] == NORMAL_STEP ? "Fast" : "Slow");
-                ModDebugLog.module("freecam", "speed=" + moveStep[0]);
-            }
-        });
-        panel.addView(row(mode, reset, speed), fill());
-
-        Button forward = button(activity, "FWD");
-        Button back = button(activity, "BACK");
-        Button up = button(activity, "UP");
-        Button down = button(activity, "DOWN");
-        repeatButton(forward, handler, new Step() {
-            public void run() {
-                RequiredPatches.nudgeReplayFreeCamera(0.0f, 0.0f, moveStep[0], 0.0f, 0.0f);
-            }
-        });
-        repeatButton(back, handler, new Step() {
-            public void run() {
-                RequiredPatches.nudgeReplayFreeCamera(0.0f, 0.0f, -moveStep[0], 0.0f, 0.0f);
-            }
-        });
-        repeatButton(up, handler, new Step() {
-            public void run() {
-                RequiredPatches.nudgeReplayFreeCamera(0.0f, moveStep[0], 0.0f, 0.0f, 0.0f);
-            }
-        });
-        repeatButton(down, handler, new Step() {
-            public void run() {
-                RequiredPatches.nudgeReplayFreeCamera(0.0f, -moveStep[0], 0.0f, 0.0f, 0.0f);
-            }
-        });
-        panel.addView(row(forward, back, up, down), fill());
-
-        Button left = button(activity, "LEFT");
-        Button right = button(activity, "RIGHT");
-        Button lookLeft = button(activity, "LOOK <");
-        Button lookRight = button(activity, "LOOK >");
-        repeatButton(left, handler, new Step() {
-            public void run() {
-                RequiredPatches.nudgeReplayFreeCamera(-moveStep[0], 0.0f, 0.0f, 0.0f, 0.0f);
-            }
-        });
-        repeatButton(right, handler, new Step() {
-            public void run() {
-                RequiredPatches.nudgeReplayFreeCamera(moveStep[0], 0.0f, 0.0f, 0.0f, 0.0f);
-            }
-        });
-        repeatButton(lookLeft, handler, new Step() {
-            public void run() {
-                RequiredPatches.nudgeReplayFreeCamera(0.0f, 0.0f, 0.0f, -ROTATE_STEP, 0.0f);
-            }
-        });
-        repeatButton(lookRight, handler, new Step() {
-            public void run() {
-                RequiredPatches.nudgeReplayFreeCamera(0.0f, 0.0f, 0.0f, ROTATE_STEP, 0.0f);
-            }
-        });
-        panel.addView(row(left, right, lookLeft, lookRight), fill());
-
-        Button lookUp = button(activity, "LOOK ^");
-        Button lookDown = button(activity, "LOOK v");
-        repeatButton(lookUp, handler, new Step() {
-            public void run() {
-                RequiredPatches.nudgeReplayFreeCamera(0.0f, 0.0f, 0.0f, 0.0f, ROTATE_STEP);
-            }
-        });
-        repeatButton(lookDown, handler, new Step() {
-            public void run() {
-                RequiredPatches.nudgeReplayFreeCamera(0.0f, 0.0f, 0.0f, 0.0f, -ROTATE_STEP);
-            }
-        });
-        panel.addView(row(lookUp, lookDown), fill());
-
-        TextView lookPad = label(activity, "LOOK", 10, Color.rgb(210, 216, 222));
-        lookPad.setGravity(Gravity.CENTER);
-        lookPad.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
-        lookPad.setBackgroundDrawable(background(Color.argb(110, 255, 255, 255), dp(activity, 5)));
-        lookPad.setOnTouchListener(new View.OnTouchListener() {
-            private float lastX;
-            private float lastY;
-            private boolean tracking;
-
-            public boolean onTouch(View v, MotionEvent event) {
-                int action = event.getActionMasked();
-                if (action == MotionEvent.ACTION_DOWN) {
-                    lastX = event.getX();
-                    lastY = event.getY();
-                    tracking = true;
-                    return true;
-                }
-                if (action == MotionEvent.ACTION_MOVE && tracking) {
-                    float x = event.getX();
-                    float y = event.getY();
-                    float yaw = (x - lastX) * DRAG_ROTATE_SCALE;
-                    float pitch = (lastY - y) * DRAG_ROTATE_SCALE;
-                    lastX = x;
-                    lastY = y;
-                    RequiredPatches.nudgeReplayFreeCamera(0.0f, 0.0f, 0.0f, yaw, pitch);
-                    return true;
-                }
-                if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                    tracking = false;
-                    return true;
-                }
-                return true;
-            }
-        });
-        LinearLayout.LayoutParams padParams = fill();
-        padParams.topMargin = dp(activity, 4);
-        panel.addView(lookPad, padParams);
+        final GestureLayer layer = new GestureLayer(activity);
+        layer.setVisibility(View.GONE);
+        if (Build.VERSION.SDK_INT >= 21) {
+            layer.setTranslationZ(1200.0f);
+        }
 
         final int baseWindowFlags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
         final WindowManager.LayoutParams layout = new WindowManager.LayoutParams(
-                dp(activity, 238),
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_PANEL,
-                baseWindowFlags | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                baseWindowFlags,
                 PixelFormat.TRANSLUCENT);
-        layout.gravity = Gravity.TOP | Gravity.RIGHT;
-        layout.x = dp(activity, 12);
-        layout.y = dp(activity, 12);
-        if (Build.VERSION.SDK_INT >= 21) {
-            panel.setTranslationZ(1200.0f);
-        }
+        layout.gravity = Gravity.TOP | Gravity.LEFT;
 
+        final Handler handler = new Handler(Looper.getMainLooper());
         final boolean[] added = new boolean[] { false };
-        final boolean[] touchable = new boolean[] { false };
         final Runnable poll = new Runnable() {
             private boolean disabled;
             private boolean lastActive;
-            private boolean lastVisible;
+            private boolean lastTouchable;
+            private int attachAttempts;
 
             public void run() {
                 if (activity.isFinishing() || disabled) {
-                    if (added[0]) {
-                        try {
-                            windowManager.removeView(panel);
-                        } catch (Throwable ignored) {
-                        }
-                        added[0] = false;
-                    }
+                    removeLayer();
                     return;
                 }
                 try {
                     int bits = RequiredPatches.readReplayFreeCameraStatus();
-                    boolean visible = (bits & STATUS_ENABLED) != 0
-                            && (bits & STATUS_IN_LEVEL_INTRO) != 0;
+                    boolean enabled = (bits & STATUS_ENABLED) != 0;
+                    boolean inIntro = (bits & STATUS_IN_LEVEL_INTRO) != 0;
+                    boolean visible = enabled && inIntro;
                     boolean active = (bits & STATUS_ACTIVE) != 0;
-                    panel.setVisibility(visible ? View.VISIBLE : View.GONE);
-                    if (touchable[0] != visible) {
-                        layout.flags = visible
-                                ? baseWindowFlags
-                                : baseWindowFlags | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
-                        windowManager.updateViewLayout(panel, layout);
-                        touchable[0] = visible;
+                    if (visible && !added[0]) {
+                        layout.token = activity.getWindow().getDecorView().getWindowToken();
+                        if (layout.token != null) {
+                            windowManager.addView(layer, layout);
+                            added[0] = true;
+                            attachAttempts = 0;
+                            ModDebugLog.module("freecam", "gesture layer installed");
+                        } else if (attachAttempts++ > 20) {
+                            ModDebugLog.module("freecam", "gesture layer waiting for window token");
+                            attachAttempts = 0;
+                        }
+                    } else if (!visible && added[0]) {
+                        removeLayer();
                     }
-                    if (visible) {
-                        panel.bringToFront();
+                    layer.setReplayTouchable(visible);
+                    layer.setVisibility(visible ? View.VISIBLE : View.GONE);
+                    if (visible && added[0]) {
+                        layer.bringToFront();
                     }
-                    if (visible != lastVisible || active != lastActive) {
+                    if (visible != lastTouchable || active != lastActive) {
                         ModDebugLog.module("freecam",
-                                "overlay visible=" + visible + " active=" + active
+                                "gesture_layer touchable=" + visible + " active=" + active
                                         + " status=" + bits);
-                        lastVisible = visible;
+                        lastTouchable = visible;
                         lastActive = active;
                     }
-                    mode.setText(active ? "Path" : "Lock");
-                    status.setText(active ? "FREE CAM LOCKED" : "FREE CAM PATH");
                     handler.postDelayed(this, POLL_MS);
                 } catch (Throwable error) {
                     disabled = true;
-                    panel.setVisibility(View.GONE);
-                    ModDebugLog.module("freecam", "overlay poll failed; disabling", error);
+                    layer.setReplayTouchable(false);
+                    layer.setVisibility(View.GONE);
+                    removeLayer();
+                    ModDebugLog.module("freecam", "gesture layer poll failed; disabling", error);
                 }
+            }
+
+            private void removeLayer() {
+                if (!added[0]) return;
+                try {
+                    windowManager.removeView(layer);
+                } catch (Throwable ignored) {
+                }
+                added[0] = false;
+                layer.setReplayTouchable(false);
+                layer.setVisibility(View.GONE);
             }
         };
-        handler.post(new Runnable() {
-            private int attempts;
-
-            public void run() {
-                if (activity.isFinishing() || added[0]) return;
-                try {
-                    layout.token = activity.getWindow().getDecorView().getWindowToken();
-                    if (layout.token == null && attempts++ < 20) {
-                        handler.postDelayed(this, 100);
-                        return;
-                    }
-                    windowManager.addView(panel, layout);
-                    added[0] = true;
-                    ModDebugLog.module("freecam", "overlay installed");
-                    handler.post(poll);
-                } catch (Throwable error) {
-                    if (attempts++ < 20) {
-                        handler.postDelayed(this, 100);
-                    } else {
-                        ModDebugLog.module("freecam", "overlay install failed", error);
-                    }
-                }
-            }
-        });
+        handler.post(poll);
     }
 
-    private static void repeatButton(final Button button, final Handler handler, final Step step) {
-        button.setOnTouchListener(new View.OnTouchListener() {
-            private boolean holding;
-            private final Runnable repeat = new Runnable() {
-                public void run() {
-                    if (!holding) return;
-                    step.run();
-                    handler.postDelayed(this, REPEAT_MS);
-                }
-            };
+    private static final class GestureLayer extends View {
+        private static final float MIN_MOTION_DP = 1.5f;
+        private static final float PAN_UNITS_PER_DP = 0.85f;
+        private static final float DOLLY_UNITS_PER_DP = 1.45f;
+        private static final float CAR_UNITS_PER_DP = 1.10f;
+        private static final float ROTATE_DEADZONE = 0.004f;
+        private static final float MAX_TRANSLATE = 140.0f;
+        private static final float MAX_ROTATE = 0.16f;
 
-            public boolean onTouch(View v, MotionEvent event) {
-                int action = event.getActionMasked();
-                if (action == MotionEvent.ACTION_DOWN) {
-                    holding = true;
-                    step.run();
-                    handler.removeCallbacks(repeat);
-                    handler.postDelayed(repeat, REPEAT_MS);
-                    return true;
-                }
-                if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                    holding = false;
-                    handler.removeCallbacks(repeat);
-                    return true;
-                }
+        private final float density;
+        private boolean replayTouchable;
+        private boolean haveBaseline;
+        private int mode;
+        private float lastCentroidX;
+        private float lastCentroidY;
+        private float lastDistance;
+        private float lastAngle;
+
+        GestureLayer(Activity activity) {
+            super(activity);
+            density = Math.max(0.75f, activity.getResources().getDisplayMetrics().density);
+            setWillNotDraw(true);
+            setFocusable(false);
+            setFocusableInTouchMode(false);
+        }
+
+        void setReplayTouchable(boolean touchable) {
+            replayTouchable = touchable;
+            if (!touchable) {
+                resetGesture();
+            }
+        }
+
+        public boolean onTouchEvent(MotionEvent event) {
+            if (!replayTouchable) return false;
+            int action = event.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN
+                    || action == MotionEvent.ACTION_POINTER_DOWN) {
+                resetBaseline(event);
                 return true;
             }
-        });
-    }
-
-    private static LinearLayout row(View... children) {
-        LinearLayout row = new LinearLayout(children[0].getContext());
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER);
-        for (int i = 0; i < children.length; i++) {
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-            if (i > 0) params.leftMargin = dp(children[0].getContext(), 4);
-            row.addView(children[i], params);
+            if (action == MotionEvent.ACTION_MOVE) {
+                handleMove(event);
+                return true;
+            }
+            if (action == MotionEvent.ACTION_POINTER_UP) {
+                haveBaseline = false;
+                mode = 0;
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                resetGesture();
+                return true;
+            }
+            return true;
         }
-        return row;
-    }
 
-    private static Button button(Activity activity, String text) {
-        Button button = new Button(activity);
-        button.setText(text);
-        button.setTextSize(9.0f);
-        button.setAllCaps(false);
-        button.setMinHeight(0);
-        button.setMinimumHeight(0);
-        button.setPadding(dp(activity, 3), dp(activity, 3), dp(activity, 3), dp(activity, 3));
-        return button;
-    }
+        private void handleMove(MotionEvent event) {
+            int pointerCount = event.getPointerCount();
+            if (pointerCount < 1 || pointerCount > 3) {
+                resetGesture();
+                return;
+            }
+            if (!haveBaseline || mode != pointerCount) {
+                resetBaseline(event);
+                return;
+            }
+            float centroidX = centroidX(event);
+            float centroidY = centroidY(event);
+            float dxDp = (centroidX - lastCentroidX) / density;
+            float dyDp = (centroidY - lastCentroidY) / density;
+            if (pointerCount == 1) {
+                if (smallTranslation(dxDp, dyDp)) return;
+                applyGesture(clamp(-dxDp * PAN_UNITS_PER_DP, MAX_TRANSLATE),
+                        clamp(dyDp * PAN_UNITS_PER_DP, MAX_TRANSLATE),
+                        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, "pan");
+                lastCentroidX = centroidX;
+                lastCentroidY = centroidY;
+                return;
+            }
+            if (pointerCount == 2) {
+                float distance = distance(event);
+                float angle = angle(event);
+                float distanceDp = (distance - lastDistance) / density;
+                float yaw = normalizeAngle(angle - lastAngle);
+                boolean moved = false;
+                float forward = 0.0f;
+                if (Math.abs(distanceDp) >= MIN_MOTION_DP) {
+                    forward = clamp(distanceDp * DOLLY_UNITS_PER_DP, MAX_TRANSLATE);
+                    moved = true;
+                }
+                if (Math.abs(yaw) >= ROTATE_DEADZONE) {
+                    yaw = clamp(yaw, MAX_ROTATE);
+                    moved = true;
+                } else {
+                    yaw = 0.0f;
+                }
+                if (!moved) return;
+                applyGesture(0.0f, 0.0f, forward, yaw, 0.0f, 0.0f, 0.0f, "pinch_rotate");
+                lastCentroidX = centroidX;
+                lastCentroidY = centroidY;
+                lastDistance = distance;
+                lastAngle = angle;
+                return;
+            }
+            if (smallTranslation(dxDp, dyDp)) return;
+            applyGesture(0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+                    clamp(-dxDp * CAR_UNITS_PER_DP, MAX_TRANSLATE),
+                    clamp(dyDp * CAR_UNITS_PER_DP, MAX_TRANSLATE), "car_drag");
+            lastCentroidX = centroidX;
+            lastCentroidY = centroidY;
+        }
 
-    private static TextView label(Activity activity, String text, int size, int color) {
-        TextView label = new TextView(activity);
-        label.setText(text);
-        label.setTextSize((float) size);
-        label.setTextColor(color);
-        return label;
-    }
+        private void resetBaseline(MotionEvent event) {
+            int pointerCount = event.getPointerCount();
+            if (pointerCount < 1 || pointerCount > 3) {
+                resetGesture();
+                return;
+            }
+            mode = pointerCount;
+            haveBaseline = true;
+            lastCentroidX = centroidX(event);
+            lastCentroidY = centroidY(event);
+            lastDistance = pointerCount >= 2 ? distance(event) : 0.0f;
+            lastAngle = pointerCount >= 2 ? angle(event) : 0.0f;
+        }
 
-    private static LinearLayout.LayoutParams fill() {
-        return new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-    }
+        private void resetGesture() {
+            haveBaseline = false;
+            mode = 0;
+            lastCentroidX = 0.0f;
+            lastCentroidY = 0.0f;
+            lastDistance = 0.0f;
+            lastAngle = 0.0f;
+        }
 
-    private static GradientDrawable background(int color, float radius) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setColor(color);
-        drawable.setCornerRadius(radius);
-        return drawable;
-    }
+        private boolean smallTranslation(float dxDp, float dyDp) {
+            return Math.abs(dxDp) < MIN_MOTION_DP && Math.abs(dyDp) < MIN_MOTION_DP;
+        }
 
-    private static int dp(android.content.Context context, int value) {
-        return (int) (value * context.getResources().getDisplayMetrics().density + 0.5f);
+        private void applyGesture(float right, float up, float forward, float yaw, float pitch,
+                                  float carRight, float carUp, String kind) {
+            RequiredPatches.gestureReplayFreeCamera(right, up, forward, yaw, pitch,
+                    carRight, carUp);
+            ModDebugLog.module("freecam", "gesture=" + kind
+                    + " r=" + fmt(right)
+                    + " u=" + fmt(up)
+                    + " f=" + fmt(forward)
+                    + " y=" + fmt(yaw)
+                    + " p=" + fmt(pitch)
+                    + " cr=" + fmt(carRight)
+                    + " cu=" + fmt(carUp));
+        }
+
+        private static float centroidX(MotionEvent event) {
+            float total = 0.0f;
+            int count = event.getPointerCount();
+            for (int i = 0; i < count; i++) total += event.getX(i);
+            return total / count;
+        }
+
+        private static float centroidY(MotionEvent event) {
+            float total = 0.0f;
+            int count = event.getPointerCount();
+            for (int i = 0; i < count; i++) total += event.getY(i);
+            return total / count;
+        }
+
+        private static float distance(MotionEvent event) {
+            int a = firstPointerIndex(event);
+            int b = secondPointerIndex(event, a);
+            float dx = event.getX(b) - event.getX(a);
+            float dy = event.getY(b) - event.getY(a);
+            return (float) Math.sqrt(dx * dx + dy * dy);
+        }
+
+        private static float angle(MotionEvent event) {
+            int a = firstPointerIndex(event);
+            int b = secondPointerIndex(event, a);
+            return (float) Math.atan2(event.getY(b) - event.getY(a),
+                    event.getX(b) - event.getX(a));
+        }
+
+        private static int firstPointerIndex(MotionEvent event) {
+            int best = 0;
+            int bestId = event.getPointerId(0);
+            for (int i = 1; i < event.getPointerCount(); i++) {
+                int id = event.getPointerId(i);
+                if (id < bestId) {
+                    best = i;
+                    bestId = id;
+                }
+            }
+            return best;
+        }
+
+        private static int secondPointerIndex(MotionEvent event, int first) {
+            int best = first == 0 ? 1 : 0;
+            int bestId = event.getPointerId(best);
+            for (int i = 0; i < event.getPointerCount(); i++) {
+                if (i == first) continue;
+                int id = event.getPointerId(i);
+                if (id < bestId) {
+                    best = i;
+                    bestId = id;
+                }
+            }
+            return best;
+        }
+
+        private static float normalizeAngle(float value) {
+            while (value > Math.PI) value -= (float) (Math.PI * 2.0);
+            while (value < -Math.PI) value += (float) (Math.PI * 2.0);
+            return value;
+        }
+
+        private static float clamp(float value, float maxAbs) {
+            if (value > maxAbs) return maxAbs;
+            if (value < -maxAbs) return -maxAbs;
+            return value;
+        }
+
+        private static String fmt(float value) {
+            return String.valueOf(((int) (value * 1000.0f)) / 1000.0f);
+        }
     }
 }

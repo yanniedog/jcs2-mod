@@ -464,7 +464,7 @@ public class ModMenu {
 
             card.addView(sectionHeader(a, "Replay free camera"));
             addCheckBox(a, card,
-                    "Enable free camera controls for level fly-throughs",
+                    "Enable gesture free camera for level fly-throughs",
                     K_REPLAY_FREE_CAMERA, true);
 
             card.addView(sectionHeader(a, "Replay split HUD"));

@@ -91,6 +91,9 @@ public final class RequiredPatches {
     static native void resetReplayFreeCamera();
     static native void nudgeReplayFreeCamera(float right, float up, float forward,
                                              float yaw, float pitch);
+    static native void gestureReplayFreeCamera(float right, float up, float forward,
+                                               float yaw, float pitch,
+                                               float carRight, float carUp);
     static native int readReplayFreeCameraStatus();
     static native long readLatestCheckpointSplit();
     static native int readLatestCheckpointCurrentMillis();

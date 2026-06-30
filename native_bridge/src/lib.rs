@@ -819,6 +819,9 @@ unsafe fn ensure_free_camera_symbols() -> bool {
     if CAMERA_POINTER.is_null() {
         CAMERA_POINTER = resolve(b"g_pCamera\0") as *mut *mut f32;
     }
+    if LAST_GHOST_TRANSFORM.is_null() {
+        LAST_GHOST_TRANSFORM = resolve(b"g_ghostTransformLast\0") as *mut f32;
+    }
     !CAMERA_POINTER.is_null()
 }
 
@@ -881,6 +884,43 @@ fn fast_inverse_sqrt(value: f32) -> f32 {
     estimate
 }
 
+fn finite_camera_value(value: f32) -> bool {
+    value == value && value > -1_000_000.0 && value < 1_000_000.0
+}
+
+fn clamp_camera_delta(value: f32, max_abs: f32) -> f32 {
+    if value > max_abs {
+        max_abs
+    } else if value < -max_abs {
+        -max_abs
+    } else {
+        value
+    }
+}
+
+fn normalize_values(x: f32, y: f32, z: f32) -> (f32, f32, f32, bool) {
+    let length_sq = x * x + y * y + z * z;
+    if length_sq <= FREE_CAMERA_MIN_LENGTH_SQ {
+        return (x, y, z, false);
+    }
+    let scale = fast_inverse_sqrt(length_sq);
+    (x * scale, y * scale, z * scale, true)
+}
+
+fn cross_values(ax: f32, ay: f32, az: f32, bx: f32, by: f32, bz: f32) -> (f32, f32, f32) {
+    (ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx)
+}
+
+unsafe fn axis_dot_values(axis: usize, x: f32, y: f32, z: f32) -> f32 {
+    FREE_CAMERA_FRAME[axis] * x + FREE_CAMERA_FRAME[axis + 1] * y + FREE_CAMERA_FRAME[axis + 2] * z
+}
+
+unsafe fn write_free_camera_axis(axis: usize, x: f32, y: f32, z: f32) {
+    FREE_CAMERA_FRAME[axis] = x;
+    FREE_CAMERA_FRAME[axis + 1] = y;
+    FREE_CAMERA_FRAME[axis + 2] = z;
+}
+
 unsafe fn normalize_free_camera_axis(axis: usize) {
     let x = FREE_CAMERA_FRAME[axis];
     let y = FREE_CAMERA_FRAME[axis + 1];
@@ -893,6 +933,52 @@ unsafe fn normalize_free_camera_axis(axis: usize) {
     FREE_CAMERA_FRAME[axis] = x * scale;
     FREE_CAMERA_FRAME[axis + 1] = y * scale;
     FREE_CAMERA_FRAME[axis + 2] = z * scale;
+}
+
+unsafe fn stabilize_free_camera_frame() {
+    normalize_free_camera_axis(FREE_CAMERA_FORWARD_AXIS);
+    let dot = axis_dot_values(
+        FREE_CAMERA_UP_AXIS,
+        FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS],
+        FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + 1],
+        FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + 2],
+    );
+    FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS] -= FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS] * dot;
+    FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS + 1] -=
+        FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + 1] * dot;
+    FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS + 2] -=
+        FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + 2] * dot;
+    normalize_free_camera_axis(FREE_CAMERA_UP_AXIS);
+
+    let (right_x, right_y, right_z) = cross_values(
+        FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS],
+        FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS + 1],
+        FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS + 2],
+        FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS],
+        FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + 1],
+        FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + 2],
+    );
+    let (mut right_x, mut right_y, mut right_z, ok) = normalize_values(right_x, right_y, right_z);
+    if ok {
+        if axis_dot_values(FREE_CAMERA_RIGHT_AXIS, right_x, right_y, right_z) < 0.0 {
+            right_x = -right_x;
+            right_y = -right_y;
+            right_z = -right_z;
+        }
+        write_free_camera_axis(FREE_CAMERA_RIGHT_AXIS, right_x, right_y, right_z);
+        let (up_x, up_y, up_z) = cross_values(
+            FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS],
+            FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + 1],
+            FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + 2],
+            right_x,
+            right_y,
+            right_z,
+        );
+        let (up_x, up_y, up_z, up_ok) = normalize_values(up_x, up_y, up_z);
+        if up_ok {
+            write_free_camera_axis(FREE_CAMERA_UP_AXIS, up_x, up_y, up_z);
+        }
+    }
 }
 
 unsafe fn nudge_free_camera_position(axis: usize, amount: f32) {
@@ -923,7 +1009,84 @@ unsafe fn pitch_free_camera(amount: f32) {
     normalize_free_camera_axis(FREE_CAMERA_FORWARD_AXIS);
 }
 
-unsafe fn nudge_free_camera(right: f32, up: f32, forward: f32, yaw: f32, pitch: f32) {
+unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
+    ensure_free_camera_symbols();
+    if LAST_GHOST_TRANSFORM.is_null() {
+        return false;
+    }
+    let x = ptr::read_volatile(LAST_GHOST_TRANSFORM.add(GHOST_TRANSFORM_POS_FLOAT));
+    let y = ptr::read_volatile(LAST_GHOST_TRANSFORM.add(GHOST_TRANSFORM_POS_FLOAT + 1));
+    let z = ptr::read_volatile(LAST_GHOST_TRANSFORM.add(GHOST_TRANSFORM_POS_FLOAT + 2));
+    if !(finite_camera_value(x) && finite_camera_value(y) && finite_camera_value(z)) {
+        return false;
+    }
+    anchor[0] = x;
+    anchor[1] = y;
+    anchor[2] = z;
+    true
+}
+
+unsafe fn aim_free_camera_at(anchor: &[f32; 3]) {
+    let pos_x = FREE_CAMERA_FRAME[FREE_CAMERA_POSITION];
+    let pos_y = FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 1];
+    let pos_z = FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 2];
+    let (forward_x, forward_y, forward_z, forward_ok) =
+        normalize_values(anchor[0] - pos_x, anchor[1] - pos_y, anchor[2] - pos_z);
+    if !forward_ok {
+        return;
+    }
+
+    let old_up_x = FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS];
+    let old_up_y = FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS + 1];
+    let old_up_z = FREE_CAMERA_FRAME[FREE_CAMERA_UP_AXIS + 2];
+    let (right_x, right_y, right_z) = cross_values(
+        old_up_x, old_up_y, old_up_z, forward_x, forward_y, forward_z,
+    );
+    let (mut right_x, mut right_y, mut right_z, right_ok) =
+        normalize_values(right_x, right_y, right_z);
+    if !right_ok {
+        return;
+    }
+    if axis_dot_values(FREE_CAMERA_RIGHT_AXIS, right_x, right_y, right_z) < 0.0 {
+        right_x = -right_x;
+        right_y = -right_y;
+        right_z = -right_z;
+    }
+    let (up_x, up_y, up_z) =
+        cross_values(forward_x, forward_y, forward_z, right_x, right_y, right_z);
+    let (up_x, up_y, up_z, up_ok) = normalize_values(up_x, up_y, up_z);
+    if !up_ok {
+        return;
+    }
+
+    write_free_camera_axis(FREE_CAMERA_RIGHT_AXIS, right_x, right_y, right_z);
+    write_free_camera_axis(FREE_CAMERA_UP_AXIS, up_x, up_y, up_z);
+    write_free_camera_axis(FREE_CAMERA_FORWARD_AXIS, forward_x, forward_y, forward_z);
+}
+
+unsafe fn drag_free_camera_around_car(right: f32, up: f32) {
+    let mut anchor = [0.0f32; 3];
+    if !free_camera_anchor_position(&mut anchor) {
+        return;
+    }
+    if right != 0.0 {
+        nudge_free_camera_position(FREE_CAMERA_RIGHT_AXIS, right);
+    }
+    if up != 0.0 {
+        nudge_free_camera_position(FREE_CAMERA_UP_AXIS, up);
+    }
+    aim_free_camera_at(&anchor);
+}
+
+unsafe fn apply_free_camera_gesture(
+    right: f32,
+    up: f32,
+    forward: f32,
+    yaw: f32,
+    pitch: f32,
+    car_right: f32,
+    car_up: f32,
+) {
     let camera = current_camera();
     if camera.is_null() {
         return;
@@ -931,6 +1094,13 @@ unsafe fn nudge_free_camera(right: f32, up: f32, forward: f32, yaw: f32, pitch: 
     if !FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
         capture_free_camera_frame(camera);
     }
+    let right = clamp_camera_delta(right, 200.0);
+    let up = clamp_camera_delta(up, 200.0);
+    let forward = clamp_camera_delta(forward, 200.0);
+    let yaw = clamp_camera_delta(yaw, 0.25);
+    let pitch = clamp_camera_delta(pitch, 0.25);
+    let car_right = clamp_camera_delta(car_right, 200.0);
+    let car_up = clamp_camera_delta(car_up, 200.0);
     if right != 0.0 {
         nudge_free_camera_position(FREE_CAMERA_RIGHT_AXIS, right);
     }
@@ -946,8 +1116,16 @@ unsafe fn nudge_free_camera(right: f32, up: f32, forward: f32, yaw: f32, pitch: 
     if pitch != 0.0 {
         pitch_free_camera(pitch);
     }
+    if car_right != 0.0 || car_up != 0.0 {
+        drag_free_camera_around_car(car_right, car_up);
+    }
+    stabilize_free_camera_frame();
     FREE_CAMERA_ACTIVE.store(true, Ordering::Release);
     write_free_camera_frame(camera);
+}
+
+unsafe fn nudge_free_camera(right: f32, up: f32, forward: f32, yaw: f32, pitch: f32) {
+    apply_free_camera_gesture(right, up, forward, yaw, pitch, 0.0, 0.0);
 }
 
 unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds: f32) {
@@ -1748,10 +1926,32 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_nudgeReplayFr
     yaw: f32,
     pitch: f32,
 ) {
-    if !FREE_CAMERA_ENABLED.load(Ordering::Acquire) {
+    if !FREE_CAMERA_ENABLED.load(Ordering::Acquire)
+        || !FREE_CAMERA_IN_LEVEL_INTRO.load(Ordering::Acquire)
+    {
         return;
     }
     nudge_free_camera(right, up, forward, yaw, pitch);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_gestureReplayFreeCamera(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    right: f32,
+    up: f32,
+    forward: f32,
+    yaw: f32,
+    pitch: f32,
+    car_right: f32,
+    car_up: f32,
+) {
+    if !FREE_CAMERA_ENABLED.load(Ordering::Acquire)
+        || !FREE_CAMERA_IN_LEVEL_INTRO.load(Ordering::Acquire)
+    {
+        return;
+    }
+    apply_free_camera_gesture(right, up, forward, yaw, pitch, car_right, car_up);
 }
 
 #[no_mangle]

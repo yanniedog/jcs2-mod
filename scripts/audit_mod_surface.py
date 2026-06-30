@@ -413,13 +413,23 @@ def check_sources(skip_local_assets=False):
     if (
         "RequiredPatches_installReplayFreeCameraHooks" not in bridge
         or "RequiredPatches_nudgeReplayFreeCamera" not in bridge
+        or "RequiredPatches_gestureReplayFreeCamera" not in bridge
         or "RequiredPatches_readReplayFreeCameraStatus" not in bridge
     ):
         ok = fail("replay free camera JNI entry points are missing") and ok
     if (
+        "apply_free_camera_gesture" not in bridge
+        or "stabilize_free_camera_frame" not in bridge
+        or "free_camera_anchor_position" not in bridge
+        or "drag_free_camera_around_car" not in bridge
+        or 'resolve(b"g_ghostTransformLast\\0") as *mut f32' not in bridge
+        or "!FREE_CAMERA_IN_LEVEL_INTRO.load(Ordering::Acquire)" not in bridge
+    ):
+        ok = fail("native replay free camera no longer supports gated tactile/car-centric gestures") and ok
+    if (
         "K_REPLAY_FREE_CAMERA" not in mod_menu
         or "replayFreeCameraEnabled" not in mod_menu
-        or "Enable free camera controls for level fly-throughs" not in mod_menu
+        or "Enable gesture free camera for level fly-throughs" not in mod_menu
         or 'prefs(c).getBoolean(K_REPLAY_FREE_CAMERA, true)' not in mod_menu
     ):
         ok = fail("mod menu no longer exposes replay free camera as an enabled-by-default option") and ok
@@ -431,12 +441,20 @@ def check_sources(skip_local_assets=False):
         ok = fail("required patches no longer install the replay free camera hook/overlay") and ok
     if (
         "STATUS_IN_LEVEL_INTRO" not in replay_free_camera_text
-        or "RequiredPatches.nudgeReplayFreeCamera" not in replay_free_camera_text
-        or "RequiredPatches.setReplayFreeCameraLocked" not in replay_free_camera_text
-        or "RequiredPatches.resetReplayFreeCamera" not in replay_free_camera_text
-        or "DRAG_ROTATE_SCALE" not in replay_free_camera_text
+        or "GestureLayer" not in replay_free_camera_text
+        or "RequiredPatches.gestureReplayFreeCamera" not in replay_free_camera_text
+        or "TYPE_APPLICATION_PANEL" not in replay_free_camera_text
+        or "windowManager.addView(layer, layout)" not in replay_free_camera_text
+        or "windowManager.removeView(layer)" not in replay_free_camera_text
+        or "ACTION_POINTER_DOWN" not in replay_free_camera_text
+        or "ACTION_POINTER_UP" not in replay_free_camera_text
+        or "DOLLY_UNITS_PER_DP" not in replay_free_camera_text
+        or "CAR_UNITS_PER_DP" not in replay_free_camera_text
     ):
-        ok = fail("replay free camera overlay no longer exposes movement, look, lock, and reset controls") and ok
+        ok = fail("replay free camera overlay no longer provides replay-gated tactile gestures") and ok
+    for forbidden_camera_ui in ("new Button", "TextView", '"Lock"', '"Reset"', '"FWD"', '"LOOK"'):
+        if forbidden_camera_ui in replay_free_camera_text:
+            ok = fail("replay free camera must not show visible button/dialog controls") and ok
 
     straight_runtime = (ROOT / "scripts/runtime_straight_level_split_test.ps1").read_text(
         encoding="utf-8"

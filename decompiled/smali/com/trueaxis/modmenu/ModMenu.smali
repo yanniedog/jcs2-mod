@@ -4157,7 +4157,7 @@
     invoke-virtual {v13, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
     .line 466
-    const-string v1, "Enable free camera controls for level fly-throughs"
+    const-string v1, "Enable gesture free camera for level fly-throughs"
 
     const-string v4, "replay_free_camera"
 
