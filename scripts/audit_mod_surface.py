@@ -428,11 +428,12 @@ def check_sources(skip_local_assets=False):
     ):
         ok = fail("native replay free camera hook is not gated to explicit replay level-intro sessions") and ok
     if (
-        "ground_is_valid" not in bridge
+        "FREE_CAMERA_MAX_GROUND_RAY_OFFSET_SQ" not in bridge
         or "ground.iter().any(|&v| v.abs() > FREE_CAMERA_MIN_LENGTH_SQ)" not in bridge
+        or "let ray_offset_sq = ray_dx * ray_dx + ray_dy * ray_dy + ray_dz * ray_dz" not in bridge
         or "FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE" not in bridge
     ):
-        ok = fail("replay follow distance calibration no longer rejects zero/unresolved ground-position samples") and ok
+        ok = fail("replay follow distance calibration no longer rejects zero/stale ground-position samples") and ok
     if (
         "write_free_camera_frame" not in bridge
         or "ptr::copy_nonoverlapping" not in bridge

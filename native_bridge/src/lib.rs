@@ -76,6 +76,7 @@ const REPLAY_CAMERA_PERSPECTIVE_SCALE: f32 = 0.012;
 const FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE: f32 = 12.0;
 const FREE_CAMERA_MIN_FOLLOW_DISTANCE: f32 = 1.0;
 const FREE_CAMERA_MAX_FOLLOW_DISTANCE: f32 = 250.0;
+const FREE_CAMERA_MAX_GROUND_RAY_OFFSET_SQ: f32 = 4.0;
 /// Per-frame camera movement (squared world units) above which the replay is
 /// considered actively playing rather than sitting on a static menu.
 const FREE_CAMERA_MOVE_EPSILON_SQ: f32 = 0.0016;
@@ -1283,20 +1284,33 @@ unsafe fn replay_follow_frame(camera: *const f32) -> Option<replay_camera::CarFr
         return None;
     }
 
-    // Calibrate the follow distance ONCE from the live on-ground car position:
+    // Calibrate the follow distance ONCE from a live on-ground car position:
     // project (groundPos - camPos) onto the forward axis to get the native chase
-    // distance, then freeze it. Calibrating only on the first in-range sample (the
-    // replay starts grounded) avoids drift while airborne, where g_v3LastOnGroundPos
-    // is the stale take-off point. Calibration is reset when the mode activates.
+    // distance, then freeze it. The ground vector can be zero during startup or a
+    // stale takeoff point while airborne, so only accept samples that are non-zero
+    // and close to the current chase-camera look ray. Calibration is reset when
+    // the mode activates.
     if !FREE_CAMERA_FOLLOW_CALIBRATED && !LAST_ON_GROUND_POS.is_null() {
         let ground = read3(LAST_ON_GROUND_POS, 0);
-        let ground_is_valid = ground.iter().all(|&v| finite_camera_value(v))
-            && ground.iter().any(|&v| v.abs() > FREE_CAMERA_MIN_LENGTH_SQ);
-        if ground_is_valid {
+        if ground.iter().all(|&v| finite_camera_value(v))
+            && ground.iter().any(|&v| v.abs() > FREE_CAMERA_MIN_LENGTH_SQ)
+        {
             let proj = (ground[0] - cam_pos[0]) * fwd[0]
                 + (ground[1] - cam_pos[1]) * fwd[1]
                 + (ground[2] - cam_pos[2]) * fwd[2];
-            if proj > FREE_CAMERA_MIN_FOLLOW_DISTANCE && proj < FREE_CAMERA_MAX_FOLLOW_DISTANCE {
+            let projected = [
+                cam_pos[0] + fwd[0] * proj,
+                cam_pos[1] + fwd[1] * proj,
+                cam_pos[2] + fwd[2] * proj,
+            ];
+            let ray_dx = ground[0] - projected[0];
+            let ray_dy = ground[1] - projected[1];
+            let ray_dz = ground[2] - projected[2];
+            let ray_offset_sq = ray_dx * ray_dx + ray_dy * ray_dy + ray_dz * ray_dz;
+            if proj > FREE_CAMERA_MIN_FOLLOW_DISTANCE
+                && proj < FREE_CAMERA_MAX_FOLLOW_DISTANCE
+                && ray_offset_sq <= FREE_CAMERA_MAX_GROUND_RAY_OFFSET_SQ
+            {
                 FREE_CAMERA_FOLLOW_DISTANCE = proj;
                 FREE_CAMERA_FOLLOW_CALIBRATED = true;
             }
