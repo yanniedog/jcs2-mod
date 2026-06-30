@@ -36,6 +36,19 @@ const MIN_LAP_COUNT: u8 = 2;
 const MAX_LAP_COUNT: u8 = 9;
 const GAME_CURRENT_CAR_OFFSET: usize = 0xb0;
 const CAR_FUEL_OFFSET: usize = 0x128;
+/// Pointer to the car's physics body inside the Car object (Car::MoveToGround /
+/// UpdateShadow both deref `car + 0x158`).
+const CAR_BODY_PTR_OFFSET: usize = 0x158;
+/// The body's CURRENT world transform (TA::MFrame, written by
+/// TA::DynamicObject::SetFrame): basis rows at byte 0x1c0/0x1d0/0x1e0 (stride
+/// 0x10) and translation at 0x1f0 -- in f32 indices below. Byte 0x200 begins a
+/// stale cached copy of the frame and must not be used as the position.
+const CAR_BODY_RIGHT_FLOAT: usize = 0x1c0 / 4;
+const CAR_BODY_UP_FLOAT: usize = 0x1d0 / 4;
+const CAR_BODY_FWD_FLOAT: usize = 0x1e0 / 4;
+const CAR_BODY_POS_FLOAT: usize = 0x1f0 / 4;
+/// Lift the orbit anchor along the car's up axis toward roof height (world units).
+const CAR_ROOF_OFFSET: f32 = 0.0;
 const INGAME_LEVEL_EDITOR_SAVE_HOOK_BYTES: usize = 16;
 const INGAME_LEVEL_EDITOR_LOAD_HOOK_BYTES: usize = 16;
 const UIFORM_CREATE_CTOR_HOOK_BYTES: usize = 16;
@@ -80,6 +93,10 @@ const FREE_CAMERA_MAX_FOLLOW_DISTANCE: f32 = 250.0;
 /// count as the live car position (used as the exact orbit anchor). Below this it
 /// is treated as static and the chase-camera estimate is used instead.
 const FREE_CAMERA_GHOST_LIVE_EPSILON_SQ: f32 = 0.0001;
+/// Max squared perpendicular distance of a candidate car anchor from the chase
+/// camera's look-at ray. The camera looks at the car, so the real car is near the
+/// ray; a wrong struct offset lands far off and is rejected (falls to fallback).
+const FREE_CAMERA_ANCHOR_MAX_PERP_SQ: f32 = 100.0;
 /// Per-frame camera movement (squared world units) above which the replay is
 /// considered actively playing rather than sitting on a static menu.
 const FREE_CAMERA_MOVE_EPSILON_SQ: f32 = 0.0016;
@@ -1248,21 +1265,72 @@ unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
     true
 }
 
+/// Read the live car's world frame from the Car object chain
+/// `game -> car (*+0xb0) -> body (*+0x158)`, whose current TA::MFrame has basis
+/// rows at f32 indices 112/116/120 (bytes 0x1c0/0x1d0/0x1e0) and the translation
+/// at f32 124 (byte 0x1f0). This is the actual replay car the chase camera
+/// follows -- `g_ghostTransform` is the separate racing ghost. The anchor is
+/// lifted along the car up axis toward roof height by `CAR_ROOF_OFFSET`.
+unsafe fn read_car_world_frame(game: *mut c_void) -> Option<replay_camera::CarFrame> {
+    if game.is_null() {
+        return None;
+    }
+    let car = ptr::read_volatile((game as *mut u8).add(GAME_CURRENT_CAR_OFFSET) as *mut *mut u8);
+    if car.is_null() {
+        return None;
+    }
+    let body = ptr::read_volatile(car.add(CAR_BODY_PTR_OFFSET) as *mut *mut f32);
+    if body.is_null() {
+        return None;
+    }
+    let read3 = |offset: usize| -> [f32; 3] {
+        [
+            ptr::read_volatile(body.add(offset)),
+            ptr::read_volatile(body.add(offset + 1)),
+            ptr::read_volatile(body.add(offset + 2)),
+        ]
+    };
+    let right = read3(CAR_BODY_RIGHT_FLOAT);
+    let up = read3(CAR_BODY_UP_FLOAT);
+    let fwd = read3(CAR_BODY_FWD_FLOAT);
+    let pos = read3(CAR_BODY_POS_FLOAT);
+    if [right, up, fwd, pos]
+        .iter()
+        .flatten()
+        .any(|&v| !finite_camera_value(v))
+    {
+        return None;
+    }
+    let anchor = [
+        pos[0] + up[0] * CAR_ROOF_OFFSET,
+        pos[1] + up[1] * CAR_ROOF_OFFSET,
+        pos[2] + up[2] * CAR_ROOF_OFFSET,
+    ];
+    Some(replay_camera::CarFrame {
+        pos: anchor,
+        right,
+        up,
+        fwd,
+    })
+}
+
 /// Build the managed-camera target frame: the world point the camera orbits.
 ///
-/// Preferred anchor is the live current-frame ghost transform `g_ghostTransform`
-/// (the exact car centre). It is used when it is actively moving frame-to-frame
-/// (judged against this module's own previous-frame sample -- `g_ghostTransformLast`
-/// is a checkpoint/respawn snapshot, not a per-frame value) and sits a sane
-/// distance in front of the camera. This is what keeps the orbit centred ON the car.
+/// Primary anchor is the live Car object's own world transform (see
+/// `read_car_world_frame`) -- the exact car centre. The secondary anchor is the
+/// live ghost transform `g_ghostTransform` (for ghost-race views), judged live by
+/// this module's own previous-frame sample (`g_ghostTransformLast` is a
+/// checkpoint/respawn snapshot, not a per-frame value).
 ///
-/// When the ghost transform is static (e.g. a self-replay that does not drive it),
-/// fall back to the game's own chase camera, which still tracks the car: the
+/// Final fallback is the game's own chase camera, which still tracks the car: the
 /// anchor is its look-at point `camPos + camForward * focusDistance`. The original
 /// `Game::UpdateCamera` runs first and leaves the chase camera in the camera
 /// object (stride-4: right@0, up@4, forward@8, position@12); its axes also double
 /// as a car-orientation proxy for GoPro.
-unsafe fn replay_follow_frame(camera: *const f32) -> Option<replay_camera::CarFrame> {
+unsafe fn replay_follow_frame(
+    game: *mut c_void,
+    camera: *const f32,
+) -> Option<replay_camera::CarFrame> {
     let read3 = |base: *const f32, offset: usize| -> [f32; 3] {
         [
             ptr::read_volatile(base.add(offset)),
@@ -1282,7 +1350,34 @@ unsafe fn replay_follow_frame(camera: *const f32) -> Option<replay_camera::CarFr
         return None;
     }
 
-    // Preferred anchor: the live ghost transform, the exact car centre. Liveness
+    // Primary anchor: the live Car object's own world transform -- the exact car
+    // the chase camera follows. Sanity-checked to sit in front of the camera so a
+    // wrong struct offset falls through to the other sources rather than
+    // misbehaving. Refreshes the chase-camera focus distance for the fallback.
+    if let Some(frame) = read_car_world_frame(game) {
+        let to = [
+            frame.pos[0] - cam_pos[0],
+            frame.pos[1] - cam_pos[1],
+            frame.pos[2] - cam_pos[2],
+        ];
+        let proj = to[0] * fwd[0] + to[1] * fwd[1] + to[2] * fwd[2];
+        let perp_sq = {
+            let px = to[0] - fwd[0] * proj;
+            let py = to[1] - fwd[1] * proj;
+            let pz = to[2] - fwd[2] * proj;
+            px * px + py * py + pz * pz
+        };
+        if proj > FREE_CAMERA_MIN_FOLLOW_DISTANCE
+            && proj < FREE_CAMERA_MAX_FOLLOW_DISTANCE
+            && perp_sq < FREE_CAMERA_ANCHOR_MAX_PERP_SQ
+        {
+            FREE_CAMERA_FOLLOW_DISTANCE = proj;
+            FREE_CAMERA_FOLLOW_CALIBRATED = true;
+            return Some(frame);
+        }
+    }
+
+    // Secondary anchor: the live ghost transform (ghost-race views). Liveness
     // is judged against this module's own previous-frame sample (not
     // g_ghostTransformLast, which is a checkpoint/respawn snapshot rather than a
     // per-frame value). When live, refresh the chase-camera focus distance so a
@@ -1523,7 +1618,7 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
             FREE_CAMERA_PREV_GHOST_VALID = false;
         }
         if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
-            if let Some(car) = replay_follow_frame(camera) {
+            if let Some(car) = replay_follow_frame(game, camera) {
                 if replay_camera::update(
                     delta_seconds,
                     &car,
