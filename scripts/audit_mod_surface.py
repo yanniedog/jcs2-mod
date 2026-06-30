@@ -613,6 +613,10 @@ def check_sources(skip_local_assets=False):
     return ok
 
 
+def normalize_shader_bytes(data):
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
 def check_apk(apk_path):
     ok = True
     with zipfile.ZipFile(apk_path) as apk:
@@ -638,8 +642,10 @@ def check_apk(apk_path):
                 ok = check_blob(f"{apk_path.name}:{name}", apk.read(name)) and ok
 
         for shader in ("afterburner.vert", "afterburner_fix.vert"):
-            packaged = apk.read(f"assets/shaders/{shader}")
-            tracked = (ROOT / "mod_assets/shaders" / shader).read_bytes()
+            packaged = normalize_shader_bytes(apk.read(f"assets/shaders/{shader}"))
+            tracked = normalize_shader_bytes(
+                (ROOT / "mod_assets/shaders" / shader).read_bytes()
+            )
             if packaged != tracked:
                 ok = fail(f"APK shader overlay mismatch: {shader}") and ok
     return ok
