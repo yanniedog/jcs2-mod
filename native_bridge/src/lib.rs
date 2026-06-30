@@ -630,20 +630,21 @@ unsafe fn set_switch_button_label(button: *mut c_void, text: *const c_char) {
 
 unsafe fn refresh_user_track_create_switch_labels() {
     static mut LAPS_LABEL: [u8; 16] = [0; 16];
-    let laps_text = if (USER_TRACK_PENDING_FLAGS.load(Ordering::Acquire) & USER_TRACK_FLAG_LAPS) == 0 {
-        b"LAPS: OFF\0".as_ptr()
-    } else {
-        let count = USER_TRACK_PENDING_LAP_COUNT.load(Ordering::Acquire);
-        LAPS_LABEL[0] = b'L';
-        LAPS_LABEL[1] = b'A';
-        LAPS_LABEL[2] = b'P';
-        LAPS_LABEL[3] = b'S';
-        LAPS_LABEL[4] = b':';
-        LAPS_LABEL[5] = b' ';
-        LAPS_LABEL[6] = b'0' + count;
-        LAPS_LABEL[7] = 0;
-        ptr::addr_of!(LAPS_LABEL).cast::<c_char>()
-    };
+    let laps_text =
+        if (USER_TRACK_PENDING_FLAGS.load(Ordering::Acquire) & USER_TRACK_FLAG_LAPS) == 0 {
+            b"LAPS: OFF\0".as_ptr()
+        } else {
+            let count = USER_TRACK_PENDING_LAP_COUNT.load(Ordering::Acquire);
+            LAPS_LABEL[0] = b'L';
+            LAPS_LABEL[1] = b'A';
+            LAPS_LABEL[2] = b'P';
+            LAPS_LABEL[3] = b'S';
+            LAPS_LABEL[4] = b':';
+            LAPS_LABEL[5] = b' ';
+            LAPS_LABEL[6] = b'0' + count;
+            LAPS_LABEL[7] = 0;
+            ptr::addr_of!(LAPS_LABEL).cast::<c_char>()
+        };
     set_switch_button_label(USER_TRACK_LAPS_BUTTON, laps_text as *const c_char);
     set_switch_button_label(
         USER_TRACK_BOOST_REGEN_BUTTON,
@@ -2860,10 +2861,8 @@ unsafe fn swarm_integrate_transform(
             );
         } else {
             velocity[0] += ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET) as *const f32);
-            velocity[1] +=
-                ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 4) as *const f32);
-            velocity[2] +=
-                ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 8) as *const f32);
+            velocity[1] += ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 4) as *const f32);
+            velocity[2] += ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 8) as *const f32);
             ptr::write(
                 transform.add(GHOST_TRANSFORM_POS_FLOAT),
                 ptr::read(transform.add(GHOST_TRANSFORM_POS_FLOAT)) + velocity[0],
@@ -2906,7 +2905,8 @@ unsafe fn swarm_render_extra_ghosts(game: *mut c_void) {
     if master < 1 {
         return;
     }
-    let car = ptr::read_volatile((game as *mut u8).add(GAME_CURRENT_CAR_OFFSET) as *mut *mut c_void);
+    let car =
+        ptr::read_volatile((game as *mut u8).add(GAME_CURRENT_CAR_OFFSET) as *mut *mut c_void);
     if car.is_null() {
         return;
     }
@@ -3005,7 +3005,12 @@ unsafe fn install_replay_swarm_hooks() -> bool {
     ok
 }
 
-unsafe fn jni_copy_bytes_to_array(env: *mut c_void, array: *mut c_void, data: *const u8, len: usize) -> i32 {
+unsafe fn jni_copy_bytes_to_array(
+    env: *mut c_void,
+    array: *mut c_void,
+    data: *const u8,
+    len: usize,
+) -> i32 {
     if env.is_null() || array.is_null() || data.is_null() || len == 0 {
         return 0;
     }
@@ -3038,7 +3043,12 @@ unsafe fn jni_copy_bytes_to_array(env: *mut c_void, array: *mut c_void, data: *c
     write_len as i32
 }
 
-unsafe fn jni_read_int_array(env: *mut c_void, array: *mut c_void, out: *mut i32, max: usize) -> i32 {
+unsafe fn jni_read_int_array(
+    env: *mut c_void,
+    array: *mut c_void,
+    out: *mut i32,
+    max: usize,
+) -> i32 {
     if env.is_null() || array.is_null() || out.is_null() || max == 0 {
         return 0;
     }
@@ -3173,7 +3183,12 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplaySwar
     SWARM_PRIMARY_CATALOG_INDEX = primary_index;
 
     let mut indices = [0i32; SWARM_MAX_GHOSTS];
-    let count = jni_read_int_array(env, secondary_indices, indices.as_mut_ptr(), SWARM_MAX_GHOSTS);
+    let count = jni_read_int_array(
+        env,
+        secondary_indices,
+        indices.as_mut_ptr(),
+        SWARM_MAX_GHOSTS,
+    );
     if count <= 0 {
         return;
     }
