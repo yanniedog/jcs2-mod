@@ -71,6 +71,17 @@ const FREE_CAMERA_MIN_LENGTH_SQ: f32 = 0.000001;
 /// Converts a perspective-drag gesture delta (world-ish units) into radians for
 /// the managed camera sphere. Tunable feel constant.
 const REPLAY_CAMERA_PERSPECTIVE_SCALE: f32 = 0.012;
+/// Fallback chase-camera focus distance (world units) used to derive the car
+/// anchor from the game's own replay camera when calibration is unavailable.
+const FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE: f32 = 12.0;
+const FREE_CAMERA_MIN_FOLLOW_DISTANCE: f32 = 1.0;
+const FREE_CAMERA_MAX_FOLLOW_DISTANCE: f32 = 250.0;
+/// Per-frame camera movement (squared world units) above which the replay is
+/// considered actively playing rather than sitting on a static menu.
+const FREE_CAMERA_MOVE_EPSILON_SQ: f32 = 0.0016;
+/// Frames of stillness before the replay is treated as not actively playing
+/// (debounce so the gesture overlay does not flicker).
+const FREE_CAMERA_STATIONARY_LIMIT: i32 = 12;
 const UI_CONTROL_BUTTON_SIZE: usize = 0x130;
 const UIFORM_CREATE_CAR_PANEL_X: c_int = 0x0d7;
 const UIFORM_CREATE_CAR_PANEL_Y: c_int = 0x07d;
@@ -247,6 +258,12 @@ static mut USER_TRACK_BOOST_REGEN_BUTTON: *mut c_void = ptr::null_mut();
 static mut FREE_CAMERA_FRAME: [f32; FREE_CAMERA_FRAME_FLOATS] = [0.0; FREE_CAMERA_FRAME_FLOATS];
 static mut FREE_CAMERA_CAR_OFFSET: [f32; 3] = [0.0; 3];
 static mut FREE_CAMERA_HAVE_CAR_OFFSET: bool = false;
+static mut FREE_CAMERA_FOLLOW_DISTANCE: f32 = 0.0;
+static mut FREE_CAMERA_FOLLOW_CALIBRATED: bool = false;
+static mut FREE_CAMERA_LAST_CAM_POS: [f32; 3] = [0.0; 3];
+static mut FREE_CAMERA_LAST_CAM_VALID: bool = false;
+static mut FREE_CAMERA_STATIONARY_FRAMES: i32 = 0;
+static FREE_CAMERA_PLAYBACK_MOVING: AtomicBool = AtomicBool::new(false);
 static mut LAST_SPLIT_CHECKPOINT: c_int = 0;
 static mut LAST_SPLIT_CURRENT_MS: i32 = -1;
 static mut FALLBACK_GHOST_CHECKPOINT_COUNT: c_int = 0;
@@ -1219,37 +1236,107 @@ unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
     true
 }
 
-/// Read the replayed car's world frame (position + basis) from the ghost
-/// transform for the managed camera modes. The transform shares the engine's
-/// stride-4 4x4 layout: right @ 0..3, up @ 4..7, forward @ 8..11, position @
-/// 12..15, so the basis triples are the car's local axes in world space.
-unsafe fn read_replay_car_frame() -> Option<replay_camera::CarFrame> {
-    ensure_free_camera_symbols();
-    if LAST_GHOST_TRANSFORM.is_null() {
-        return None;
-    }
-    let transform = LAST_GHOST_TRANSFORM;
+/// Build the managed-camera target frame by following the game's own replay
+/// (chase) camera, which tracks the live car every frame -- unlike
+/// `g_ghostTransformLast`, which is static during a normal (non-ghost) replay
+/// and left the orbit stuck on a fixed point (issue #0021).
+///
+/// The original `Game::UpdateCamera` runs before this and leaves the live chase
+/// camera in the camera object (stride-4: right@0, up@4, forward@8, position@12).
+/// The car anchor is the chase camera's look-at point, `camPos + camForward *
+/// focusDistance`; the chase camera's own axes double as a proxy for the car
+/// orientation (used by GoPro). `focusDistance` is calibrated once from the
+/// ghost transform (correct at the start of playback) and otherwise defaults.
+unsafe fn replay_follow_frame(camera: *const f32) -> Option<replay_camera::CarFrame> {
     let read3 = |offset: usize| -> [f32; 3] {
         [
-            ptr::read_volatile(transform.add(offset)),
-            ptr::read_volatile(transform.add(offset + 1)),
-            ptr::read_volatile(transform.add(offset + 2)),
+            ptr::read_volatile(camera.add(offset)),
+            ptr::read_volatile(camera.add(offset + 1)),
+            ptr::read_volatile(camera.add(offset + 2)),
         ]
     };
-    let frame = replay_camera::CarFrame {
-        right: read3(0),
-        up: read3(FREE_CAMERA_AXIS_STRIDE_FLOATS),
-        fwd: read3(2 * FREE_CAMERA_AXIS_STRIDE_FLOATS),
-        pos: read3(GHOST_TRANSFORM_POS_FLOAT),
-    };
-    let finite = [frame.right, frame.up, frame.fwd, frame.pos]
+    let right = read3(0);
+    let up = read3(FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    let fwd = read3(2 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    let cam_pos = read3(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    let finite = [right, up, fwd, cam_pos]
         .iter()
         .flatten()
         .all(|&value| finite_camera_value(value));
     if !finite {
         return None;
     }
-    Some(frame)
+
+    if !FREE_CAMERA_FOLLOW_CALIBRATED {
+        let mut distance = FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE;
+        let mut car0 = [0.0f32; 3];
+        if free_camera_anchor_position(&mut car0) {
+            // Project the (initially-correct) car position onto the camera
+            // forward ray to recover the chase focus distance.
+            let proj = (car0[0] - cam_pos[0]) * fwd[0]
+                + (car0[1] - cam_pos[1]) * fwd[1]
+                + (car0[2] - cam_pos[2]) * fwd[2];
+            if proj > FREE_CAMERA_MIN_FOLLOW_DISTANCE && proj < FREE_CAMERA_MAX_FOLLOW_DISTANCE {
+                distance = proj;
+            }
+        }
+        FREE_CAMERA_FOLLOW_DISTANCE = distance;
+        FREE_CAMERA_FOLLOW_CALIBRATED = true;
+    }
+
+    let distance = FREE_CAMERA_FOLLOW_DISTANCE;
+    let anchor = [
+        cam_pos[0] + fwd[0] * distance,
+        cam_pos[1] + fwd[1] * distance,
+        cam_pos[2] + fwd[2] * distance,
+    ];
+    Some(replay_camera::CarFrame {
+        pos: anchor,
+        right,
+        up,
+        fwd,
+    })
+}
+
+/// Track whether the replay is actively playing by watching the game camera
+/// translate. During playback the chase camera moves with the car; on a static
+/// replay/selection menu it sits still, so the gesture overlay can be dropped
+/// there (it otherwise covers screen-centre and blocks the menu lists).
+unsafe fn update_playback_motion(camera: *const f32) {
+    let pos_src = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    let pos = [
+        ptr::read_volatile(pos_src),
+        ptr::read_volatile(pos_src.add(1)),
+        ptr::read_volatile(pos_src.add(2)),
+    ];
+    if !(finite_camera_value(pos[0]) && finite_camera_value(pos[1]) && finite_camera_value(pos[2]))
+    {
+        return;
+    }
+    if FREE_CAMERA_LAST_CAM_VALID {
+        let dx = pos[0] - FREE_CAMERA_LAST_CAM_POS[0];
+        let dy = pos[1] - FREE_CAMERA_LAST_CAM_POS[1];
+        let dz = pos[2] - FREE_CAMERA_LAST_CAM_POS[2];
+        if dx * dx + dy * dy + dz * dz > FREE_CAMERA_MOVE_EPSILON_SQ {
+            FREE_CAMERA_STATIONARY_FRAMES = 0;
+        } else if FREE_CAMERA_STATIONARY_FRAMES < FREE_CAMERA_STATIONARY_LIMIT {
+            FREE_CAMERA_STATIONARY_FRAMES += 1;
+        }
+    }
+    FREE_CAMERA_LAST_CAM_POS = pos;
+    FREE_CAMERA_LAST_CAM_VALID = true;
+    FREE_CAMERA_PLAYBACK_MOVING.store(
+        FREE_CAMERA_STATIONARY_FRAMES < FREE_CAMERA_STATIONARY_LIMIT,
+        Ordering::Release,
+    );
+}
+
+unsafe fn reset_playback_motion() {
+    FREE_CAMERA_LAST_CAM_VALID = false;
+    // Start at the limit so playback reads as "still" until real motion is seen;
+    // otherwise the overlay would block the menu for ~12 frames after a reset.
+    FREE_CAMERA_STATIONARY_FRAMES = FREE_CAMERA_STATIONARY_LIMIT;
+    FREE_CAMERA_PLAYBACK_MOVING.store(false, Ordering::Release);
 }
 
 unsafe fn aim_free_camera_at(anchor: &[f32; 3]) {
@@ -1370,12 +1457,14 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
         FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
         FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
         reset_free_camera_car_follow();
+        reset_playback_motion();
         replay_camera::invalidate();
         return;
     }
     if !FREE_CAMERA_ENABLED.load(Ordering::Acquire) {
         FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
         reset_free_camera_car_follow();
+        reset_playback_motion();
         replay_camera::invalidate();
         return;
     }
@@ -1384,15 +1473,17 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
     if camera.is_null() {
         return;
     }
+    update_playback_motion(camera);
     // Managed camera modes (Orbit / Helicopter / GoPro / Trackside) auto-activate
     // and fully own the camera each frame.
     if replay_camera::is_managed() {
         if !FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
             capture_free_camera_frame(camera);
             replay_camera::invalidate();
+            FREE_CAMERA_FOLLOW_CALIBRATED = false;
         }
         if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
-            if let Some(car) = read_replay_car_frame() {
+            if let Some(car) = replay_follow_frame(camera) {
                 if replay_camera::update(
                     delta_seconds,
                     &car,
@@ -2295,7 +2386,10 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplayFre
     if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
         status |= 4;
     }
-    if game_show_replay_active() {
+    // Require active playback motion so the gesture overlay drops on static
+    // replay/selection menus (where it otherwise blocks the centre lists) while
+    // staying present during playback (the car, hence the chase camera, moves).
+    if game_show_replay_active() && FREE_CAMERA_PLAYBACK_MOVING.load(Ordering::Acquire) {
         status |= 8;
     }
     status
