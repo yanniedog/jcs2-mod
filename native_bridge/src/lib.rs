@@ -76,6 +76,10 @@ const REPLAY_CAMERA_PERSPECTIVE_SCALE: f32 = 0.012;
 const FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE: f32 = 12.0;
 const FREE_CAMERA_MIN_FOLLOW_DISTANCE: f32 = 1.0;
 const FREE_CAMERA_MAX_FOLLOW_DISTANCE: f32 = 250.0;
+/// Minimum squared movement of g_ghostTransform vs g_ghostTransformLast for it to
+/// count as the live car position (used as the exact orbit anchor). Below this it
+/// is treated as static and the chase-camera estimate is used instead.
+const FREE_CAMERA_GHOST_LIVE_EPSILON_SQ: f32 = 0.0001;
 /// Per-frame camera movement (squared world units) above which the replay is
 /// considered actively playing rather than sitting on a static menu.
 const FREE_CAMERA_MOVE_EPSILON_SQ: f32 = 0.0016;
@@ -997,6 +1001,12 @@ unsafe fn ensure_free_camera_symbols() -> bool {
     if LAST_GHOST_TRANSFORM.is_null() {
         LAST_GHOST_TRANSFORM = resolve(b"g_ghostTransformLast\0") as *mut f32;
     }
+    if GHOST_TRANSFORM.is_null() {
+        // The current-frame ghost transform (vs the static *Last) -- the live car
+        // position during ghost playback. Resolving here is idempotent with the
+        // swarm code that also uses this symbol.
+        GHOST_TRANSFORM = resolve(b"g_ghostTransform\0") as *mut f32;
+    }
     !CAMERA_POINTER.is_null()
 }
 
@@ -1236,29 +1246,31 @@ unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
     true
 }
 
-/// Build the managed-camera target frame by following the game's own replay
-/// (chase) camera, which tracks the live car every frame -- unlike
-/// `g_ghostTransformLast`, which is static during a normal (non-ghost) replay
-/// and left the orbit stuck on a fixed point (issue #0021).
+/// Build the managed-camera target frame: the world point the camera orbits.
 ///
-/// The original `Game::UpdateCamera` runs before this and leaves the live chase
-/// camera in the camera object (stride-4: right@0, up@4, forward@8, position@12).
-/// The car anchor is the chase camera's look-at point, `camPos + camForward *
-/// focusDistance`; the chase camera's own axes double as a proxy for the car
-/// orientation (used by GoPro). `focusDistance` is calibrated once from the
-/// ghost transform (correct at the start of playback) and otherwise defaults.
+/// Preferred anchor is the live current-frame ghost transform `g_ghostTransform`
+/// (the exact car centre). It is used when it is actively moving -- i.e. differs
+/// from the previous-frame `g_ghostTransformLast` -- and sits a sane distance in
+/// front of the camera. This is what keeps the orbit centred ON the car.
+///
+/// When the ghost transform is static (e.g. a self-replay that does not drive it),
+/// fall back to the game's own chase camera, which still tracks the car: the
+/// anchor is its look-at point `camPos + camForward * focusDistance`. The original
+/// `Game::UpdateCamera` runs first and leaves the chase camera in the camera
+/// object (stride-4: right@0, up@4, forward@8, position@12); its axes also double
+/// as a car-orientation proxy for GoPro.
 unsafe fn replay_follow_frame(camera: *const f32) -> Option<replay_camera::CarFrame> {
-    let read3 = |offset: usize| -> [f32; 3] {
+    let read3 = |base: *const f32, offset: usize| -> [f32; 3] {
         [
-            ptr::read_volatile(camera.add(offset)),
-            ptr::read_volatile(camera.add(offset + 1)),
-            ptr::read_volatile(camera.add(offset + 2)),
+            ptr::read_volatile(base.add(offset)),
+            ptr::read_volatile(base.add(offset + 1)),
+            ptr::read_volatile(base.add(offset + 2)),
         ]
     };
-    let right = read3(0);
-    let up = read3(FREE_CAMERA_AXIS_STRIDE_FLOATS);
-    let fwd = read3(2 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
-    let cam_pos = read3(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    let right = read3(camera, 0);
+    let up = read3(camera, FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    let fwd = read3(camera, 2 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    let cam_pos = read3(camera, 3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
     let finite = [right, up, fwd, cam_pos]
         .iter()
         .flatten()
@@ -1267,12 +1279,53 @@ unsafe fn replay_follow_frame(camera: *const f32) -> Option<replay_camera::CarFr
         return None;
     }
 
+    // Preferred: the live ghost transform itself, anchored exactly on the car.
+    if !GHOST_TRANSFORM.is_null() && !LAST_GHOST_TRANSFORM.is_null() {
+        let car = read3(GHOST_TRANSFORM, GHOST_TRANSFORM_POS_FLOAT);
+        let prev = read3(LAST_GHOST_TRANSFORM, GHOST_TRANSFORM_POS_FLOAT);
+        if car.iter().all(|&v| finite_camera_value(v)) {
+            let moved = {
+                let dx = car[0] - prev[0];
+                let dy = car[1] - prev[1];
+                let dz = car[2] - prev[2];
+                dx * dx + dy * dy + dz * dz > FREE_CAMERA_GHOST_LIVE_EPSILON_SQ
+            };
+            let proj = (car[0] - cam_pos[0]) * fwd[0]
+                + (car[1] - cam_pos[1]) * fwd[1]
+                + (car[2] - cam_pos[2]) * fwd[2];
+            if moved
+                && proj > FREE_CAMERA_MIN_FOLLOW_DISTANCE
+                && proj < FREE_CAMERA_MAX_FOLLOW_DISTANCE
+            {
+                return Some(replay_camera::CarFrame {
+                    pos: car,
+                    right,
+                    up,
+                    fwd,
+                });
+            }
+        }
+    }
+
     if !FREE_CAMERA_FOLLOW_CALIBRATED {
         let mut distance = FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE;
+        // Prefer the live ghost transform for the car position; fall back to the
+        // static *Last only if the live one is unavailable.
         let mut car0 = [0.0f32; 3];
-        if free_camera_anchor_position(&mut car0) {
-            // Project the (initially-correct) car position onto the camera
-            // forward ray to recover the chase focus distance.
+        let have_car0 = if !GHOST_TRANSFORM.is_null() {
+            let p = read3(GHOST_TRANSFORM, GHOST_TRANSFORM_POS_FLOAT);
+            if p.iter().all(|&v| finite_camera_value(v)) {
+                car0 = p;
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+        if have_car0 || free_camera_anchor_position(&mut car0) {
+            // Project the car position onto the camera forward ray to recover the
+            // chase focus distance, so the anchor lands on the car (not behind it).
             let proj = (car0[0] - cam_pos[0]) * fwd[0]
                 + (car0[1] - cam_pos[1]) * fwd[1]
                 + (car0[2] - cam_pos[2]) * fwd[2];
