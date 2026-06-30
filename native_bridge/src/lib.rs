@@ -264,6 +264,8 @@ static mut FREE_CAMERA_CAR_OFFSET: [f32; 3] = [0.0; 3];
 static mut FREE_CAMERA_HAVE_CAR_OFFSET: bool = false;
 static mut FREE_CAMERA_FOLLOW_DISTANCE: f32 = 0.0;
 static mut FREE_CAMERA_FOLLOW_CALIBRATED: bool = false;
+static mut FREE_CAMERA_PREV_GHOST: [f32; 3] = [0.0; 3];
+static mut FREE_CAMERA_PREV_GHOST_VALID: bool = false;
 static mut FREE_CAMERA_LAST_CAM_POS: [f32; 3] = [0.0; 3];
 static mut FREE_CAMERA_LAST_CAM_VALID: bool = false;
 static mut FREE_CAMERA_STATIONARY_FRAMES: i32 = 0;
@@ -1249,9 +1251,10 @@ unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
 /// Build the managed-camera target frame: the world point the camera orbits.
 ///
 /// Preferred anchor is the live current-frame ghost transform `g_ghostTransform`
-/// (the exact car centre). It is used when it is actively moving -- i.e. differs
-/// from the previous-frame `g_ghostTransformLast` -- and sits a sane distance in
-/// front of the camera. This is what keeps the orbit centred ON the car.
+/// (the exact car centre). It is used when it is actively moving frame-to-frame
+/// (judged against this module's own previous-frame sample -- `g_ghostTransformLast`
+/// is a checkpoint/respawn snapshot, not a per-frame value) and sits a sane
+/// distance in front of the camera. This is what keeps the orbit centred ON the car.
 ///
 /// When the ghost transform is static (e.g. a self-replay that does not drive it),
 /// fall back to the game's own chase camera, which still tracks the car: the
@@ -1279,65 +1282,48 @@ unsafe fn replay_follow_frame(camera: *const f32) -> Option<replay_camera::CarFr
         return None;
     }
 
-    // Preferred: the live ghost transform itself, anchored exactly on the car.
-    if !GHOST_TRANSFORM.is_null() && !LAST_GHOST_TRANSFORM.is_null() {
+    // Preferred anchor: the live ghost transform, the exact car centre. Liveness
+    // is judged against this module's own previous-frame sample (not
+    // g_ghostTransformLast, which is a checkpoint/respawn snapshot rather than a
+    // per-frame value). When live, refresh the chase-camera focus distance so a
+    // momentary freeze still falls back to a recent, correct distance.
+    if !GHOST_TRANSFORM.is_null() {
         let car = read3(GHOST_TRANSFORM, GHOST_TRANSFORM_POS_FLOAT);
-        let prev = read3(LAST_GHOST_TRANSFORM, GHOST_TRANSFORM_POS_FLOAT);
         if car.iter().all(|&v| finite_camera_value(v)) {
-            let moved = {
-                let dx = car[0] - prev[0];
-                let dy = car[1] - prev[1];
-                let dz = car[2] - prev[2];
+            let moved = FREE_CAMERA_PREV_GHOST_VALID && {
+                let dx = car[0] - FREE_CAMERA_PREV_GHOST[0];
+                let dy = car[1] - FREE_CAMERA_PREV_GHOST[1];
+                let dz = car[2] - FREE_CAMERA_PREV_GHOST[2];
                 dx * dx + dy * dy + dz * dz > FREE_CAMERA_GHOST_LIVE_EPSILON_SQ
             };
-            let proj = (car[0] - cam_pos[0]) * fwd[0]
-                + (car[1] - cam_pos[1]) * fwd[1]
-                + (car[2] - cam_pos[2]) * fwd[2];
-            if moved
-                && proj > FREE_CAMERA_MIN_FOLLOW_DISTANCE
-                && proj < FREE_CAMERA_MAX_FOLLOW_DISTANCE
-            {
-                return Some(replay_camera::CarFrame {
-                    pos: car,
-                    right,
-                    up,
-                    fwd,
-                });
+            FREE_CAMERA_PREV_GHOST = car;
+            FREE_CAMERA_PREV_GHOST_VALID = true;
+            if moved {
+                let proj = (car[0] - cam_pos[0]) * fwd[0]
+                    + (car[1] - cam_pos[1]) * fwd[1]
+                    + (car[2] - cam_pos[2]) * fwd[2];
+                if proj > FREE_CAMERA_MIN_FOLLOW_DISTANCE && proj < FREE_CAMERA_MAX_FOLLOW_DISTANCE
+                {
+                    FREE_CAMERA_FOLLOW_DISTANCE = proj;
+                    FREE_CAMERA_FOLLOW_CALIBRATED = true;
+                    return Some(replay_camera::CarFrame {
+                        pos: car,
+                        right,
+                        up,
+                        fwd,
+                    });
+                }
             }
         }
     }
 
-    if !FREE_CAMERA_FOLLOW_CALIBRATED {
-        let mut distance = FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE;
-        // Prefer the live ghost transform for the car position; fall back to the
-        // static *Last only if the live one is unavailable.
-        let mut car0 = [0.0f32; 3];
-        let have_car0 = if !GHOST_TRANSFORM.is_null() {
-            let p = read3(GHOST_TRANSFORM, GHOST_TRANSFORM_POS_FLOAT);
-            if p.iter().all(|&v| finite_camera_value(v)) {
-                car0 = p;
-                true
-            } else {
-                false
-            }
-        } else {
-            false
-        };
-        if have_car0 || free_camera_anchor_position(&mut car0) {
-            // Project the car position onto the camera forward ray to recover the
-            // chase focus distance, so the anchor lands on the car (not behind it).
-            let proj = (car0[0] - cam_pos[0]) * fwd[0]
-                + (car0[1] - cam_pos[1]) * fwd[1]
-                + (car0[2] - cam_pos[2]) * fwd[2];
-            if proj > FREE_CAMERA_MIN_FOLLOW_DISTANCE && proj < FREE_CAMERA_MAX_FOLLOW_DISTANCE {
-                distance = proj;
-            }
-        }
-        FREE_CAMERA_FOLLOW_DISTANCE = distance;
-        FREE_CAMERA_FOLLOW_CALIBRATED = true;
-    }
-
-    let distance = FREE_CAMERA_FOLLOW_DISTANCE;
+    // Fallback: the game chase camera at the last good focus distance (it still
+    // tracks the car) -- used when the ghost transform is static or unavailable.
+    let distance = if FREE_CAMERA_FOLLOW_CALIBRATED {
+        FREE_CAMERA_FOLLOW_DISTANCE
+    } else {
+        FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE
+    };
     let anchor = [
         cam_pos[0] + fwd[0] * distance,
         cam_pos[1] + fwd[1] * distance,
@@ -1534,6 +1520,7 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
             capture_free_camera_frame(camera);
             replay_camera::invalidate();
             FREE_CAMERA_FOLLOW_CALIBRATED = false;
+            FREE_CAMERA_PREV_GHOST_VALID = false;
         }
         if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
             if let Some(car) = replay_follow_frame(camera) {
