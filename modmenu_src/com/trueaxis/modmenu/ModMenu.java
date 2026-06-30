@@ -710,7 +710,7 @@ public class ModMenu {
             addSeek(a, displaySliders, "Vertical position", K_SPLIT_Y,
                     DEFAULT_SPLIT_Y, 0, 180, " dp");
 
-            Button displayToggle = miniIconButton(a,
+            final Button displayToggle = miniIconButton(a,
                     new DisplayIconDrawable(Color.rgb(210, 216, 222)),
                     "Show display position sliders",
                     new View.OnClickListener() {
@@ -740,7 +740,8 @@ public class ModMenu {
                     "Enable checkpoint/sector deltas vs saved replay ghost",
                     K_CHECKPOINT_SPLITS, true, new Runnable() {
                         public void run() {
-                            updateSplitOptionsVisibility(a, splitOptions, displaySliders);
+                            updateSplitOptionsVisibility(a, splitOptions, displaySliders,
+                                    displayToggle);
                         }
                     });
 
@@ -751,7 +752,7 @@ public class ModMenu {
                     "Use sector deltas instead of checkpoint deltas",
                     K_SPLIT_SECTOR_DELTA, false);
 
-            updateSplitOptionsVisibility(a, splitOptions, displaySliders);
+            updateSplitOptionsVisibility(a, splitOptions, displaySliders, displayToggle);
             card.addView(splitOptions, fill());
             card.addView(displaySliders, fill());
 
@@ -859,10 +860,13 @@ public class ModMenu {
     }
 
     private static void updateSplitOptionsVisibility(Context c, View content,
-                                                     View displaySliders) {
+                                                     View displaySliders, View displayToggle) {
         applyMenuDefaults(c);
         boolean enabled = prefs(c).getBoolean(K_CHECKPOINT_SPLITS, true);
         content.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        if (displayToggle != null) {
+            displayToggle.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        }
         if (!enabled && displaySliders != null) {
             displaySliders.setVisibility(View.GONE);
         }

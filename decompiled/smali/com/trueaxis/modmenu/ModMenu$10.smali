@@ -22,12 +22,14 @@
 
 .field final synthetic val$displaySliders:Landroid/widget/LinearLayout;
 
+.field final synthetic val$displayToggle:Landroid/widget/Button;
+
 .field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/LinearLayout;)V
-    .registers 4
+.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/LinearLayout;Landroid/widget/Button;)V
+    .registers 5
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
@@ -41,6 +43,8 @@
 
     iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$displaySliders:Landroid/widget/LinearLayout;
 
+    iput-object p4, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$displayToggle:Landroid/widget/Button;
+
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
     return-void
@@ -49,7 +53,7 @@
 
 # virtual methods
 .method public run()V
-    .registers 4
+    .registers 5
 
     .line 743
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
@@ -58,9 +62,11 @@
 
     iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$displaySliders:Landroid/widget/LinearLayout;
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;Landroid/view/View;)V
-    invoke-static {v0, v1, v2}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Landroid/view/View;Landroid/view/View;)V
+    iget-object v3, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$displayToggle:Landroid/widget/Button;
 
-    .line 744
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
+    invoke-static {v0, v1, v2, v3}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
+
+    .line 745
     return-void
 .end method
