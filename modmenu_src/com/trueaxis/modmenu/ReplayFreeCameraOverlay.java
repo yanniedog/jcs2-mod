@@ -3,8 +3,13 @@ package com.trueaxis.modmenu;
 import android.app.Activity;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -20,6 +25,24 @@ final class ReplayFreeCameraOverlay {
 
     private ReplayFreeCameraOverlay() {
     }
+
+    // #region agent log
+    private static void agentLog(String hypothesisId, String location, String message, String dataJson) {
+        try {
+            File dir = new File(Environment.getExternalStorageDirectory(), "YCS2CommunityMod/logs");
+            if (!dir.exists() && !dir.mkdirs()) return;
+            File out = new File(dir, "debug-04e8a3.log");
+            String line = "{\"sessionId\":\"04e8a3\",\"hypothesisId\":\"" + hypothesisId
+                    + "\",\"location\":\"" + location + "\",\"message\":\"" + message
+                    + "\",\"data\":" + dataJson + ",\"timestamp\":"
+                    + System.currentTimeMillis() + "}\n";
+            FileOutputStream stream = new FileOutputStream(out, true);
+            stream.write(line.getBytes("UTF-8"));
+            stream.close();
+        } catch (Throwable ignored) {
+        }
+    }
+    // #endregion
 
     static void install(final Activity activity) {
         final WindowManager windowManager =
@@ -85,6 +108,13 @@ final class ReplayFreeCameraOverlay {
                         ModDebugLog.module("freecam",
                                 "gesture_layer touchable=" + visible + " active=" + active
                                         + " status=" + bits);
+                        // #region agent log
+                        agentLog("B", "ReplayFreeCameraOverlay.java:poll",
+                                "overlay_visibility",
+                                "{\"visible\":" + visible + ",\"active\":" + active
+                                        + ",\"enabled\":" + enabled + ",\"inIntro\":" + inIntro
+                                        + ",\"added\":" + added[0] + ",\"bits\":" + bits + "}");
+                        // #endregion
                         lastTouchable = visible;
                         lastActive = active;
                     }
@@ -129,6 +159,11 @@ final class ReplayFreeCameraOverlay {
         private float lastCentroidY;
         private float lastDistance;
         private float lastAngle;
+        private float downX;
+        private float downY;
+        private float maxMoveDp;
+        private boolean consumedDown;
+        private boolean gestureActive;
 
         GestureLayer(Activity activity) {
             super(activity);
@@ -148,25 +183,91 @@ final class ReplayFreeCameraOverlay {
         public boolean onTouchEvent(MotionEvent event) {
             if (!replayTouchable) return false;
             int action = event.getActionMasked();
-            if (action == MotionEvent.ACTION_DOWN
-                    || action == MotionEvent.ACTION_POINTER_DOWN) {
+            int pointerCount = event.getPointerCount();
+            boolean handled = true;
+            if (action == MotionEvent.ACTION_DOWN) {
+                downX = event.getX();
+                downY = event.getY();
+                maxMoveDp = 0.0f;
+                consumedDown = true;
+                gestureActive = false;
+            } else if (action == MotionEvent.ACTION_POINTER_DOWN) {
+                gestureActive = true;
                 resetBaseline(event);
-                return true;
-            }
-            if (action == MotionEvent.ACTION_MOVE) {
-                handleMove(event);
-                return true;
-            }
-            if (action == MotionEvent.ACTION_POINTER_UP) {
-                haveBaseline = false;
-                mode = 0;
-                return true;
-            }
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+            } else if (action == MotionEvent.ACTION_MOVE) {
+                if (pointerCount == 1 && consumedDown) {
+                    float dxDp = (event.getX() - downX) / density;
+                    float dyDp = (event.getY() - downY) / density;
+                    float moveDp = (float) Math.sqrt(dxDp * dxDp + dyDp * dyDp);
+                    if (moveDp > maxMoveDp) maxMoveDp = moveDp;
+                    if (!gestureActive && maxMoveDp >= MIN_MOTION_DP) {
+                        gestureActive = true;
+                        resetBaseline(event);
+                    }
+                } else if (pointerCount >= 2 && !gestureActive) {
+                    gestureActive = true;
+                    resetBaseline(event);
+                }
+                if (gestureActive) {
+                    handleMove(event);
+                }
+            } else if (action == MotionEvent.ACTION_POINTER_UP) {
+                if (gestureActive) {
+                    haveBaseline = false;
+                    mode = 0;
+                }
+            } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                boolean tapLike = consumedDown && !gestureActive
+                        && maxMoveDp < MIN_MOTION_DP && pointerCount <= 1;
+                boolean forwarded = false;
+                if (tapLike) {
+                    forwarded = forwardTap(downX, downY);
+                }
+                // #region agent log
+                agentLog(tapLike ? "A" : "E", "ReplayFreeCameraOverlay.java:onTouchEvent",
+                        tapLike ? "tap_forwarded_to_game" : "gesture_or_multi_touch_end",
+                        "{\"action\":" + action + ",\"pointerCount\":" + pointerCount
+                                + ",\"maxMoveDp\":" + maxMoveDp + ",\"downX\":" + downX
+                                + ",\"downY\":" + downY + ",\"tapLike\":" + tapLike
+                                + ",\"forwarded\":" + forwarded + "}");
+                // #endregion
                 resetGesture();
-                return true;
+            } else {
+                handled = true;
             }
-            return true;
+            // #region agent log
+            if (action == MotionEvent.ACTION_DOWN) {
+                agentLog("A", "ReplayFreeCameraOverlay.java:onTouchEvent",
+                        "touch_down_claimed",
+                        "{\"x\":" + event.getX() + ",\"y\":" + event.getY()
+                                + ",\"pointerCount\":" + pointerCount + ",\"handled\":" + handled + "}");
+            } else if (action == MotionEvent.ACTION_POINTER_DOWN) {
+                agentLog("C", "ReplayFreeCameraOverlay.java:onTouchEvent",
+                        "pointer_down_claimed",
+                        "{\"pointerCount\":" + pointerCount + ",\"handled\":" + handled + "}");
+            }
+            // #endregion
+            return handled;
+        }
+
+        private boolean forwardTap(float x, float y) {
+            if (!(getContext() instanceof Activity)) return false;
+            Activity activity = (Activity) getContext();
+            View target = activity.getWindow().getDecorView();
+            if (target == null) return false;
+            long now = SystemClock.uptimeMillis();
+            MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0);
+            MotionEvent up = MotionEvent.obtain(now, now + 12, MotionEvent.ACTION_UP, x, y, 0);
+            try {
+                target.dispatchTouchEvent(down);
+                target.dispatchTouchEvent(up);
+                ModDebugLog.module("freecam",
+                        "tap forwarded x=" + fmt(x) + " y=" + fmt(y));
+                return true;
+            } finally {
+                down.recycle();
+                up.recycle();
+            }
         }
 
         private void handleMove(MotionEvent event) {
@@ -246,6 +347,9 @@ final class ReplayFreeCameraOverlay {
             lastCentroidY = 0.0f;
             lastDistance = 0.0f;
             lastAngle = 0.0f;
+            consumedDown = false;
+            maxMoveDp = 0.0f;
+            gestureActive = false;
         }
 
         private boolean smallTranslation(float dxDp, float dyDp) {
