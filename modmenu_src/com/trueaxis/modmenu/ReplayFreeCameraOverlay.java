@@ -212,7 +212,8 @@ final class ReplayFreeCameraOverlay {
                 float yawOut = 0.0f;
                 boolean pinchRotate = false;
                 if (Math.abs(distanceDp) >= MIN_MOTION_DP) {
-                    forward = clamp(distanceDp * DOLLY_UNITS_PER_DP, MAX_TRANSLATE);
+                    // Pinch in (fingers closer) zooms out; pinch out zooms in.
+                    forward = clamp(-distanceDp * DOLLY_UNITS_PER_DP, MAX_TRANSLATE);
                     pinchRotate = true;
                 }
                 if (Math.abs(yaw) >= ROTATE_DEADZONE) {

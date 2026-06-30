@@ -240,6 +240,8 @@ static REPLAY_SWARM_ACTIVE: AtomicBool = AtomicBool::new(false);
 static mut USER_TRACK_LAPS_BUTTON: *mut c_void = ptr::null_mut();
 static mut USER_TRACK_BOOST_REGEN_BUTTON: *mut c_void = ptr::null_mut();
 static mut FREE_CAMERA_FRAME: [f32; FREE_CAMERA_FRAME_FLOATS] = [0.0; FREE_CAMERA_FRAME_FLOATS];
+static mut FREE_CAMERA_CAR_OFFSET: [f32; 3] = [0.0; 3];
+static mut FREE_CAMERA_HAVE_CAR_OFFSET: bool = false;
 static mut LAST_SPLIT_CHECKPOINT: c_int = 0;
 static mut LAST_SPLIT_CURRENT_MS: i32 = -1;
 static mut FALLBACK_GHOST_CHECKPOINT_COUNT: c_int = 0;
@@ -992,6 +994,36 @@ unsafe fn game_show_replay_active() -> bool {
     ensure_split_symbols() && !SHOW_REPLAY.is_null() && ptr::read_volatile(SHOW_REPLAY) != 0
 }
 
+unsafe fn reset_free_camera_car_follow() {
+    FREE_CAMERA_HAVE_CAR_OFFSET = false;
+    FREE_CAMERA_CAR_OFFSET = [0.0; 3];
+}
+
+unsafe fn update_free_camera_car_offset() {
+    let mut car = [0.0f32; 3];
+    if !free_camera_anchor_position(&mut car) {
+        return;
+    }
+    FREE_CAMERA_CAR_OFFSET[0] = FREE_CAMERA_FRAME[FREE_CAMERA_POSITION] - car[0];
+    FREE_CAMERA_CAR_OFFSET[1] = FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 1] - car[1];
+    FREE_CAMERA_CAR_OFFSET[2] = FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 2] - car[2];
+    FREE_CAMERA_HAVE_CAR_OFFSET = true;
+}
+
+unsafe fn apply_free_camera_car_follow() {
+    if !FREE_CAMERA_HAVE_CAR_OFFSET {
+        update_free_camera_car_offset();
+        return;
+    }
+    let mut car = [0.0f32; 3];
+    if !free_camera_anchor_position(&mut car) {
+        return;
+    }
+    FREE_CAMERA_FRAME[FREE_CAMERA_POSITION] = car[0] + FREE_CAMERA_CAR_OFFSET[0];
+    FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 1] = car[1] + FREE_CAMERA_CAR_OFFSET[1];
+    FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 2] = car[2] + FREE_CAMERA_CAR_OFFSET[2];
+}
+
 unsafe fn capture_free_camera_frame(camera: *mut f32) {
     if camera.is_null() {
         return;
@@ -1007,6 +1039,7 @@ unsafe fn capture_free_camera_frame(camera: *mut f32) {
     FREE_CAMERA_FRAME[FREE_CAMERA_POSITION] = ptr::read_volatile(source);
     FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 1] = ptr::read_volatile(source.add(1));
     FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 2] = ptr::read_volatile(source.add(2));
+    update_free_camera_car_offset();
     FREE_CAMERA_ACTIVE.store(true, Ordering::Release);
 }
 
@@ -1275,6 +1308,7 @@ unsafe fn apply_free_camera_gesture(
         drag_free_camera_around_car(car_right, car_up);
     }
     stabilize_free_camera_frame();
+    update_free_camera_car_offset();
     FREE_CAMERA_ACTIVE.store(true, Ordering::Release);
     write_free_camera_frame(camera);
 }
@@ -1297,10 +1331,12 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
     if !in_level_intro {
         FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
         FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
+        reset_free_camera_car_follow();
         return;
     }
     if !FREE_CAMERA_ENABLED.load(Ordering::Acquire) {
         FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
+        reset_free_camera_car_follow();
         return;
     }
 
@@ -1312,6 +1348,7 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
         capture_free_camera_frame(camera);
     }
     if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
+        apply_free_camera_car_follow();
         write_free_camera_frame(camera);
     }
 }
@@ -1322,6 +1359,7 @@ unsafe extern "C" fn hooked_game_start_level_intro(game: *mut c_void, intro_type
     FREE_CAMERA_LEVEL_INTRO_STARTED.store(true, Ordering::Release);
     FREE_CAMERA_ACTIVE.store(false, Ordering::Release);
     FREE_CAMERA_CAPTURE_REQUESTED.store(false, Ordering::Release);
+    reset_free_camera_car_follow();
 }
 
 unsafe fn install_free_camera_hooks() -> bool {

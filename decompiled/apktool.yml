@@ -12,8 +12,8 @@ packageInfo:
   forcedPackageId: 127
   renameManifestPackage: null
 versionInfo:
-  versionCode: 68
-  versionName: 1.0.24-mod40
+  versionCode: 70
+  versionName: 1.0.24-mod42
 resourcesAreCompressed: false
 sharedLibrary: false
 sparseResources: false
@@ -63,6 +63,7 @@ doNotCompress:
 - META-INF/androidx.versionedparcelable_versionedparcelable.version
 - META-INF/androidx.viewpager_viewpager.version
 - META-INF/com.google.android.material_material.version
+
 
 
 
