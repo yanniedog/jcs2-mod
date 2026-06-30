@@ -43,7 +43,7 @@
         }
     .end annotation
 
-    .line 343
+    .line 344
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$13;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$13;->val$rgb:[I
@@ -58,7 +58,7 @@
 .method public onClick(Landroid/content/DialogInterface;I)V
     .registers 6
 
-    .line 345
+    .line 346
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$13;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     iget-object p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$13;->val$rgb:[I
@@ -86,6 +86,6 @@
     # invokes: Lcom/trueaxis/modmenu/LiveryDesignerActivity;->setColor(I)V
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->access$000(Lcom/trueaxis/modmenu/LiveryDesignerActivity;I)V
 
-    .line 346
+    .line 347
     return-void
 .end method

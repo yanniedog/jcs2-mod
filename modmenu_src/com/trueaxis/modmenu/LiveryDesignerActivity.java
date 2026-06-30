@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -421,11 +422,22 @@ public class LiveryDesignerActivity extends Activity {
         private float strokeWidth = 10f;
 
         private final RectF dst = new RectF();
-        private float scale = 1f;
+        private float fitScale = 1f;
+        private float zoom = 1f;
+        private float panX;
+        private float panY;
+        private int viewW;
+        private int viewH;
+        private static final float MIN_ZOOM = 1f;
+        private static final float MAX_ZOOM = 8f;
         private final Path stroke = new Path();
         private float startX, startY, curX, curY;
         private boolean dragging;
+        private boolean multiTouchActive;
+        private float lastMidX;
+        private float lastMidY;
         private ColorListener colorListener;
+        private final ScaleGestureDetector scaleDetector;
 
         DesignView(Context c, Bitmap initial) {
             super(c);
@@ -436,6 +448,20 @@ public class LiveryDesignerActivity extends Activity {
             paint.setStrokeCap(Paint.Cap.ROUND);
             paint.setStrokeJoin(Paint.Join.ROUND);
             checker = makeChecker();
+            scaleDetector = new ScaleGestureDetector(c,
+                    new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                        @Override
+                        public boolean onScale(ScaleGestureDetector detector) {
+                            float oldZoom = zoom;
+                            float newZoom = Math.max(MIN_ZOOM,
+                                    Math.min(MAX_ZOOM, zoom * detector.getScaleFactor()));
+                            if (newZoom != oldZoom) {
+                                applyZoomAt(newZoom, detector.getFocusX(), detector.getFocusY());
+                                invalidate();
+                            }
+                            return true;
+                        }
+                    });
         }
 
         void setColorListener(ColorListener l) {
@@ -501,11 +527,54 @@ public class LiveryDesignerActivity extends Activity {
 
         @Override
         protected void onSizeChanged(int w, int h, int oldW, int oldH) {
-            float side = Math.min(w, h);
-            scale = side / bitmap.getWidth();
-            float left = (w - side) / 2f;
-            float top = (h - side) / 2f;
+            viewW = w;
+            viewH = h;
+            fitScale = Math.min(w, h) / (float) bitmap.getWidth();
+            updateDst();
+        }
+
+        private float effectiveScale() {
+            return fitScale * zoom;
+        }
+
+        private void updateDst() {
+            float side = bitmap.getWidth() * effectiveScale();
+            float left = viewW / 2f + panX - side / 2f;
+            float top = viewH / 2f + panY - side / 2f;
             dst.set(left, top, left + side, top + side);
+        }
+
+        private void applyZoomAt(float newZoom, float focusX, float focusY) {
+            float oldScale = effectiveScale();
+            float bx = (focusX - dst.left) / oldScale;
+            float by = (focusY - dst.top) / oldScale;
+            zoom = newZoom;
+            if (zoom <= MIN_ZOOM) {
+                zoom = MIN_ZOOM;
+                panX = 0f;
+                panY = 0f;
+                updateDst();
+                return;
+            }
+            float newScale = effectiveScale();
+            float side = bitmap.getWidth() * newScale;
+            panX = focusX - bx * newScale - viewW / 2f + side / 2f;
+            panY = focusY - by * newScale - viewH / 2f + side / 2f;
+            clampPan();
+            updateDst();
+        }
+
+        private void clampPan() {
+            if (zoom <= MIN_ZOOM) {
+                panX = 0f;
+                panY = 0f;
+                return;
+            }
+            float side = bitmap.getWidth() * effectiveScale();
+            float maxPanX = Math.max(0f, (side - viewW) / 2f);
+            float maxPanY = Math.max(0f, (side - viewH) / 2f);
+            panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
+            panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
         }
 
         @Override
@@ -515,7 +584,7 @@ public class LiveryDesignerActivity extends Activity {
             if (dragging && (tool == LINE || tool == RECT)) {
                 paint.setXfermode(null);
                 paint.setColor(color);
-                paint.setStrokeWidth(strokeWidth * scale);
+                paint.setStrokeWidth(strokeWidth * effectiveScale());
                 paint.setStyle(tool == RECT ? Paint.Style.FILL : Paint.Style.STROKE);
                 if (tool == LINE) {
                     c.drawLine(viewX(startX), viewY(startY), viewX(curX), viewY(curY), paint);
@@ -527,23 +596,67 @@ public class LiveryDesignerActivity extends Activity {
         }
 
         private float viewX(float bx) {
-            return dst.left + bx * scale;
+            return dst.left + bx * effectiveScale();
         }
 
         private float viewY(float by) {
-            return dst.top + by * scale;
+            return dst.top + by * effectiveScale();
         }
 
         private float bmpX(float vx) {
-            return (vx - dst.left) / scale;
+            return (vx - dst.left) / effectiveScale();
         }
 
         private float bmpY(float vy) {
-            return (vy - dst.top) / scale;
+            return (vy - dst.top) / effectiveScale();
         }
 
         @Override
         public boolean onTouchEvent(MotionEvent e) {
+            scaleDetector.onTouchEvent(e);
+            int action = e.getActionMasked();
+            int pointers = e.getPointerCount();
+
+            if (pointers >= 2) {
+                dragging = false;
+                if (action == MotionEvent.ACTION_POINTER_UP) {
+                    multiTouchActive = false;
+                    return true;
+                }
+                float midX = 0f;
+                float midY = 0f;
+                for (int i = 0; i < pointers; i++) {
+                    midX += e.getX(i);
+                    midY += e.getY(i);
+                }
+                midX /= pointers;
+                midY /= pointers;
+
+                if (action == MotionEvent.ACTION_POINTER_DOWN) {
+                    lastMidX = midX;
+                    lastMidY = midY;
+                    multiTouchActive = true;
+                } else if (action == MotionEvent.ACTION_MOVE && multiTouchActive) {
+                    panX += midX - lastMidX;
+                    panY += midY - lastMidY;
+                    lastMidX = midX;
+                    lastMidY = midY;
+                    clampPan();
+                    updateDst();
+                    invalidate();
+                }
+                return true;
+            }
+
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                multiTouchActive = false;
+                dragging = false;
+            }
+
+            if (scaleDetector.isInProgress()) {
+                return true;
+            }
+
             float bx = bmpX(e.getX());
             float by = bmpY(e.getY());
             switch (e.getAction()) {

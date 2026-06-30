@@ -21,7 +21,7 @@
 .method constructor <init>()V
     .registers 1
 
-    .line 423
+    .line 478
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
     return-void
@@ -32,7 +32,7 @@
 .method public onConfigurationChanged(Landroid/content/res/Configuration;)V
     .registers 4
 
-    .line 425
+    .line 480
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -79,31 +79,31 @@
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 428
+    .line 483
     return-void
 .end method
 
 .method public onLowMemory()V
     .registers 2
 
-    .line 431
+    .line 486
     const-string v0, "LOW MEMORY callback"
 
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 432
+    .line 487
     const-string v0, "onLowMemory"
 
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModDebugLog;->logRuntime(Ljava/lang/String;)V
 
-    .line 433
+    .line 488
     return-void
 .end method
 
 .method public onTrimMemory(I)V
     .registers 4
 
-    .line 436
+    .line 491
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -124,7 +124,7 @@
 
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 437
+    .line 492
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -145,6 +145,6 @@
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModDebugLog;->logRuntime(Ljava/lang/String;)V
 
-    .line 438
+    .line 493
     return-void
 .end method

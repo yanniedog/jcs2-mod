@@ -35,7 +35,7 @@
 .method static constructor <clinit>()V
     .registers 15
 
-    .line 42
+    .line 43
     const/16 v0, 0x11
 
     const/16 v1, 0x17
@@ -48,7 +48,7 @@
 
     sput v0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->BG:I
 
-    .line 43
+    .line 44
     const/16 v0, 0x20
 
     const/16 v1, 0x26
@@ -61,7 +61,7 @@
 
     sput v0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->PANEL:I
 
-    .line 44
+    .line 45
     const/16 v0, 0xff
 
     const/16 v1, 0x80
@@ -74,17 +74,17 @@
 
     sput v0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->ACCENT:I
 
-    .line 45
+    .line 46
     nop
 
-    .line 46
+    .line 47
     const/16 v0, 0x78
 
     invoke-static {v0, v0, v0}, Landroid/graphics/Color;->rgb(III)I
 
     move-result v5
 
-    .line 47
+    .line 48
     const/16 v1, 0xdc
 
     const/16 v3, 0x28
@@ -103,7 +103,7 @@
 
     move-result v8
 
-    .line 48
+    .line 49
     const/16 v1, 0xb4
 
     const/16 v9, 0x46
@@ -126,7 +126,7 @@
 
     move-result v12
 
-    .line 49
+    .line 50
     const/16 v3, 0xf0
 
     invoke-static {v3, v0, v1}, Landroid/graphics/Color;->rgb(III)I
@@ -163,14 +163,14 @@
 
     sput-object v0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->SWATCHES:[I
 
-    .line 45
+    .line 46
     return-void
 .end method
 
 .method public constructor <init>()V
     .registers 1
 
-    .line 39
+    .line 40
     invoke-direct {p0}, Landroid/app/Activity;-><init>()V
 
     return-void
@@ -179,7 +179,7 @@
 .method static synthetic access$000(Lcom/trueaxis/modmenu/LiveryDesignerActivity;I)V
     .registers 2
 
-    .line 39
+    .line 40
     invoke-direct {p0, p1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->setColor(I)V
 
     return-void
@@ -188,7 +188,7 @@
 .method static synthetic access$100(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
     .registers 1
 
-    .line 39
+    .line 40
     iget-object p0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     return-object p0
@@ -197,7 +197,7 @@
 .method static synthetic access$200()I
     .registers 1
 
-    .line 39
+    .line 40
     sget v0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->ACCENT:I
 
     return v0
@@ -206,7 +206,7 @@
 .method static synthetic access$300()I
     .registers 1
 
-    .line 39
+    .line 40
     sget v0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->PANEL:I
 
     return v0
@@ -215,7 +215,7 @@
 .method static synthetic access$400(I)Landroid/graphics/drawable/GradientDrawable;
     .registers 1
 
-    .line 39
+    .line 40
     invoke-static {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->pill(I)Landroid/graphics/drawable/GradientDrawable;
 
     move-result-object p0
@@ -226,7 +226,7 @@
 .method static synthetic access$500(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
     .registers 1
 
-    .line 39
+    .line 40
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->showColorPicker()V
 
     return-void
@@ -235,7 +235,7 @@
 .method static synthetic access$600(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
     .registers 1
 
-    .line 39
+    .line 40
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->confirmRevert()V
 
     return-void
@@ -244,7 +244,7 @@
 .method static synthetic access$700(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
     .registers 1
 
-    .line 39
+    .line 40
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->save()V
 
     return-void
@@ -253,7 +253,7 @@
 .method static synthetic access$800(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)I
     .registers 1
 
-    .line 39
+    .line 40
     iget p0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->car:I
 
     return p0
@@ -262,17 +262,17 @@
 .method private buildBottomBar()Landroid/view/View;
     .registers 8
 
-    .line 208
+    .line 209
     new-instance v0, Landroid/widget/LinearLayout;
 
     invoke-direct {v0, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 209
+    .line 210
     const/4 v1, 0x0
 
     invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 210
+    .line 211
     const/4 v2, 0x4
 
     invoke-direct {p0, v2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -281,70 +281,70 @@
 
     invoke-virtual {v0, v1, v2, v1, v1}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 212
+    .line 213
     const-string v1, "Undo"
 
     invoke-direct {p0, v1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->toolButton(Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v1
 
-    .line 213
+    .line 214
     new-instance v2, Lcom/trueaxis/modmenu/LiveryDesignerActivity$6;
 
     invoke-direct {v2, p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$6;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
 
     invoke-virtual {v1, v2}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 218
+    .line 219
     const-string v2, "Redo"
 
     invoke-direct {p0, v2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->toolButton(Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v2
 
-    .line 219
+    .line 220
     new-instance v3, Lcom/trueaxis/modmenu/LiveryDesignerActivity$7;
 
     invoke-direct {v3, p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$7;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
 
     invoke-virtual {v2, v3}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 224
+    .line 225
     const-string v3, "Revert"
 
     invoke-direct {p0, v3}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->toolButton(Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v3
 
-    .line 225
+    .line 226
     new-instance v4, Lcom/trueaxis/modmenu/LiveryDesignerActivity$8;
 
     invoke-direct {v4, p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$8;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
 
     invoke-virtual {v3, v4}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 230
+    .line 231
     const-string v4, "Cancel"
 
     invoke-direct {p0, v4}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->toolButton(Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v4
 
-    .line 231
+    .line 232
     new-instance v5, Lcom/trueaxis/modmenu/LiveryDesignerActivity$9;
 
     invoke-direct {v5, p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$9;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
 
     invoke-virtual {v4, v5}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 236
+    .line 237
     const-string v5, "SAVE"
 
     invoke-direct {p0, v5}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->toolButton(Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v5
 
-    .line 237
+    .line 238
     sget v6, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->ACCENT:I
 
     invoke-static {v6}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->pill(I)Landroid/graphics/drawable/GradientDrawable;
@@ -353,76 +353,76 @@
 
     invoke-virtual {v5, v6}, Landroid/widget/Button;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 238
+    .line 239
     const/high16 v6, -0x1000000
 
     invoke-virtual {v5, v6}, Landroid/widget/Button;->setTextColor(I)V
 
-    .line 239
+    .line 240
     new-instance v6, Lcom/trueaxis/modmenu/LiveryDesignerActivity$10;
 
     invoke-direct {v6, p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$10;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
 
     invoke-virtual {v5, v6}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 245
+    .line 246
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->even()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v6
 
     invoke-virtual {v0, v1, v6}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 246
+    .line 247
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->even()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v1
 
     invoke-virtual {v0, v2, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 247
+    .line 248
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->even()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v1
 
     invoke-virtual {v0, v3, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 248
+    .line 249
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->even()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v1
 
     invoke-virtual {v0, v4, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 249
+    .line 250
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->even()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v1
 
     invoke-virtual {v0, v5, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 250
+    .line 251
     return-object v0
 .end method
 
 .method private buildColorRow()Landroid/view/View;
     .registers 10
 
-    .line 138
+    .line 139
     new-instance v0, Landroid/widget/LinearLayout;
 
     invoke-direct {v0, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 139
+    .line 140
     const/4 v1, 0x0
 
     invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 140
+    .line 141
     const/16 v2, 0x10
 
     invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->setGravity(I)V
 
-    .line 141
+    .line 142
     const/4 v2, 0x2
 
     invoke-direct {p0, v2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -445,14 +445,14 @@
 
     invoke-virtual {v0, v3, v5, v6, v2}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 143
+    .line 144
     new-instance v2, Landroid/view/View;
 
     invoke-direct {v2, p0}, Landroid/view/View;-><init>(Landroid/content/Context;)V
 
     iput-object v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->colorPreview:Landroid/view/View;
 
-    .line 144
+    .line 145
     iget-object v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->colorPreview:Landroid/view/View;
 
     const/4 v3, -0x1
@@ -463,7 +463,7 @@
 
     invoke-virtual {v2, v3}, Landroid/view/View;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 145
+    .line 146
     iget-object v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->colorPreview:Landroid/view/View;
 
     new-instance v3, Landroid/widget/LinearLayout$LayoutParams;
@@ -484,15 +484,15 @@
 
     invoke-virtual {v0, v2, v3}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 147
+    .line 148
     new-instance v2, Landroid/widget/LinearLayout;
 
     invoke-direct {v2, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 148
+    .line 149
     invoke-virtual {v2, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 149
+    .line 150
     const/4 v3, 0x0
 
     :goto_53
@@ -502,31 +502,31 @@
 
     if-ge v3, v5, :cond_8b
 
-    .line 150
+    .line 151
     sget-object v5, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->SWATCHES:[I
 
     aget v5, v5, v3
 
-    .line 151
+    .line 152
     new-instance v6, Landroid/view/View;
 
     invoke-direct {v6, p0}, Landroid/view/View;-><init>(Landroid/content/Context;)V
 
-    .line 152
+    .line 153
     invoke-static {v5}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->pill(I)Landroid/graphics/drawable/GradientDrawable;
 
     move-result-object v7
 
     invoke-virtual {v6, v7}, Landroid/view/View;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 153
+    .line 154
     new-instance v7, Lcom/trueaxis/modmenu/LiveryDesignerActivity$3;
 
     invoke-direct {v7, p0, v5}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$3;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;I)V
 
     invoke-virtual {v6, v7}, Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 158
+    .line 159
     new-instance v5, Landroid/widget/LinearLayout$LayoutParams;
 
     const/16 v7, 0x16
@@ -541,22 +541,22 @@
 
     invoke-direct {v5, v8, v7}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
 
-    .line 159
+    .line 160
     invoke-direct {p0, v4}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
 
     move-result v7
 
     iput v7, v5, Landroid/widget/LinearLayout$LayoutParams;->leftMargin:I
 
-    .line 160
+    .line 161
     invoke-virtual {v2, v6, v5}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 149
+    .line 150
     add-int/lit8 v3, v3, 0x1
 
     goto :goto_53
 
-    .line 162
+    .line 163
     :cond_8b
     const-string v3, "RGB"
 
@@ -564,28 +564,28 @@
 
     move-result-object v3
 
-    .line 163
+    .line 164
     new-instance v4, Lcom/trueaxis/modmenu/LiveryDesignerActivity$4;
 
     invoke-direct {v4, p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$4;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
 
     invoke-virtual {v3, v4}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 168
+    .line 169
     invoke-virtual {v2, v3}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 170
+    .line 171
     new-instance v3, Landroid/widget/HorizontalScrollView;
 
     invoke-direct {v3, p0}, Landroid/widget/HorizontalScrollView;-><init>(Landroid/content/Context;)V
 
-    .line 171
+    .line 172
     invoke-virtual {v3, v1}, Landroid/widget/HorizontalScrollView;->setHorizontalScrollBarEnabled(Z)V
 
-    .line 172
+    .line 173
     invoke-virtual {v3, v2}, Landroid/widget/HorizontalScrollView;->addView(Landroid/view/View;)V
 
-    .line 173
+    .line 174
     new-instance v2, Landroid/widget/LinearLayout$LayoutParams;
 
     const/4 v4, -0x2
@@ -594,7 +594,7 @@
 
     invoke-direct {v2, v1, v4, v5}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
-    .line 175
+    .line 176
     const/16 v1, 0x8
 
     invoke-direct {p0, v1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -603,32 +603,32 @@
 
     iput v1, v2, Landroid/widget/LinearLayout$LayoutParams;->leftMargin:I
 
-    .line 176
+    .line 177
     invoke-virtual {v0, v3, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 177
+    .line 178
     return-object v0
 .end method
 
 .method private buildSizeRow()Landroid/view/View;
     .registers 7
 
-    .line 181
+    .line 182
     new-instance v0, Landroid/widget/LinearLayout;
 
     invoke-direct {v0, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 182
+    .line 183
     const/4 v1, 0x0
 
     invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 183
+    .line 184
     const/16 v2, 0x10
 
     invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->setGravity(I)V
 
-    .line 184
+    .line 185
     const/16 v2, 0xb2
 
     const/16 v3, 0xb9
@@ -649,36 +649,36 @@
 
     invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 185
+    .line 186
     new-instance v2, Landroid/widget/SeekBar;
 
     invoke-direct {v2, p0}, Landroid/widget/SeekBar;-><init>(Landroid/content/Context;)V
 
-    .line 186
+    .line 187
     const/16 v3, 0x50
 
     invoke-virtual {v2, v3}, Landroid/widget/SeekBar;->setMax(I)V
 
-    .line 187
+    .line 188
     const/16 v3, 0xa
 
     invoke-virtual {v2, v3}, Landroid/widget/SeekBar;->setProgress(I)V
 
-    .line 188
+    .line 189
     iget-object v3, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     const/high16 v4, 0x41200000
 
     invoke-virtual {v3, v4}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->setStrokeWidth(F)V
 
-    .line 189
+    .line 190
     new-instance v3, Lcom/trueaxis/modmenu/LiveryDesignerActivity$5;
 
     invoke-direct {v3, p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$5;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
 
     invoke-virtual {v2, v3}, Landroid/widget/SeekBar;->setOnSeekBarChangeListener(Landroid/widget/SeekBar$OnSeekBarChangeListener;)V
 
-    .line 200
+    .line 201
     new-instance v3, Landroid/widget/LinearLayout$LayoutParams;
 
     const/4 v4, -0x2
@@ -687,7 +687,7 @@
 
     invoke-direct {v3, v1, v4, v5}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
-    .line 202
+    .line 203
     const/16 v1, 0x8
 
     invoke-direct {p0, v1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -696,27 +696,27 @@
 
     iput v1, v3, Landroid/widget/LinearLayout$LayoutParams;->leftMargin:I
 
-    .line 203
+    .line 204
     invoke-virtual {v0, v2, v3}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 204
+    .line 205
     return-object v0
 .end method
 
 .method private buildToolRow()Landroid/view/View;
     .registers 11
 
-    .line 107
+    .line 108
     new-instance v0, Landroid/widget/LinearLayout;
 
     invoke-direct {v0, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 108
+    .line 109
     const/4 v1, 0x0
 
     invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 109
+    .line 110
     const/4 v2, 0x7
 
     new-array v3, v2, [Ljava/lang/String;
@@ -761,52 +761,52 @@
 
     aput-object v4, v3, v5
 
-    .line 110
+    .line 111
     new-array v4, v2, [I
 
     fill-array-data v4, :array_70
 
-    .line 112
+    .line 113
     new-array v5, v2, [Landroid/widget/Button;
 
-    .line 113
+    .line 114
     const/4 v6, 0x0
 
     :goto_36
     if-ge v6, v2, :cond_51
 
-    .line 114
+    .line 115
     aget v7, v4, v6
 
-    .line 115
+    .line 116
     nop
 
-    .line 116
+    .line 117
     aget-object v8, v3, v6
 
     invoke-direct {p0, v8}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->toolButton(Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v8
 
-    .line 117
+    .line 118
     new-instance v9, Lcom/trueaxis/modmenu/LiveryDesignerActivity$2;
 
     invoke-direct {v9, p0, v7, v5, v6}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$2;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;I[Landroid/widget/Button;I)V
 
     invoke-virtual {v8, v9}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 126
+    .line 127
     aput-object v8, v5, v6
 
-    .line 127
+    .line 128
     invoke-virtual {v0, v8}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 113
+    .line 114
     add-int/lit8 v6, v6, 0x1
 
     goto :goto_36
 
-    .line 129
+    .line 130
     :cond_51
     aget-object v2, v5, v1
 
@@ -818,25 +818,25 @@
 
     invoke-virtual {v2, v3}, Landroid/widget/Button;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 130
+    .line 131
     aget-object v2, v5, v1
 
     const/high16 v3, -0x1000000
 
     invoke-virtual {v2, v3}, Landroid/widget/Button;->setTextColor(I)V
 
-    .line 131
+    .line 132
     new-instance v2, Landroid/widget/HorizontalScrollView;
 
     invoke-direct {v2, p0}, Landroid/widget/HorizontalScrollView;-><init>(Landroid/content/Context;)V
 
-    .line 132
+    .line 133
     invoke-virtual {v2, v1}, Landroid/widget/HorizontalScrollView;->setHorizontalScrollBarEnabled(Z)V
 
-    .line 133
+    .line 134
     invoke-virtual {v2, v0}, Landroid/widget/HorizontalScrollView;->addView(Landroid/view/View;)V
 
-    .line 134
+    .line 135
     return-object v2
 
     nop
@@ -856,7 +856,7 @@
 .method private confirmRevert()V
     .registers 4
 
-    .line 254
+    .line 255
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -885,19 +885,19 @@
 
     invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 255
+    .line 256
     new-instance v0, Landroid/app/AlertDialog$Builder;
 
     invoke-direct {v0, p0}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
 
-    .line 256
+    .line 257
     const-string v1, "Revert to bundled livery?"
 
     invoke-virtual {v0, v1}, Landroid/app/AlertDialog$Builder;->setTitle(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v0
 
-    .line 257
+    .line 258
     const-string v1, "Discards your edits and starts again from the original car texture."
 
     invoke-virtual {v0, v1}, Landroid/app/AlertDialog$Builder;->setMessage(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
@@ -908,14 +908,14 @@
 
     invoke-direct {v1, p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$11;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;)V
 
-    .line 258
+    .line 259
     const-string v2, "Revert"
 
     invoke-virtual {v0, v2, v1}, Landroid/app/AlertDialog$Builder;->setPositiveButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v0
 
-    .line 272
+    .line 273
     const-string v1, "Keep editing"
 
     const/4 v2, 0x0
@@ -924,17 +924,17 @@
 
     move-result-object v0
 
-    .line 273
+    .line 274
     invoke-virtual {v0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
 
-    .line 274
+    .line 275
     return-void
 .end method
 
 .method private dp(I)I
     .registers 3
 
-    .line 355
+    .line 356
     int-to-float p1, p1
 
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->getResources()Landroid/content/res/Resources;
@@ -961,7 +961,7 @@
 .method private even()Landroid/widget/LinearLayout$LayoutParams;
     .registers 5
 
-    .line 386
+    .line 387
     new-instance v0, Landroid/widget/LinearLayout$LayoutParams;
 
     const/4 v1, -0x2
@@ -972,7 +972,7 @@
 
     invoke-direct {v0, v3, v1, v2}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
-    .line 388
+    .line 389
     const/4 v1, 0x4
 
     invoke-direct {p0, v1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -981,27 +981,27 @@
 
     iput v1, v0, Landroid/widget/LinearLayout$LayoutParams;->rightMargin:I
 
-    .line 389
+    .line 390
     return-object v0
 .end method
 
 .method private static pill(I)Landroid/graphics/drawable/GradientDrawable;
     .registers 3
 
-    .line 393
+    .line 394
     new-instance v0, Landroid/graphics/drawable/GradientDrawable;
 
     invoke-direct {v0}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
 
-    .line 394
+    .line 395
     invoke-virtual {v0, p0}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
 
-    .line 395
+    .line 396
     const/high16 p0, 0x41400000
 
     invoke-virtual {v0, p0}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
 
-    .line 396
+    .line 397
     const/16 p0, 0x3c
 
     const/16 v1, 0xff
@@ -1014,14 +1014,14 @@
 
     invoke-virtual {v0, v1, p0}, Landroid/graphics/drawable/GradientDrawable;->setStroke(II)V
 
-    .line 397
+    .line 398
     return-object v0
 .end method
 
 .method private save()V
     .registers 6
 
-    .line 278
+    .line 279
     const-string v0, "designer"
 
     const/4 v1, 0x1
@@ -1055,7 +1055,7 @@
 
     iget-object v3, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
-    .line 279
+    .line 280
     invoke-virtual {v3}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->getBitmap()Landroid/graphics/Bitmap;
 
     move-result-object v3
@@ -1076,7 +1076,7 @@
 
     iget-object v3, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
-    .line 280
+    .line 281
     invoke-virtual {v3}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->getBitmap()Landroid/graphics/Bitmap;
 
     move-result-object v3
@@ -1093,10 +1093,10 @@
 
     move-result-object v2
 
-    .line 278
+    .line 279
     invoke-static {v0, v2}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 281
+    .line 282
     iget v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->car:I
 
     iget-object v3, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
@@ -1107,7 +1107,7 @@
 
     invoke-static {p0, v2, v3}, Lcom/trueaxis/modmenu/ModMenu;->saveDesignedLivery(Landroid/content/Context;ILandroid/graphics/Bitmap;)V
 
-    .line 282
+    .line 283
     new-instance v2, Ljava/lang/StringBuilder;
 
     invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
@@ -1136,10 +1136,10 @@
 
     move-result-object v2
 
-    .line 283
+    .line 284
     invoke-virtual {v2}, Landroid/widget/Toast;->show()V
 
-    .line 284
+    .line 285
     new-instance v2, Ljava/lang/StringBuilder;
 
     invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
@@ -1166,29 +1166,29 @@
 
     invoke-static {v0, v2}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 285
+    .line 286
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->finish()V
     :try_end_91
     .catchall {:try_start_3 .. :try_end_91} :catchall_92
 
-    .line 290
+    .line 291
     goto :goto_bb
 
-    .line 286
+    .line 287
     :catchall_92
     move-exception v2
 
-    .line 287
+    .line 288
     const-string v3, "YCS2Mod"
 
     const-string v4, "Could not save designed livery"
 
     invoke-static {v3, v4, v2}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 288
+    .line 289
     invoke-static {v0, v4, v2}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 289
+    .line 290
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -1217,7 +1217,7 @@
 
     invoke-virtual {v0}, Landroid/widget/Toast;->show()V
 
-    .line 291
+    .line 292
     :goto_bb
     return-void
 .end method
@@ -1225,12 +1225,12 @@
 .method private setColor(I)V
     .registers 3
 
-    .line 294
+    .line 295
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     invoke-virtual {v0, p1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->setColor(I)V
 
-    .line 295
+    .line 296
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->colorPreview:Landroid/view/View;
 
     if-eqz v0, :cond_12
@@ -1243,7 +1243,7 @@
 
     invoke-virtual {v0, p1}, Landroid/view/View;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 296
+    .line 297
     :cond_12
     return-void
 .end method
@@ -1251,14 +1251,14 @@
 .method private showColorPicker()V
     .registers 15
 
-    .line 299
+    .line 300
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     invoke-virtual {v0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->getColor()I
 
     move-result v0
 
-    .line 300
+    .line 301
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -1281,17 +1281,17 @@
 
     invoke-static {v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 301
+    .line 302
     new-instance v1, Landroid/widget/LinearLayout;
 
     invoke-direct {v1, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 302
+    .line 303
     const/4 v2, 0x1
 
     invoke-virtual {v1, v2}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 303
+    .line 304
     const/16 v3, 0x10
 
     invoke-direct {p0, v3}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -1316,22 +1316,22 @@
 
     invoke-virtual {v1, v4, v5, v6, v7}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 304
+    .line 305
     new-instance v4, Landroid/view/View;
 
     invoke-direct {v4, p0}, Landroid/view/View;-><init>(Landroid/content/Context;)V
 
-    .line 305
+    .line 306
     invoke-static {v0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->pill(I)Landroid/graphics/drawable/GradientDrawable;
 
     move-result-object v5
 
     invoke-virtual {v4, v5}, Landroid/view/View;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 306
+    .line 307
     new-instance v5, Landroid/widget/LinearLayout$LayoutParams;
 
-    .line 307
+    .line 308
     const/16 v6, 0x1e
 
     invoke-direct {p0, v6}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -1342,10 +1342,10 @@
 
     invoke-direct {v5, v7, v6}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
 
-    .line 306
+    .line 307
     invoke-virtual {v1, v4, v5}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 309
+    .line 310
     invoke-static {v0}, Landroid/graphics/Color;->red(I)I
 
     move-result v5
@@ -1362,7 +1362,7 @@
 
     move-result-object v0
 
-    .line 310
+    .line 311
     const/4 v5, 0x3
 
     new-array v6, v5, [Ljava/lang/String;
@@ -1383,30 +1383,30 @@
 
     aput-object v2, v6, v8
 
-    .line 311
+    .line 312
     new-array v2, v5, [Landroid/widget/SeekBar;
 
-    .line 312
+    .line 313
     const/4 v8, 0x0
 
     :goto_7e
     if-ge v8, v5, :cond_cc
 
-    .line 313
+    .line 314
     nop
 
-    .line 314
+    .line 315
     new-instance v9, Landroid/widget/LinearLayout;
 
     invoke-direct {v9, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 315
+    .line 316
     invoke-virtual {v9, v7}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 316
+    .line 317
     invoke-virtual {v9, v3}, Landroid/widget/LinearLayout;->setGravity(I)V
 
-    .line 317
+    .line 318
     aget-object v10, v6, v8
 
     const/16 v11, 0xd
@@ -1419,32 +1419,32 @@
 
     invoke-virtual {v9, v10}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 318
+    .line 319
     new-instance v10, Landroid/widget/SeekBar;
 
     invoke-direct {v10, p0}, Landroid/widget/SeekBar;-><init>(Landroid/content/Context;)V
 
-    .line 319
+    .line 320
     const/16 v11, 0xff
 
     invoke-virtual {v10, v11}, Landroid/widget/SeekBar;->setMax(I)V
 
-    .line 320
+    .line 321
     aget v11, v0, v8
 
     invoke-virtual {v10, v11}, Landroid/widget/SeekBar;->setProgress(I)V
 
-    .line 321
+    .line 322
     new-instance v11, Lcom/trueaxis/modmenu/LiveryDesignerActivity$12;
 
     invoke-direct {v11, p0, v0, v8, v4}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$12;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;[IILandroid/view/View;)V
 
     invoke-virtual {v10, v11}, Landroid/widget/SeekBar;->setOnSeekBarChangeListener(Landroid/widget/SeekBar$OnSeekBarChangeListener;)V
 
-    .line 333
+    .line 334
     aput-object v10, v2, v8
 
-    .line 334
+    .line 335
     new-instance v11, Landroid/widget/LinearLayout$LayoutParams;
 
     const/4 v12, -0x2
@@ -1453,7 +1453,7 @@
 
     invoke-direct {v11, v7, v12, v13}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
-    .line 336
+    .line 337
     const/16 v12, 0x8
 
     invoke-direct {p0, v12}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -1462,31 +1462,31 @@
 
     iput v12, v11, Landroid/widget/LinearLayout$LayoutParams;->leftMargin:I
 
-    .line 337
+    .line 338
     invoke-virtual {v9, v10, v11}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 338
+    .line 339
     invoke-virtual {v1, v9}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 312
+    .line 313
     add-int/lit8 v8, v8, 0x1
 
     goto :goto_7e
 
-    .line 340
+    .line 341
     :cond_cc
     new-instance v2, Landroid/app/AlertDialog$Builder;
 
     invoke-direct {v2, p0}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
 
-    .line 341
+    .line 342
     const-string v3, "Custom colour"
 
     invoke-virtual {v2, v3}, Landroid/app/AlertDialog$Builder;->setTitle(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v2
 
-    .line 342
+    .line 343
     invoke-virtual {v2, v1}, Landroid/app/AlertDialog$Builder;->setView(Landroid/view/View;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v1
@@ -1495,14 +1495,14 @@
 
     invoke-direct {v2, p0, v0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$13;-><init>(Lcom/trueaxis/modmenu/LiveryDesignerActivity;[I)V
 
-    .line 343
+    .line 344
     const-string v0, "Use"
 
     invoke-virtual {v1, v0, v2}, Landroid/app/AlertDialog$Builder;->setPositiveButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v0
 
-    .line 348
+    .line 349
     const-string v1, "Cancel"
 
     const/4 v2, 0x0
@@ -1511,75 +1511,75 @@
 
     move-result-object v0
 
-    .line 349
+    .line 350
     invoke-virtual {v0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
 
-    .line 350
+    .line 351
     return-void
 .end method
 
 .method private text(Ljava/lang/String;II)Landroid/widget/TextView;
     .registers 5
 
-    .line 359
+    .line 360
     new-instance v0, Landroid/widget/TextView;
 
     invoke-direct {v0, p0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
 
-    .line 360
+    .line 361
     invoke-virtual {v0, p1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    .line 361
+    .line 362
     int-to-float p1, p2
 
     invoke-virtual {v0, p1}, Landroid/widget/TextView;->setTextSize(F)V
 
-    .line 362
+    .line 363
     invoke-virtual {v0, p3}, Landroid/widget/TextView;->setTextColor(I)V
 
-    .line 363
+    .line 364
     return-object v0
 .end method
 
 .method private toolButton(Ljava/lang/String;)Landroid/widget/Button;
     .registers 6
 
-    .line 367
+    .line 368
     new-instance v0, Landroid/widget/Button;
 
     invoke-direct {v0, p0}, Landroid/widget/Button;-><init>(Landroid/content/Context;)V
 
-    .line 368
+    .line 369
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
 
-    .line 369
+    .line 370
     const/4 p1, 0x0
 
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setAllCaps(Z)V
 
-    .line 370
+    .line 371
     const/high16 v1, 0x41400000
 
     invoke-virtual {v0, v1}, Landroid/widget/Button;->setTextSize(F)V
 
-    .line 371
+    .line 372
     const/4 v1, -0x1
 
     invoke-virtual {v0, v1}, Landroid/widget/Button;->setTextColor(I)V
 
-    .line 372
+    .line 373
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setMinHeight(I)V
 
-    .line 373
+    .line 374
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setMinimumHeight(I)V
 
-    .line 374
+    .line 375
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setMinWidth(I)V
 
-    .line 375
+    .line 376
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setMinimumWidth(I)V
 
-    .line 376
+    .line 377
     const/16 p1, 0xa
 
     invoke-direct {p0, p1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -1602,7 +1602,7 @@
 
     invoke-virtual {v0, v1, v3, p1, v2}, Landroid/widget/Button;->setPadding(IIII)V
 
-    .line 377
+    .line 378
     sget p1, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->PANEL:I
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->pill(I)Landroid/graphics/drawable/GradientDrawable;
@@ -1611,14 +1611,14 @@
 
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 378
+    .line 379
     new-instance p1, Landroid/widget/LinearLayout$LayoutParams;
 
     const/4 v1, -0x2
 
     invoke-direct {p1, v1, v1}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
 
-    .line 380
+    .line 381
     const/4 v1, 0x4
 
     invoke-direct {p0, v1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -1627,10 +1627,10 @@
 
     iput v1, p1, Landroid/widget/LinearLayout$LayoutParams;->rightMargin:I
 
-    .line 381
+    .line 382
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setLayoutParams(Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 382
+    .line 383
     return-object v0
 .end method
 
@@ -1639,13 +1639,13 @@
 .method protected onCreate(Landroid/os/Bundle;)V
     .registers 8
 
-    .line 58
+    .line 59
     invoke-super {p0, p1}, Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V
 
-    .line 59
+    .line 60
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->install(Landroid/content/Context;)V
 
-    .line 60
+    .line 61
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->getIntent()Landroid/content/Intent;
 
     move-result-object v0
@@ -1672,7 +1672,7 @@
     :goto_19
     iput v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->car:I
 
-    .line 61
+    .line 62
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -1723,22 +1723,22 @@
 
     invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 64
+    .line 65
     iget p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->car:I
 
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->loadEditableLivery(Landroid/content/Context;I)Landroid/graphics/Bitmap;
 
     move-result-object p1
 
-    .line 65
+    .line 66
     if-nez p1, :cond_64
 
-    .line 66
+    .line 67
     const-string p1, "editable livery unavailable; creating blank texture"
 
     invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 67
+    .line 68
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->textureSize()I
 
     move-result p1
@@ -1753,21 +1753,21 @@
 
     move-result-object p1
 
-    .line 71
+    .line 72
     :cond_64
     new-instance v0, Landroid/widget/LinearLayout;
 
     invoke-direct {v0, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 72
+    .line 73
     invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 73
+    .line 74
     sget v2, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->BG:I
 
     invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->setBackgroundColor(I)V
 
-    .line 74
+    .line 75
     const/16 v2, 0x8
 
     invoke-direct {p0, v2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -1790,7 +1790,7 @@
 
     invoke-virtual {v0, v3, v5, v2, v4}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 76
+    .line 77
     new-instance v2, Ljava/lang/StringBuilder;
 
     invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
@@ -1823,7 +1823,7 @@
 
     move-result-object v2
 
-    .line 77
+    .line 78
     const/4 v3, 0x4
 
     invoke-direct {p0, v3}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -1836,43 +1836,43 @@
 
     invoke-virtual {v2, v4, v1, v1, v5}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 78
+    .line 79
     invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 80
+    .line 81
     new-instance v2, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     invoke-direct {v2, p0, p1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;-><init>(Landroid/content/Context;Landroid/graphics/Bitmap;)V
 
     iput-object v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
-    .line 82
+    .line 83
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->buildToolRow()Landroid/view/View;
 
     move-result-object p1
 
     invoke-virtual {v0, p1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 83
+    .line 84
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->buildColorRow()Landroid/view/View;
 
     move-result-object p1
 
     invoke-virtual {v0, p1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 84
+    .line 85
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->buildSizeRow()Landroid/view/View;
 
     move-result-object p1
 
     invoke-virtual {v0, p1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 86
+    .line 87
     new-instance p1, Landroid/widget/FrameLayout;
 
     invoke-direct {p1, p0}, Landroid/widget/FrameLayout;-><init>(Landroid/content/Context;)V
 
-    .line 87
+    .line 88
     const/4 v2, 0x2
 
     invoke-direct {p0, v2}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->dp(I)I
@@ -1893,7 +1893,7 @@
 
     invoke-virtual {p1, v4, v5, v2, v3}, Landroid/widget/FrameLayout;->setPadding(IIII)V
 
-    .line 88
+    .line 89
     iget-object v2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     new-instance v3, Landroid/widget/FrameLayout$LayoutParams;
@@ -1904,7 +1904,7 @@
 
     invoke-virtual {p1, v2, v3}, Landroid/widget/FrameLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 90
+    .line 91
     new-instance v2, Landroid/widget/LinearLayout$LayoutParams;
 
     const/high16 v3, 0x3f800000
@@ -1913,17 +1913,17 @@
 
     invoke-virtual {v0, p1, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 93
+    .line 94
     invoke-direct {p0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->buildBottomBar()Landroid/view/View;
 
     move-result-object p1
 
     invoke-virtual {v0, p1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 95
+    .line 96
     invoke-virtual {p0, v0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->setContentView(Landroid/view/View;)V
 
-    .line 96
+    .line 97
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
 
     new-instance v0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$1;
@@ -1932,7 +1932,7 @@
 
     invoke-virtual {p1, v0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->setColorListener(Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView$ColorListener;)V
 
-    .line 102
+    .line 103
     sget-object p1, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->SWATCHES:[I
 
     const/4 v0, 0x3
@@ -1941,11 +1941,11 @@
 
     invoke-direct {p0, p1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity;->setColor(I)V
 
-    .line 103
+    .line 104
     const-string p1, "designer ready"
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModDebugLog;->logRuntime(Ljava/lang/String;)V
 
-    .line 104
+    .line 105
     return-void
 .end method

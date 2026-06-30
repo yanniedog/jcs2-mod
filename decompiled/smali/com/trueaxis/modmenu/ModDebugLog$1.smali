@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 73
+    .line 75
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModDebugLog$1;->val$previous:Ljava/lang/Thread$UncaughtExceptionHandler;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,7 +43,7 @@
 .method public uncaughtException(Ljava/lang/Thread;Ljava/lang/Throwable;)V
     .registers 5
 
-    .line 75
+    .line 77
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -68,17 +68,17 @@
 
     invoke-static {v0, p2}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 76
+    .line 78
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModDebugLog$1;->val$previous:Ljava/lang/Thread$UncaughtExceptionHandler;
 
     if-eqz v0, :cond_23
 
-    .line 77
+    .line 79
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModDebugLog$1;->val$previous:Ljava/lang/Thread$UncaughtExceptionHandler;
 
     invoke-interface {v0, p1, p2}, Ljava/lang/Thread$UncaughtExceptionHandler;->uncaughtException(Ljava/lang/Thread;Ljava/lang/Throwable;)V
 
-    .line 79
+    .line 81
     :cond_23
     return-void
 .end method

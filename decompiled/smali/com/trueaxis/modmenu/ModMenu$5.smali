@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Landroid/view/View$OnClickListener;
+.implements Ljava/lang/Runnable;
 
 
 # annotations
@@ -18,20 +18,24 @@
 
 
 # instance fields
-.field final synthetic val$onPlay:Ljava/lang/Runnable;
+.field final synthetic val$a:Landroid/app/Activity;
+
+.field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
 
 
 # direct methods
-.method constructor <init>(Ljava/lang/Runnable;)V
-    .registers 2
+.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;)V
+    .registers 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 523
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$onPlay:Ljava/lang/Runnable;
+    .line 492
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
+
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$splitOptions:Landroid/widget/LinearLayout;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -40,21 +44,17 @@
 
 
 # virtual methods
-.method public onClick(Landroid/view/View;)V
+.method public run()V
     .registers 3
 
-    .line 525
-    const-string p1, "launcher"
+    .line 494
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
-    const-string v0, "play button invoking onPlay"
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$splitOptions:Landroid/widget/LinearLayout;
 
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;)V
+    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->access$000(Landroid/content/Context;Landroid/view/View;)V
 
-    .line 526
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$onPlay:Ljava/lang/Runnable;
-
-    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
-
-    .line 527
+    .line 495
     return-void
 .end method

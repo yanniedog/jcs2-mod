@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Ljava/lang/Runnable;
+.implements Landroid/view/View$OnClickListener;
 
 
 # annotations
@@ -20,22 +20,18 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
-
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;)V
-    .registers 3
+.method constructor <init>(Landroid/app/Activity;)V
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 483
+    .line 460
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$a:Landroid/app/Activity;
-
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$splitOptions:Landroid/widget/LinearLayout;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -44,17 +40,21 @@
 
 
 # virtual methods
-.method public run()V
+.method public onClick(Landroid/view/View;)V
     .registers 3
 
-    .line 485
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$a:Landroid/app/Activity;
+    .line 462
+    const-string p1, "launcher"
 
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$splitOptions:Landroid/widget/LinearLayout;
+    const-string v0, "upload debug logs clicked"
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;)V
-    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->access$000(Landroid/content/Context;Landroid/view/View;)V
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 486
+    .line 463
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$4;->val$a:Landroid/app/Activity;
+
+    invoke-static {p1}, Lcom/trueaxis/modmenu/DebugLogExporter;->uploadNow(Landroid/app/Activity;)V
+
+    .line 464
     return-void
 .end method

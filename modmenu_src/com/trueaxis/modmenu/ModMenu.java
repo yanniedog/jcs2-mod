@@ -456,6 +456,43 @@ public class ModMenu {
             });
             card.addView(updates, fill());
 
+            Button uploadLogs = button(a, "Upload debug logs");
+            uploadLogs.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    ModDebugLog.module("launcher", "upload debug logs clicked");
+                    DebugLogExporter.uploadNow(a);
+                }
+            });
+            card.addView(uploadLogs, fill());
+
+            card.addView(sectionHeader(a, "Cloud sync (Play Games)"));
+            TextView playGamesStatus = label(a, PlayGamesAssessment.signInStatus(a), 10,
+                    Color.rgb(255, 196, 120));
+            playGamesStatus.setPadding(0, 0, 0, dp(a, 2));
+            card.addView(playGamesStatus);
+            TextView playGamesLeaderboards = label(a,
+                    "Leaderboards: " + PlayGamesAssessment.leaderboardFeasibility(),
+                    10, Color.rgb(170, 178, 185));
+            playGamesLeaderboards.setPadding(0, 0, 0, dp(a, 2));
+            card.addView(playGamesLeaderboards);
+            TextView playGamesReplays = label(a,
+                    "Replays: " + PlayGamesAssessment.replayFeasibility(),
+                    10, Color.rgb(170, 178, 185));
+            playGamesReplays.setPadding(0, 0, 0, dp(a, 4));
+            card.addView(playGamesReplays);
+            TextView localBackup = label(a, PlayGamesAssessment.localBackupStatus(a),
+                    10, Color.rgb(210, 216, 222));
+            localBackup.setPadding(0, 0, 0, dp(a, 4));
+            card.addView(localBackup);
+            Button exportData = button(a, "Export local stats / replay queue");
+            exportData.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    ModDebugLog.module("launcher", "local game data export clicked");
+                    GameDataExporter.exportNow(a);
+                }
+            });
+            card.addView(exportData, fill());
+
             TextView coreNote = label(a,
                     "Always on: purchase compatibility, expanded checkpoint capacity, and blue flame identification. Replay files are not rewritten.",
                     10, Color.rgb(150, 158, 165));

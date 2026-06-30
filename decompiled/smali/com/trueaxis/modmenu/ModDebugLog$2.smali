@@ -21,7 +21,7 @@
 .method constructor <init>()V
     .registers 1
 
-    .line 386
+    .line 441
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
     return-void
@@ -32,7 +32,7 @@
 .method public onActivityCreated(Landroid/app/Activity;Landroid/os/Bundle;)V
     .registers 5
 
-    .line 388
+    .line 443
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -63,43 +63,43 @@
 
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ModDebugLog;->lifecycle(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 389
+    .line 444
     return-void
 .end method
 
 .method public onActivityDestroyed(Landroid/app/Activity;)V
     .registers 3
 
-    .line 413
+    .line 468
     const-string v0, "destroyed"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->lifecycle(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 414
+    .line 469
     return-void
 .end method
 
 .method public onActivityPaused(Landroid/app/Activity;)V
     .registers 3
 
-    .line 401
+    .line 456
     const-string v0, "paused"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->lifecycle(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 402
+    .line 457
     return-void
 .end method
 
 .method public onActivityResumed(Landroid/app/Activity;)V
     .registers 4
 
-    .line 396
+    .line 451
     const-string v0, "resumed"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->lifecycle(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 397
+    .line 452
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -128,42 +128,42 @@
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModDebugLog;->logRuntime(Ljava/lang/String;)V
 
-    .line 398
+    .line 453
     return-void
 .end method
 
 .method public onActivitySaveInstanceState(Landroid/app/Activity;Landroid/os/Bundle;)V
     .registers 3
 
-    .line 409
+    .line 464
     const-string p2, "saveInstanceState"
 
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ModDebugLog;->lifecycle(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 410
+    .line 465
     return-void
 .end method
 
 .method public onActivityStarted(Landroid/app/Activity;)V
     .registers 3
 
-    .line 392
+    .line 447
     const-string v0, "started"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->lifecycle(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 393
+    .line 448
     return-void
 .end method
 
 .method public onActivityStopped(Landroid/app/Activity;)V
     .registers 3
 
-    .line 405
+    .line 460
     const-string v0, "stopped"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->lifecycle(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 406
+    .line 461
     return-void
 .end method

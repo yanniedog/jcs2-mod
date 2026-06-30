@@ -51,7 +51,7 @@
         }
     .end annotation
 
-    .line 117
+    .line 118
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$2;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     iput p2, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$2;->val$tool:I
@@ -70,7 +70,7 @@
 .method public onClick(Landroid/view/View;)V
     .registers 4
 
-    .line 119
+    .line 120
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$2;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     # getter for: Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
@@ -82,7 +82,7 @@
 
     invoke-virtual {p1, v0}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->setTool(I)V
 
-    .line 120
+    .line 121
     const/4 p1, 0x0
 
     :goto_c
@@ -92,7 +92,7 @@
 
     if-ge p1, v0, :cond_3b
 
-    .line 121
+    .line 122
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$2;->val$buttons:[Landroid/widget/Button;
 
     aget-object v0, v0, p1
@@ -122,7 +122,7 @@
 
     invoke-virtual {v0, v1}, Landroid/widget/Button;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 122
+    .line 123
     iget-object v0, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$2;->val$buttons:[Landroid/widget/Button;
 
     aget-object v0, v0, p1
@@ -141,12 +141,12 @@
     :goto_35
     invoke-virtual {v0, v1}, Landroid/widget/Button;->setTextColor(I)V
 
-    .line 120
+    .line 121
     add-int/lit8 p1, p1, 0x1
 
     goto :goto_c
 
-    .line 124
+    .line 125
     :cond_3b
     return-void
 .end method

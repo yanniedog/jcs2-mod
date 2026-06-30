@@ -33,7 +33,7 @@
         }
     .end annotation
 
-    .line 219
+    .line 220
     iput-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$7;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -46,7 +46,7 @@
 .method public onClick(Landroid/view/View;)V
     .registers 2
 
-    .line 221
+    .line 222
     iget-object p1, p0, Lcom/trueaxis/modmenu/LiveryDesignerActivity$7;->this$0:Lcom/trueaxis/modmenu/LiveryDesignerActivity;
 
     # getter for: Lcom/trueaxis/modmenu/LiveryDesignerActivity;->canvas:Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;
@@ -56,6 +56,6 @@
 
     invoke-virtual {p1}, Lcom/trueaxis/modmenu/LiveryDesignerActivity$DesignView;->redo()V
 
-    .line 222
+    .line 223
     return-void
 .end method

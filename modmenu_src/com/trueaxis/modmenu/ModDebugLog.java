@@ -14,11 +14,13 @@ import android.os.Environment;
 import android.os.Process;
 import android.util.Log;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
@@ -171,6 +173,59 @@ final class ModDebugLog {
 
     static File file() {
         return file;
+    }
+
+    /** Reads the current debug log files for export (main log plus native crash log). */
+    static String readExportContent() {
+        synchronized (LOCK) {
+            StringBuilder builder = new StringBuilder(8192);
+            builder.append("=== YCS2 Community Mod debug log export ===\n");
+            builder.append("exported_at=").append(timestamp()).append("\n");
+            builder.append("main_log_path=").append(file == null ? "null" : file.getAbsolutePath())
+                    .append("\n");
+            builder.append("native_log_path=")
+                    .append(nativeFile == null ? "null" : nativeFile.getAbsolutePath())
+                    .append("\n");
+            appendFileSection(builder, file, "ycs2_mod_debug.log");
+            appendFileSection(builder, nativeFile, "ycs2_mod_native_crash.log");
+            if (fallbackFile != null && !fallbackFile.equals(file)) {
+                appendFileSection(builder, fallbackFile, "ycs2_mod_debug.log (fallback)");
+            }
+            return builder.toString();
+        }
+    }
+
+    private static void appendFileSection(StringBuilder builder, File source, String label) {
+        builder.append("\n--- ").append(label).append(" ---\n");
+        if (source == null) {
+            builder.append("(unavailable)\n");
+            return;
+        }
+        if (!source.isFile()) {
+            builder.append("(missing: ").append(source.getAbsolutePath()).append(")\n");
+            return;
+        }
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(
+                    new FileInputStream(source), "UTF-8"));
+            char[] buffer = new char[4096];
+            int read;
+            while ((read = reader.read(buffer)) >= 0) {
+                builder.append(buffer, 0, read);
+            }
+        } catch (Throwable error) {
+            builder.append("(read failed: ").append(error.getClass().getSimpleName())
+                    .append(" path=").append(source.getAbsolutePath()).append(")\n");
+            Log.e(TAG, "Could not read mod debug log section " + label, error);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (Throwable ignored) {
+                }
+            }
+        }
     }
 
     static void requestSharedLogPermission(Activity activity) {
