@@ -279,12 +279,6 @@ static mut CAMERA_UPDATE_TRAMPOLINE: *mut c_void = ptr::null_mut();
 /// also drives that body via DynamicObject::SetFrame), so its MFrame at
 /// +0x1c0..0x1f0 is the rendered car pose in every replay mode.
 static mut REPLAY_FOLLOW_OBJECT: *mut f32 = ptr::null_mut();
-// Previous raw follow-object position, for one-frame extrapolation of the
-// orbit anchor (the renderer draws the car one update ahead of the physics
-// MFrame we read, which otherwise leaves the car trailing off-centre).
-static mut ORBIT_FOLLOW_PREV_POS: [f32; 3] = [0.0; 3];
-static mut ORBIT_FOLLOW_PREV_VALID: bool = false;
-const ORBIT_FOLLOW_EXTRAPOLATION_MAX: f32 = 4.0;
 static mut SET_VEL_TO_FRAME_TRAMPOLINE: *mut c_void = ptr::null_mut();
 /// The MFrame Replay::Update most recently drove the camera-followed body
 /// toward (captured in DynamicObject::SetVelocitiesToMoveToFrame). This is the
@@ -1147,7 +1141,6 @@ unsafe fn reset_free_camera_car_follow() {
     REPLAY_UPDATE_CAR = ptr::null_mut();
     REPLAY_RENDER_TRANSFORM_VALID = false;
     REPLAY_FOLLOW_OBJECT = ptr::null_mut();
-    ORBIT_FOLLOW_PREV_VALID = false;
     REPLAY_TARGET_MFRAME_VALID = false;
     CAMERA_UPDATE_THIS = ptr::null_mut();
 }
@@ -1525,8 +1518,6 @@ unsafe fn choose_replay_camera_anchor(
             // No extrapolation: the render pass draws the car from these same
             // body values later in the same frame (Car::Render reads the body
             // MFrame directly), so camera target and drawn car match exactly.
-            ORBIT_FOLLOW_PREV_POS = car.pos;
-            ORBIT_FOLLOW_PREV_VALID = true;
             ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
             ORBIT_ANCHOR_SOURCE.store(7, Ordering::Release);
             ORBIT_LAST_ANCHOR = car.pos;
@@ -4103,6 +4094,11 @@ unsafe extern "C" fn hooked_camera_path_update(path: *mut c_void, dt: f32) {
         let camera = current_camera();
         if !camera.is_null() {
             write_free_camera_frame(camera);
+        }
+        // The viewer renders through its own Camera (the Camera::Update this),
+        // which the path playback can also write; re-assert there too.
+        if !CAMERA_UPDATE_THIS.is_null() && CAMERA_UPDATE_THIS != camera {
+            write_free_camera_frame(CAMERA_UPDATE_THIS);
         }
     }
 }

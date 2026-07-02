@@ -30,7 +30,8 @@ if ($devices -notmatch "emulator-\d+\s+device") {
     -SkipInstall (-not $InstallApk) `
     -ClearAppDataBeforeRun ([bool]$FreshAppData) `
     -EnableAccelerateWithJet $false `
-    -GameStartupWaitSeconds 30
+    -GameStartupWaitSeconds 30 `
+    -Adb $Adb
 if ($LASTEXITCODE -ne 0) { throw "orbit snapshot harness run failed" }
 
 $run = Get-ChildItem "_apk_build\runtime-freecam-gestures" -Directory |
