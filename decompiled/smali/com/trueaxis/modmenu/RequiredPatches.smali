@@ -530,6 +530,9 @@
 .method static native readLatestCheckpointSplit()J
 .end method
 
+.method static native readReplayCameraDiag(I)I
+.end method
+
 .method static native readReplayFreeCameraStatus()I
 .end method
 

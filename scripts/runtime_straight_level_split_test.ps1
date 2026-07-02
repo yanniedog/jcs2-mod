@@ -426,7 +426,7 @@ function Assert-NoCrashEvidence {
 }
 
 Write-Host "Installing $ApkPath"
-Invoke-Adb install -r $ApkPath | Out-Host
+Invoke-Adb install --no-incremental -r $ApkPath | Out-Host
 Grant-StoragePermissions
 if ($ClearAppDataBeforeRun) {
     Write-Host "Clearing app data for deterministic regular-level startup"

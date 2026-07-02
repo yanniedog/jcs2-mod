@@ -284,7 +284,7 @@ function Assert-NoCrashEvidence {
 
 Write-Host "Installing $ApkPath"
 Set-EmulatorLandscape
-Invoke-Adb @("install", "-r", $ApkPath) | Out-Host
+Invoke-Adb @("install", "--no-incremental", "-r", $ApkPath) | Out-Host
 
 $summary = New-Object System.Collections.Generic.List[string]
 for ($cycle = 1; $cycle -le $Cycles; $cycle++) {

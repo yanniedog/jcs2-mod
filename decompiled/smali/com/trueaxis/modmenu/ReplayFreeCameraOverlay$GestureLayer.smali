@@ -54,10 +54,10 @@
 .method constructor <init>(Landroid/app/Activity;)V
     .registers 3
 
-    .line 147
+    .line 164
     invoke-direct {p0, p1}, Landroid/view/View;-><init>(Landroid/content/Context;)V
 
-    .line 148
+    .line 165
     invoke-virtual {p1}, Landroid/app/Activity;->getResources()Landroid/content/res/Resources;
 
     move-result-object p1
@@ -76,37 +76,37 @@
 
     iput p1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->density:F
 
-    .line 149
+    .line 166
     const/4 p1, 0x1
 
     invoke-virtual {p0, p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->setWillNotDraw(Z)V
 
-    .line 150
+    .line 167
     const/4 p1, 0x0
 
     invoke-virtual {p0, p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->setFocusable(Z)V
 
-    .line 151
+    .line 168
     invoke-virtual {p0, p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->setFocusableInTouchMode(Z)V
 
-    .line 152
+    .line 169
     return-void
 .end method
 
 .method private static angle(Landroid/view/MotionEvent;)F
     .registers 5
 
-    .line 311
+    .line 328
     invoke-static {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->firstPointerIndex(Landroid/view/MotionEvent;)I
 
     move-result v0
 
-    .line 312
+    .line 329
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->secondPointerIndex(Landroid/view/MotionEvent;I)I
 
     move-result v1
 
-    .line 313
+    .line 330
     invoke-virtual {p0, v1}, Landroid/view/MotionEvent;->getY(I)F
 
     move-result v2
@@ -119,7 +119,7 @@
 
     float-to-double v2, v2
 
-    .line 314
+    .line 331
     invoke-virtual {p0, v1}, Landroid/view/MotionEvent;->getX(I)F
 
     move-result v1
@@ -132,7 +132,7 @@
 
     float-to-double v0, v1
 
-    .line 313
+    .line 330
     invoke-static {v2, v3, v0, v1}, Ljava/lang/Math;->atan2(DD)D
 
     move-result-wide v0
@@ -145,10 +145,10 @@
 .method private applyGesture(FFFFFFFLjava/lang/String;)V
     .registers 11
 
-    .line 276
+    .line 293
     invoke-static/range {p1 .. p7}, Lcom/trueaxis/modmenu/RequiredPatches;->gestureReplayFreeCamera(FFFFFFF)V
 
-    .line 278
+    .line 295
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -169,7 +169,7 @@
 
     move-result-object p8
 
-    .line 279
+    .line 296
     invoke-static {p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->fmt(F)Ljava/lang/String;
 
     move-result-object p1
@@ -184,7 +184,7 @@
 
     move-result-object p1
 
-    .line 280
+    .line 297
     invoke-static {p2}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->fmt(F)Ljava/lang/String;
 
     move-result-object p2
@@ -199,7 +199,7 @@
 
     move-result-object p1
 
-    .line 281
+    .line 298
     invoke-static {p3}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->fmt(F)Ljava/lang/String;
 
     move-result-object p2
@@ -214,7 +214,7 @@
 
     move-result-object p1
 
-    .line 282
+    .line 299
     invoke-static {p4}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->fmt(F)Ljava/lang/String;
 
     move-result-object p2
@@ -229,7 +229,7 @@
 
     move-result-object p1
 
-    .line 283
+    .line 300
     invoke-static {p5}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->fmt(F)Ljava/lang/String;
 
     move-result-object p2
@@ -244,7 +244,7 @@
 
     move-result-object p1
 
-    .line 284
+    .line 301
     invoke-static {p6}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->fmt(F)Ljava/lang/String;
 
     move-result-object p2
@@ -259,7 +259,7 @@
 
     move-result-object p1
 
-    .line 285
+    .line 302
     invoke-static {p7}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->fmt(F)Ljava/lang/String;
 
     move-result-object p2
@@ -272,27 +272,27 @@
 
     move-result-object p1
 
-    .line 278
+    .line 295
     const-string p2, "freecam"
 
     invoke-static {p2, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 286
+    .line 303
     return-void
 .end method
 
 .method private static centroidX(Landroid/view/MotionEvent;)F
     .registers 5
 
-    .line 289
+    .line 306
     nop
 
-    .line 290
+    .line 307
     invoke-virtual {p0}, Landroid/view/MotionEvent;->getPointerCount()I
 
     move-result v0
 
-    .line 291
+    .line 308
     const/4 v1, 0x0
 
     const/4 v2, 0x0
@@ -310,7 +310,7 @@
 
     goto :goto_7
 
-    .line 292
+    .line 309
     :cond_11
     int-to-float p0, v0
 
@@ -322,15 +322,15 @@
 .method private static centroidY(Landroid/view/MotionEvent;)F
     .registers 5
 
-    .line 296
+    .line 313
     nop
 
-    .line 297
+    .line 314
     invoke-virtual {p0}, Landroid/view/MotionEvent;->getPointerCount()I
 
     move-result v0
 
-    .line 298
+    .line 315
     const/4 v1, 0x0
 
     const/4 v2, 0x0
@@ -348,7 +348,7 @@
 
     goto :goto_7
 
-    .line 299
+    .line 316
     :cond_11
     int-to-float p0, v0
 
@@ -360,14 +360,14 @@
 .method private static clamp(FF)F
     .registers 3
 
-    .line 351
+    .line 368
     cmpl-float v0, p0, p1
 
     if-lez v0, :cond_5
 
     return p1
 
-    .line 352
+    .line 369
     :cond_5
     neg-float p1, p1
 
@@ -377,7 +377,7 @@
 
     return p1
 
-    .line 353
+    .line 370
     :cond_b
     return p0
 .end method
@@ -385,17 +385,17 @@
 .method private static distance(Landroid/view/MotionEvent;)F
     .registers 5
 
-    .line 303
+    .line 320
     invoke-static {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->firstPointerIndex(Landroid/view/MotionEvent;)I
 
     move-result v0
 
-    .line 304
+    .line 321
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->secondPointerIndex(Landroid/view/MotionEvent;I)I
 
     move-result v1
 
-    .line 305
+    .line 322
     invoke-virtual {p0, v1}, Landroid/view/MotionEvent;->getX(I)F
 
     move-result v2
@@ -406,7 +406,7 @@
 
     sub-float/2addr v2, v3
 
-    .line 306
+    .line 323
     invoke-virtual {p0, v1}, Landroid/view/MotionEvent;->getY(I)F
 
     move-result v1
@@ -417,7 +417,7 @@
 
     sub-float/2addr v1, p0
 
-    .line 307
+    .line 324
     mul-float v2, v2, v2
 
     mul-float v1, v1, v1
@@ -438,17 +438,17 @@
 .method private static firstPointerIndex(Landroid/view/MotionEvent;)I
     .registers 5
 
-    .line 318
+    .line 335
     nop
 
-    .line 319
+    .line 336
     const/4 v0, 0x0
 
     invoke-virtual {p0, v0}, Landroid/view/MotionEvent;->getPointerId(I)I
 
     move-result v1
 
-    .line 320
+    .line 337
     const/4 v2, 0x1
 
     :goto_7
@@ -458,29 +458,29 @@
 
     if-ge v2, v3, :cond_19
 
-    .line 321
+    .line 338
     invoke-virtual {p0, v2}, Landroid/view/MotionEvent;->getPointerId(I)I
 
     move-result v3
 
-    .line 322
+    .line 339
     if-ge v3, v1, :cond_16
 
-    .line 323
+    .line 340
     nop
 
-    .line 324
+    .line 341
     move v0, v2
 
     move v1, v3
 
-    .line 320
+    .line 337
     :cond_16
     add-int/lit8 v2, v2, 0x1
 
     goto :goto_7
 
-    .line 327
+    .line 344
     :cond_19
     return v0
 .end method
@@ -488,7 +488,7 @@
 .method private static fmt(F)Ljava/lang/String;
     .registers 2
 
-    .line 357
+    .line 374
     const/high16 v0, 0x447a0000
 
     mul-float p0, p0, v0
@@ -509,14 +509,14 @@
 .method private handleMove(Landroid/view/MotionEvent;)V
     .registers 18
 
-    .line 193
+    .line 210
     move-object/from16 v9, p0
 
     invoke-virtual/range {p1 .. p1}, Landroid/view/MotionEvent;->getPointerCount()I
 
     move-result v0
 
-    .line 194
+    .line 211
     const/4 v1, 0x2
 
     if-lt v0, v1, :cond_f0
@@ -527,7 +527,7 @@
 
     goto/16 :goto_f0
 
-    .line 198
+    .line 215
     :cond_e
     iget-boolean v2, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->haveBaseline:Z
 
@@ -539,18 +539,18 @@
 
     goto/16 :goto_ec
 
-    .line 202
+    .line 219
     :cond_18
     invoke-static/range {p1 .. p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->centroidX(Landroid/view/MotionEvent;)F
 
     move-result v10
 
-    .line 203
+    .line 220
     invoke-static/range {p1 .. p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->centroidY(Landroid/view/MotionEvent;)F
 
     move-result v11
 
-    .line 204
+    .line 221
     iget v2, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastCentroidX:F
 
     sub-float v2, v10, v2
@@ -559,7 +559,7 @@
 
     div-float/2addr v2, v3
 
-    .line 205
+    .line 222
     iget v3, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastCentroidY:F
 
     sub-float v3, v11, v3
@@ -568,22 +568,22 @@
 
     div-float/2addr v3, v4
 
-    .line 206
+    .line 223
     const/high16 v4, 0x430c0000
 
     if-ne v0, v1, :cond_c4
 
-    .line 207
+    .line 224
     invoke-static/range {p1 .. p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->distance(Landroid/view/MotionEvent;)F
 
     move-result v12
 
-    .line 208
+    .line 225
     invoke-static/range {p1 .. p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->angle(Landroid/view/MotionEvent;)F
 
     move-result v13
 
-    .line 209
+    .line 226
     iget v0, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastDistance:F
 
     sub-float v0, v12, v0
@@ -592,7 +592,7 @@
 
     div-float/2addr v0, v1
 
-    .line 210
+    .line 227
     iget v1, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastAngle:F
 
     sub-float v1, v13, v1
@@ -601,16 +601,16 @@
 
     move-result v1
 
-    .line 211
+    .line 228
     nop
 
-    .line 212
+    .line 229
     nop
 
-    .line 213
+    .line 230
     nop
 
-    .line 214
+    .line 231
     invoke-static {v0}, Ljava/lang/Math;->abs(F)F
 
     move-result v5
@@ -625,7 +625,7 @@
 
     if-ltz v5, :cond_65
 
-    .line 216
+    .line 233
     neg-float v0, v0
 
     const v5, 0x3fb9999a
@@ -636,20 +636,20 @@
 
     move-result v0
 
-    .line 217
+    .line 234
     move v5, v0
 
     const/4 v0, 0x1
 
     goto :goto_67
 
-    .line 214
+    .line 231
     :cond_65
     const/4 v0, 0x0
 
     const/4 v5, 0x0
 
-    .line 219
+    .line 236
     :goto_67
     invoke-static {v1}, Ljava/lang/Math;->abs(F)F
 
@@ -661,27 +661,27 @@
 
     if-ltz v6, :cond_7b
 
-    .line 220
+    .line 237
     const v0, 0x3e23d70a
 
     invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->clamp(FF)F
 
     move-result v0
 
-    .line 221
+    .line 238
     move v8, v0
 
     goto :goto_7c
 
-    .line 219
+    .line 236
     :cond_7b
     move v7, v0
 
-    .line 223
+    .line 240
     :goto_7c
     if-eqz v7, :cond_90
 
-    .line 224
+    .line 241
     const/4 v7, 0x0
 
     const-string v14, "pinch_rotate"
@@ -710,7 +710,7 @@
 
     goto :goto_ba
 
-    .line 225
+    .line 242
     :cond_90
     invoke-direct {v9, v2, v3}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->smallTranslation(FF)Z
 
@@ -718,7 +718,7 @@
 
     if-nez v0, :cond_c3
 
-    .line 226
+    .line 243
     neg-float v0, v2
 
     const v1, 0x3f59999a
@@ -731,12 +731,12 @@
 
     mul-float v3, v3, v1
 
-    .line 227
+    .line 244
     invoke-static {v3, v4}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->clamp(FF)F
 
     move-result v3
 
-    .line 226
+    .line 243
     const/4 v4, 0x0
 
     const/4 v5, 0x0
@@ -769,27 +769,27 @@
 
     invoke-direct/range {v0 .. v8}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->applyGesture(FFFFFFFLjava/lang/String;)V
 
-    .line 232
+    .line 249
     :goto_ba
     iput v10, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastCentroidX:F
 
-    .line 233
+    .line 250
     iput v11, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastCentroidY:F
 
-    .line 234
+    .line 251
     iput v12, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastDistance:F
 
-    .line 235
+    .line 252
     iput v13, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastAngle:F
 
-    .line 236
+    .line 253
     return-void
 
-    .line 230
+    .line 247
     :cond_c3
     return-void
 
-    .line 238
+    .line 255
     :cond_c4
     invoke-direct {v9, v2, v3}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->smallTranslation(FF)Z
 
@@ -799,7 +799,7 @@
 
     return-void
 
-    .line 239
+    .line 256
     :cond_cb
     neg-float v0, v2
 
@@ -807,19 +807,19 @@
 
     mul-float v0, v0, v1
 
-    .line 240
+    .line 257
     invoke-static {v0, v4}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->clamp(FF)F
 
     move-result v6
 
     mul-float v3, v3, v1
 
-    .line 241
+    .line 258
     invoke-static {v3, v4}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->clamp(FF)F
 
     move-result v7
 
-    .line 239
+    .line 256
     const/4 v1, 0x0
 
     const/4 v2, 0x0
@@ -836,36 +836,36 @@
 
     invoke-direct/range {v0 .. v8}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->applyGesture(FFFFFFFLjava/lang/String;)V
 
-    .line 242
+    .line 259
     iput v10, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastCentroidX:F
 
-    .line 243
+    .line 260
     iput v11, v9, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastCentroidY:F
 
-    .line 244
+    .line 261
     return-void
 
-    .line 199
+    .line 216
     :cond_ec
     :goto_ec
     invoke-direct/range {p0 .. p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->resetBaseline(Landroid/view/MotionEvent;)V
 
-    .line 200
+    .line 217
     return-void
 
-    .line 195
+    .line 212
     :cond_f0
     :goto_f0
     invoke-direct/range {p0 .. p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->resetGesture()V
 
-    .line 196
+    .line 213
     return-void
 .end method
 
 .method private static normalizeAngle(F)F
     .registers 7
 
-    .line 345
+    .line 362
     nop
 
     :goto_1
@@ -883,7 +883,7 @@
 
     goto :goto_1
 
-    .line 346
+    .line 363
     :cond_10
     :goto_10
     float-to-double v0, p0
@@ -898,7 +898,7 @@
 
     goto :goto_10
 
-    .line 347
+    .line 364
     :cond_1c
     return p0
 .end method
@@ -906,12 +906,12 @@
 .method private resetBaseline(Landroid/view/MotionEvent;)V
     .registers 6
 
-    .line 247
+    .line 264
     invoke-virtual {p1}, Landroid/view/MotionEvent;->getPointerCount()I
 
     move-result v0
 
-    .line 248
+    .line 265
     const/4 v1, 0x2
 
     if-lt v0, v1, :cond_30
@@ -922,30 +922,30 @@
 
     goto :goto_30
 
-    .line 252
+    .line 269
     :cond_b
     iput v0, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->mode:I
 
-    .line 253
+    .line 270
     const/4 v2, 0x1
 
     iput-boolean v2, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->haveBaseline:Z
 
-    .line 254
+    .line 271
     invoke-static {p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->centroidX(Landroid/view/MotionEvent;)F
 
     move-result v2
 
     iput v2, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastCentroidX:F
 
-    .line 255
+    .line 272
     invoke-static {p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->centroidY(Landroid/view/MotionEvent;)F
 
     move-result v2
 
     iput v2, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastCentroidY:F
 
-    .line 256
+    .line 273
     const/4 v2, 0x0
 
     if-lt v0, v1, :cond_24
@@ -962,7 +962,7 @@
     :goto_25
     iput v3, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastDistance:F
 
-    .line 257
+    .line 274
     if-lt v0, v1, :cond_2d
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->angle(Landroid/view/MotionEvent;)F
@@ -972,54 +972,54 @@
     :cond_2d
     iput v2, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastAngle:F
 
-    .line 258
+    .line 275
     return-void
 
-    .line 249
+    .line 266
     :cond_30
     :goto_30
     invoke-direct {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->resetGesture()V
 
-    .line 250
+    .line 267
     return-void
 .end method
 
 .method private resetGesture()V
     .registers 3
 
-    .line 261
+    .line 278
     const/4 v0, 0x0
 
     iput-boolean v0, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->haveBaseline:Z
 
-    .line 262
+    .line 279
     iput v0, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->mode:I
 
-    .line 263
+    .line 280
     const/4 v1, 0x0
 
     iput v1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastCentroidX:F
 
-    .line 264
+    .line 281
     iput v1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastCentroidY:F
 
-    .line 265
+    .line 282
     iput v1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastDistance:F
 
-    .line 266
+    .line 283
     iput v1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->lastAngle:F
 
-    .line 267
+    .line 284
     iput-boolean v0, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->gestureActive:Z
 
-    .line 268
+    .line 285
     return-void
 .end method
 
 .method private static secondPointerIndex(Landroid/view/MotionEvent;I)I
     .registers 6
 
-    .line 331
+    .line 348
     const/4 v0, 0x0
 
     if-nez p1, :cond_5
@@ -1031,13 +1031,13 @@
     :cond_5
     const/4 v1, 0x0
 
-    .line 332
+    .line 349
     :goto_6
     invoke-virtual {p0, v1}, Landroid/view/MotionEvent;->getPointerId(I)I
 
     move-result v2
 
-    .line 333
+    .line 350
     nop
 
     :goto_b
@@ -1047,36 +1047,36 @@
 
     if-ge v0, v3, :cond_20
 
-    .line 334
+    .line 351
     if-ne v0, p1, :cond_14
 
     goto :goto_1d
 
-    .line 335
+    .line 352
     :cond_14
     invoke-virtual {p0, v0}, Landroid/view/MotionEvent;->getPointerId(I)I
 
     move-result v3
 
-    .line 336
+    .line 353
     if-ge v3, v2, :cond_1d
 
-    .line 337
+    .line 354
     nop
 
-    .line 338
+    .line 355
     move v1, v0
 
     move v2, v3
 
-    .line 333
+    .line 350
     :cond_1d
     :goto_1d
     add-int/lit8 v0, v0, 0x1
 
     goto :goto_b
 
-    .line 341
+    .line 358
     :cond_20
     return v1
 .end method
@@ -1084,7 +1084,7 @@
 .method private smallTranslation(FF)Z
     .registers 4
 
-    .line 271
+    .line 288
     invoke-static {p1}, Ljava/lang/Math;->abs(F)F
 
     move-result p1
@@ -1119,7 +1119,7 @@
 .method public onTouchEvent(Landroid/view/MotionEvent;)Z
     .registers 7
 
-    .line 162
+    .line 179
     iget-boolean v0, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->replayTouchable:Z
 
     const/4 v1, 0x0
@@ -1128,29 +1128,29 @@
 
     return v1
 
-    .line 163
+    .line 180
     :cond_6
     invoke-virtual {p1}, Landroid/view/MotionEvent;->getPointerCount()I
 
     move-result v0
 
-    .line 164
+    .line 181
     invoke-virtual {p1}, Landroid/view/MotionEvent;->getActionMasked()I
 
     move-result v2
 
-    .line 167
+    .line 184
     const/4 v3, 0x2
 
     if-ge v0, v3, :cond_15
 
-    .line 168
+    .line 185
     invoke-direct {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->resetGesture()V
 
-    .line 169
+    .line 186
     return v1
 
-    .line 172
+    .line 189
     :cond_15
     const/4 v0, 0x5
 
@@ -1158,57 +1158,57 @@
 
     if-ne v2, v0, :cond_1f
 
-    .line 173
+    .line 190
     iput-boolean v4, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->gestureActive:Z
 
-    .line 174
+    .line 191
     invoke-direct {p0, p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->resetBaseline(Landroid/view/MotionEvent;)V
 
     goto :goto_44
 
-    .line 175
+    .line 192
     :cond_1f
     if-ne v2, v3, :cond_2e
 
-    .line 176
+    .line 193
     iget-boolean v0, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->gestureActive:Z
 
     if-nez v0, :cond_2a
 
-    .line 177
+    .line 194
     iput-boolean v4, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->gestureActive:Z
 
-    .line 178
+    .line 195
     invoke-direct {p0, p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->resetBaseline(Landroid/view/MotionEvent;)V
 
-    .line 180
+    .line 197
     :cond_2a
     invoke-direct {p0, p1}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->handleMove(Landroid/view/MotionEvent;)V
 
     goto :goto_44
 
-    .line 181
+    .line 198
     :cond_2e
     const/4 v0, 0x6
 
     if-ne v2, v0, :cond_3c
 
-    .line 182
+    .line 199
     invoke-virtual {p1}, Landroid/view/MotionEvent;->getPointerCount()I
 
     move-result p1
 
     if-gt p1, v3, :cond_44
 
-    .line 183
+    .line 200
     iput-boolean v1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->haveBaseline:Z
 
-    .line 184
+    .line 201
     iput v1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->mode:I
 
     goto :goto_44
 
-    .line 186
+    .line 203
     :cond_3c
     if-eq v2, v4, :cond_41
 
@@ -1216,11 +1216,11 @@
 
     if-ne v2, p1, :cond_44
 
-    .line 187
+    .line 204
     :cond_41
     invoke-direct {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->resetGesture()V
 
-    .line 189
+    .line 206
     :cond_44
     :goto_44
     return v4
@@ -1229,16 +1229,16 @@
 .method setReplayTouchable(Z)V
     .registers 2
 
-    .line 155
+    .line 172
     iput-boolean p1, p0, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->replayTouchable:Z
 
-    .line 156
+    .line 173
     if-nez p1, :cond_7
 
-    .line 157
+    .line 174
     invoke-direct {p0}, Lcom/trueaxis/modmenu/ReplayFreeCameraOverlay$GestureLayer;->resetGesture()V
 
-    .line 159
+    .line 176
     :cond_7
     return-void
 .end method

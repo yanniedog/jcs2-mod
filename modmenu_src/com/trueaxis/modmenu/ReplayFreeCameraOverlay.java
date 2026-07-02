@@ -64,6 +64,8 @@ final class ReplayFreeCameraOverlay {
             private boolean lastActive;
             private boolean lastTouchable;
             private int attachAttempts;
+            private int diagPolls;
+            private int lastDiagSamples;
 
             public void run() {
                 if (activity.isFinishing() || disabled) {
@@ -99,6 +101,21 @@ final class ReplayFreeCameraOverlay {
                                         + " status=" + bits);
                         lastTouchable = visible;
                         lastActive = active;
+                    }
+                    if (visible && active && (++diagPolls % 20) == 0) {
+                        int samples = RequiredPatches.readReplayCameraDiag(0);
+                        if (samples != lastDiagSamples) {
+                            lastDiagSamples = samples;
+                            ModDebugLog.module("freecam", "orbit_diag samples=" + samples
+                                    + " radius1000=" + RequiredPatches.readReplayCameraDiag(1)
+                                    + " inwardDot1000=" + RequiredPatches.readReplayCameraDiag(2)
+                                    + " orbitChord1000=" + RequiredPatches.readReplayCameraDiag(3)
+                                    + " dir1000=" + RequiredPatches.readReplayCameraDiag(4)
+                                    + "," + RequiredPatches.readReplayCameraDiag(5)
+                                    + "," + RequiredPatches.readReplayCameraDiag(6)
+                                    + " anchorErr1000=" + RequiredPatches.readReplayCameraDiag(7)
+                                    + " anchorSrc=" + RequiredPatches.readReplayCameraDiag(8));
+                        }
                     }
                     handler.postDelayed(this, POLL_MS);
                 } catch (Throwable error) {

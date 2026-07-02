@@ -6,7 +6,7 @@ use core::ffi::{c_char, c_int, c_long, c_uint, c_void};
 use core::mem;
 use core::panic::PanicInfo;
 use core::ptr;
-use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, Ordering};
 
 mod replay_camera;
 
@@ -41,10 +41,11 @@ const CAR_FUEL_OFFSET: usize = 0x128;
 const CAR_BODY_PTR_OFFSET: usize = 0x158;
 /// The body's CURRENT world transform (TA::MFrame, written by
 /// TA::DynamicObject::SetFrame): basis rows at byte 0x1c0/0x1d0/0x1e0 (stride
-/// 0x10). Position is deliberately not used for the replay anchor here.
+/// 0x10), translation at byte 0x1f0.
 const CAR_BODY_RIGHT_FLOAT: usize = 0x1c0 / 4;
 const CAR_BODY_UP_FLOAT: usize = 0x1d0 / 4;
 const CAR_BODY_FWD_FLOAT: usize = 0x1e0 / 4;
+const CAR_BODY_POS_FLOAT: usize = 0x1f0 / 4;
 const INGAME_LEVEL_EDITOR_SAVE_HOOK_BYTES: usize = 16;
 const INGAME_LEVEL_EDITOR_LOAD_HOOK_BYTES: usize = 16;
 const UIFORM_CREATE_CTOR_HOOK_BYTES: usize = 16;
@@ -57,6 +58,11 @@ const GAME_START_LEVEL_INTRO_HOOK_BYTES: usize = 16;
 const GAME_RENDER_GHOST_HOOK_BYTES: usize = 16;
 const GAME_VIEW_REPLAY_HOOK_BYTES: usize = 16;
 const REPLAY_UPDATE_HOOK_BYTES: usize = 16;
+const CAMERA_PATH_UPDATE_HOOK_BYTES: usize = 16;
+const CAR_RENDER_GHOST_HOOK_BYTES: usize = 16;
+const CAMERA_UPDATE_HOOK_BYTES: usize = 16;
+const GAME_RENDER_HOOK_BYTES: usize = 16;
+const SET_VEL_TO_FRAME_HOOK_BYTES: usize = 16;
 const HOOK_STUB_BYTES: usize = 16;
 const GHOST_NODE_SIZE: usize = 0x14;
 const GHOST_NODE_FLAGS_OFFSET: usize = 1;
@@ -86,6 +92,7 @@ const FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE: f32 = 12.0;
 const FREE_CAMERA_MIN_FOLLOW_DISTANCE: f32 = 1.0;
 const FREE_CAMERA_MAX_FOLLOW_DISTANCE: f32 = 250.0;
 const FREE_CAMERA_MAX_GROUND_RAY_OFFSET_SQ: f32 = 4.0;
+const FREE_CAMERA_STOCK_RAY_MAX_ANCHOR_ERROR_SQ: f32 = 2500.0;
 /// Per-frame camera movement (squared world units) above which the replay is
 /// considered actively playing rather than sitting on a static menu.
 const FREE_CAMERA_MOVE_EPSILON_SQ: f32 = 0.0016;
@@ -113,10 +120,16 @@ type WorldLoadFn = unsafe extern "C" fn(*mut c_void, *const c_char, u8, c_uint) 
 type GameLoadLevelFn = unsafe extern "C" fn(*mut c_void, c_uint, c_int) -> c_int;
 type GameOnCheckpointFn = unsafe extern "C" fn(*mut c_void, *const c_void, c_int);
 type GameUpdateCameraFn = unsafe extern "C" fn(*mut c_void, f32);
+type CameraPathUpdateFn = unsafe extern "C" fn(*mut c_void, f32);
+// Camera::Update(this, float dt [s0], TA::DynamicObject* [x1], Vec3 const& [x2], bool, bool)
+type CameraUpdateFn = unsafe extern "C" fn(*mut c_void, f32, *mut c_void, *const f32, u8, u8);
+// TA::DynamicObject::SetVelocitiesToMoveToFrame(this, MFrame const& [x1], float [s0])
+type SetVelocitiesToMoveToFrameFn = unsafe extern "C" fn(*mut c_void, *const f32, f32);
 type GameStartLevelIntroFn = unsafe extern "C" fn(*mut c_void, c_int);
 type GameRenderGhostFn = unsafe extern "C" fn(*mut c_void);
 type GameViewReplayFn = unsafe extern "C" fn(*mut c_void, *mut u8, *const c_char) -> u8;
-type ReplayUpdateFn = unsafe extern "C" fn(*mut c_void, *mut c_void, c_int, c_int);
+// Replay::Update(this, Car* [x1], float dt [s0], int [w2])
+type ReplayUpdateFn = unsafe extern "C" fn(*mut c_void, *mut c_void, f32, c_int);
 type CarRenderGhostFn = unsafe extern "C" fn(*mut c_void, *const f32);
 type ReplayLoadPathFn = unsafe extern "C" fn(*mut c_void, *const c_char) -> c_int;
 type ReplayDecompressGhostFn = unsafe extern "C" fn(*mut c_void);
@@ -243,6 +256,73 @@ static mut GAME_START_LEVEL_INTRO_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut GAME_RENDER_GHOST_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut GAME_VIEW_REPLAY_TRAMPOLINE: *mut c_void = ptr::null_mut();
 static mut REPLAY_UPDATE_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static REPLAY_UPDATE_HOOK_INSTALLED: AtomicBool = AtomicBool::new(false);
+static mut CAMERA_PATH_UPDATE_TRAMPOLINE: *mut c_void = ptr::null_mut();
+/// The Car* the stock `Replay::Update(Car*, float, int)` is animating this
+/// playback frame -- the authoritative replay car in BOTH the passive View
+/// Replay viewer and post-race replays. Cleared when leaving the replay so a
+/// stale pointer is never dereferenced.
+static mut REPLAY_UPDATE_CAR: *mut u8 = ptr::null_mut();
+static mut CAR_RENDER_GHOST_TRAMPOLINE: *mut c_void = ptr::null_mut();
+/// The exact MFrame the renderer last drew a replay/ghost car with, captured
+/// in Car::RenderGhost. In the View Replay viewer the car is animated for
+/// rendering only (the physics body stays at its spawn pose), so this is the
+/// one transform guaranteed to match the car on screen. Swarm extra-ghost
+/// renders are excluded via IN_SWARM_RENDER.
+static mut REPLAY_RENDER_TRANSFORM: [f32; GHOST_TRANSFORM_BYTES / 4] =
+    [0.0; GHOST_TRANSFORM_BYTES / 4];
+static mut REPLAY_RENDER_TRANSFORM_VALID: bool = false;
+static mut IN_SWARM_RENDER: bool = false;
+static mut CAMERA_UPDATE_TRAMPOLINE: *mut c_void = ptr::null_mut();
+/// The TA::DynamicObject the stock Camera::Update was last asked to follow.
+/// Replay::Update passes the viewer car's body here every playback frame (it
+/// also drives that body via DynamicObject::SetFrame), so its MFrame at
+/// +0x1c0..0x1f0 is the rendered car pose in every replay mode.
+static mut REPLAY_FOLLOW_OBJECT: *mut f32 = ptr::null_mut();
+// Previous raw follow-object position, for one-frame extrapolation of the
+// orbit anchor (the renderer draws the car one update ahead of the physics
+// MFrame we read, which otherwise leaves the car trailing off-centre).
+static mut ORBIT_FOLLOW_PREV_POS: [f32; 3] = [0.0; 3];
+static mut ORBIT_FOLLOW_PREV_VALID: bool = false;
+const ORBIT_FOLLOW_EXTRAPOLATION_MAX: f32 = 4.0;
+static mut SET_VEL_TO_FRAME_TRAMPOLINE: *mut c_void = ptr::null_mut();
+/// The MFrame Replay::Update most recently drove the camera-followed body
+/// toward (captured in DynamicObject::SetVelocitiesToMoveToFrame). This is the
+/// node pose the viewer animates the car to -- the physics body itself only
+/// trails it -- so it is the most accurate on-screen car pose available.
+static mut REPLAY_TARGET_MFRAME: [f32; GHOST_TRANSFORM_BYTES / 4] =
+    [0.0; GHOST_TRANSFORM_BYTES / 4];
+static mut REPLAY_TARGET_MFRAME_VALID: bool = false;
+/// The Camera object the stock Camera::Update last operated on. In the View
+/// Replay viewer the scene renders through this camera (not g_pCamera), so the
+/// managed replay camera writes its frame here as well.
+static mut CAMERA_UPDATE_THIS: *mut f32 = ptr::null_mut();
+// Orbit-probe instrumentation (diagnostic only): per-hook call counters and a
+// once-per-second probe line appended to the public log directory.
+static mut GAME_RENDER_TRAMPOLINE: *mut c_void = ptr::null_mut();
+static ORBIT_PROBE_RENDER_GHOST_CALLS: AtomicI32 = AtomicI32::new(0);
+static ORBIT_PROBE_CAMERA_UPDATE_CALLS: AtomicI32 = AtomicI32::new(0);
+static ORBIT_PROBE_SETVEL_ALL_CALLS: AtomicI32 = AtomicI32::new(0);
+static ORBIT_PROBE_SETVEL_CAPTURES: AtomicI32 = AtomicI32::new(0);
+static ORBIT_PROBE_VIEWER_CAR_DRAWS: AtomicI32 = AtomicI32::new(0);
+type CarRenderFn = unsafe extern "C" fn(*mut c_void, u8);
+static mut CAR_RENDER: *mut c_void = ptr::null_mut();
+// Car::SetLightColour(u32 colour, f32 radiance) -- Game::Render calls this per
+// car right before Car::Render; without it the car draws unlit (flat grey).
+type CarSetLightColourFn = unsafe extern "C" fn(*mut c_void, u32, f32);
+static mut CAR_SET_LIGHT_COLOUR: *mut c_void = ptr::null_mut();
+static mut ORBIT_PROBE_FRAME_COUNT: i32 = 0;
+const ORBIT_PROBE_LOG_PATH: &[u8] = b"/storage/emulated/0/YCS2CommunityMod/logs/orbit_probe.log\0";
+// Replay::GetGhostTransform() -- returns the MFrame the viewer's ghost car is
+// rendered with (see Game::Render: Car::RenderGhost(car, GetGhostTransform())).
+type ReplayGetGhostTransformFn = unsafe extern "C" fn(*mut c_void) -> *const f32;
+static mut REPLAY_GET_GHOST_TRANSFORM: *mut c_void = ptr::null_mut();
+/// True between Game::ViewReplay (entering the passive replay viewer) and the
+/// next leave-replay reset. The passive viewer animates an invisible proxy
+/// body for its camera and never draws the car at the playback position, so
+/// the managed replay camera ghost-renders the car at its anchor itself.
+static mut VIEW_REPLAY_SESSION: bool = false;
+static VIEW_REPLAY_HOOK_INSTALLED: AtomicBool = AtomicBool::new(false);
 static mut REPLAY_POS: *mut c_int = ptr::null_mut();
 static mut GHOST_POINTER: *mut *mut u8 = ptr::null_mut();
 static mut GHOST_TRANSFORM: *mut f32 = ptr::null_mut();
@@ -260,6 +340,22 @@ static mut SWARM_GHOST_NODE_COUNT: [i32; SWARM_MAX_GHOSTS] = [0; SWARM_MAX_GHOST
 static mut SWARM_GHOST_NODES: [*mut u8; SWARM_MAX_GHOSTS] = [ptr::null_mut(); SWARM_MAX_GHOSTS];
 static mut SWARM_GHOST_COUNT: usize = 0;
 static mut SWARM_PRIMARY_CATALOG_INDEX: i32 = -1;
+// Last stock-camera anchor used by the managed Orbit camera, and the camera
+// pose we last wrote. If the original `Game::UpdateCamera` did not refresh the
+// camera object this frame (we would read back our own written pose), the
+// previous anchor is reused instead of deriving one from our own frame.
+static mut ORBIT_LAST_ANCHOR: [f32; 3] = [0.0; 3];
+static mut ORBIT_LAST_ANCHOR_VALID: bool = false;
+/// Distance (x1000) between the Orbit anchor and the nearest real car
+/// transform candidate this frame; -1 when no candidate was available.
+/// Diagnostic only -- exposed as `readReplayCameraDiag(7)`.
+static ORBIT_ANCHOR_ERROR_1000: AtomicI32 = AtomicI32::new(-1);
+/// Which source drove the Orbit anchor this frame: 0 live Car, 1 g_ghostTransform,
+/// 2 g_ghostTransformLast, 3 chase-ray fallback, 4 stale-frame reuse, 5 the Car*
+/// captured from Replay::Update, 6 the Car::RenderGhost MFrame, 7 the
+/// Camera::Update follow object, 8 the node-buffer pose at the playback index.
+/// Diagnostic only -- `readReplayCameraDiag(8)`.
+static ORBIT_ANCHOR_SOURCE: AtomicI32 = AtomicI32::new(-1);
 static REPLAY_SWARM_HOOKS_INSTALLED: AtomicBool = AtomicBool::new(false);
 static REPLAY_SWARM_ENABLED: AtomicBool = AtomicBool::new(false);
 static REPLAY_SWARM_ACTIVE: AtomicBool = AtomicBool::new(false);
@@ -1043,6 +1139,17 @@ unsafe fn game_show_replay_active() -> bool {
 unsafe fn reset_free_camera_car_follow() {
     FREE_CAMERA_HAVE_CAR_OFFSET = false;
     FREE_CAMERA_CAR_OFFSET = [0.0; 3];
+    ORBIT_LAST_ANCHOR_VALID = false;
+    ORBIT_ANCHOR_ERROR_1000.store(-1, Ordering::Release);
+    ORBIT_ANCHOR_SOURCE.store(-1, Ordering::Release);
+    // Drop the captured replay car so a freed Car object from a finished
+    // replay can never be dereferenced; playback re-captures it every frame.
+    REPLAY_UPDATE_CAR = ptr::null_mut();
+    REPLAY_RENDER_TRANSFORM_VALID = false;
+    REPLAY_FOLLOW_OBJECT = ptr::null_mut();
+    ORBIT_FOLLOW_PREV_VALID = false;
+    REPLAY_TARGET_MFRAME_VALID = false;
+    CAMERA_UPDATE_THIS = ptr::null_mut();
 }
 
 unsafe fn update_free_camera_car_offset() {
@@ -1260,18 +1367,54 @@ unsafe fn free_camera_anchor_position(anchor: &mut [f32; 3]) -> bool {
     true
 }
 
-/// Read only the live car basis for GoPro's car-locked orientation. Orbit anchor
-/// position stays chase-camera-derived below so bad body-position offsets cannot
-/// collapse the orbit radius again.
-unsafe fn read_live_car_basis(game: *mut c_void) -> Option<([f32; 3], [f32; 3], [f32; 3])> {
+/// Read the live replay car frame. Managed replay-camera modes use this position
+/// as the orbit axle, so the camera revolves around the car itself instead of a
+/// chase-camera point behind it.
+unsafe fn read_live_car_frame(game: *mut c_void) -> Option<replay_camera::CarFrame> {
     if game.is_null() {
         return None;
     }
     let car = ptr::read_volatile((game as *mut u8).add(GAME_CURRENT_CAR_OFFSET) as *mut *mut u8);
+    read_car_body_frame(car)
+}
+
+/// Read a Car object's rendered world frame from its physics body MFrame
+/// (basis rows at body+0x1c0.. per Car::SetFrame, translation at +0x1f0).
+unsafe fn read_car_body_frame(car: *mut u8) -> Option<replay_camera::CarFrame> {
     if car.is_null() {
         return None;
     }
     let body = ptr::read_volatile(car.add(CAR_BODY_PTR_OFFSET) as *mut *mut f32);
+    read_body_mframe(body)
+}
+
+/// Integrate the primary replay's node buffer up to the current playback index
+/// with the proven swarm routine, yielding the rendered car pose (position and
+/// basis). Gated on active playback so a freed node buffer is never touched.
+unsafe fn read_primary_node_transform() -> Option<replay_camera::CarFrame> {
+    if !FREE_CAMERA_PLAYBACK_MOVING.load(Ordering::Acquire) {
+        return None;
+    }
+    if !ensure_swarm_symbols() || GHOST_POINTER.is_null() || GHOST_SIZE.is_null() {
+        return None;
+    }
+    let nodes = ptr::read_volatile(GHOST_POINTER);
+    let count = ptr::read_volatile(GHOST_SIZE);
+    let master = swarm_master_node_index();
+    if nodes.is_null() || count < 2 || master < 1 || master >= count {
+        return None;
+    }
+    // swarm_integrate_transform zeroes GHOST_TRANSFORM_BYTES f32 ELEMENTS (not
+    // bytes), so give it that many floats of scratch to stay in bounds.
+    let mut transform = [0.0f32; GHOST_TRANSFORM_BYTES];
+    if !swarm_integrate_transform(nodes, count, master, transform.as_mut_ptr()) {
+        return None;
+    }
+    read_transform_car_frame(transform.as_ptr())
+}
+
+/// Read the current MFrame of a TA::DynamicObject (the body pointer itself).
+unsafe fn read_body_mframe(body: *mut f32) -> Option<replay_camera::CarFrame> {
     if body.is_null() {
         return None;
     }
@@ -1285,29 +1428,292 @@ unsafe fn read_live_car_basis(game: *mut c_void) -> Option<([f32; 3], [f32; 3], 
     let right = read3(CAR_BODY_RIGHT_FLOAT);
     let up = read3(CAR_BODY_UP_FLOAT);
     let fwd = read3(CAR_BODY_FWD_FLOAT);
-    if [right, up, fwd]
+    let pos = read3(CAR_BODY_POS_FLOAT);
+    if [right, up, fwd, pos]
         .iter()
         .flatten()
         .any(|&v| !finite_camera_value(v))
     {
         return None;
     }
-    Some((right, up, fwd))
+    Some(replay_camera::CarFrame {
+        pos,
+        right,
+        up,
+        fwd,
+    })
 }
 
-/// Build the managed-camera target frame: the world point the camera orbits.
-///
-/// The game's own chase camera already tracks the replay car and looks straight
-/// at it; the original `Game::UpdateCamera` runs first and leaves that chase
-/// frame in the camera object (stride-4: right@0, up@4, forward@8, position@12).
-/// Its look-at point `camPos + camForward * distance` is therefore the car centre
-/// every frame, airborne included -- which is exactly the orbit anchor we want
-/// and guarantees a non-zero orbit radius. `distance` is the native follow
-/// distance, calibrated from `g_v3LastOnGroundPos` (the car's last ground-contact
-/// world point, a plain vec3 with no fragile pointer chain) projected onto the
-/// forward axis; a missing/out-of-range sample keeps the last good (or default)
-/// distance. GoPro/Helicopter receive the live car basis when available, falling
-/// back to chase-camera axes only if the body transform is unavailable.
+unsafe fn read_transform_car_frame(transform: *const f32) -> Option<replay_camera::CarFrame> {
+    if transform.is_null() {
+        return None;
+    }
+    let read3 = |offset: usize| -> [f32; 3] {
+        [
+            ptr::read_volatile(transform.add(offset)),
+            ptr::read_volatile(transform.add(offset + 1)),
+            ptr::read_volatile(transform.add(offset + 2)),
+        ]
+    };
+    let right = read3(0);
+    let up = read3(FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    let fwd = read3(2 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    let pos = read3(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    if [right, up, fwd, pos]
+        .iter()
+        .flatten()
+        .any(|&v| !finite_camera_value(v))
+    {
+        return None;
+    }
+    let right_len_sq = right[0] * right[0] + right[1] * right[1] + right[2] * right[2];
+    let up_len_sq = up[0] * up[0] + up[1] * up[1] + up[2] * up[2];
+    let fwd_len_sq = fwd[0] * fwd[0] + fwd[1] * fwd[1] + fwd[2] * fwd[2];
+    let pos_len_sq = pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2];
+    if right_len_sq <= FREE_CAMERA_MIN_LENGTH_SQ
+        || up_len_sq <= FREE_CAMERA_MIN_LENGTH_SQ
+        || fwd_len_sq <= FREE_CAMERA_MIN_LENGTH_SQ
+        || pos_len_sq <= FREE_CAMERA_MIN_LENGTH_SQ
+    {
+        return None;
+    }
+    Some(replay_camera::CarFrame {
+        pos,
+        right,
+        up,
+        fwd,
+    })
+}
+
+fn stock_camera_ray_score(
+    car: &replay_camera::CarFrame,
+    cam_pos: [f32; 3],
+    cam_fwd: [f32; 3],
+) -> Option<(f32, f32)> {
+    let to_car = [
+        car.pos[0] - cam_pos[0],
+        car.pos[1] - cam_pos[1],
+        car.pos[2] - cam_pos[2],
+    ];
+    let proj = to_car[0] * cam_fwd[0] + to_car[1] * cam_fwd[1] + to_car[2] * cam_fwd[2];
+    if proj <= FREE_CAMERA_MIN_FOLLOW_DISTANCE {
+        return None;
+    }
+    let ray = [
+        cam_pos[0] + (cam_fwd[0] * proj),
+        cam_pos[1] + (cam_fwd[1] * proj),
+        cam_pos[2] + (cam_fwd[2] * proj),
+    ];
+    let dx = car.pos[0] - ray[0];
+    let dy = car.pos[1] - ray[1];
+    let dz = car.pos[2] - ray[2];
+    let lateral_sq = dx * dx + dy * dy + dz * dz;
+    if finite_camera_value(lateral_sq) {
+        Some((lateral_sq, proj))
+    } else {
+        None
+    }
+}
+
+/// True when the freshly read camera pose is bit-identical to the pose the
+/// managed camera wrote last frame, i.e. the original `Game::UpdateCamera` did
+/// NOT refresh the camera object. Deriving an anchor from our own written
+/// frame would feed the orbit back into itself, so callers reuse the previous
+/// anchor instead.
+unsafe fn stock_camera_frame_is_stale(cam_pos: [f32; 3], cam_fwd: [f32; 3]) -> bool {
+    if !FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
+        return false;
+    }
+    cam_pos[0] == FREE_CAMERA_FRAME[FREE_CAMERA_POSITION]
+        && cam_pos[1] == FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 1]
+        && cam_pos[2] == FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 2]
+        && cam_fwd[0] == FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS]
+        && cam_fwd[1] == FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + 1]
+        && cam_fwd[2] == FREE_CAMERA_FRAME[FREE_CAMERA_FORWARD_AXIS + 2]
+}
+
+unsafe fn choose_replay_camera_anchor(
+    game: *mut c_void,
+    cam_pos: [f32; 3],
+    cam_up: [f32; 3],
+    cam_fwd: [f32; 3],
+) -> Option<replay_camera::CarFrame> {
+    if replay_camera::current_mode() == replay_camera::MODE_ORBIT {
+        // Highest priority: the exact MFrame the viewer is currently driving
+        // the followed body toward (captured in SetVelocitiesToMoveToFrame
+        // inside Replay::Update) -- the node pose of the on-screen car.
+        // Disabled as primary: the SetVel target leads the rendered body by up
+        // to a frame; the followed body's own MFrame below is what Car::Render
+        // draws with, so anchoring there keeps the car dead-centre.
+        if false && REPLAY_TARGET_MFRAME_VALID {
+            if let Some(car) =
+                read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
+            {
+                ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
+                ORBIT_ANCHOR_SOURCE.store(9, Ordering::Release);
+                ORBIT_LAST_ANCHOR = car.pos;
+                ORBIT_LAST_ANCHOR_VALID = true;
+                return Some(car);
+            }
+        }
+        // Next: the node-buffer pose at the current playback index,
+        // integrated with the same routine the swarm feature uses to place its
+        // (visually correct) ghost cars. The viewer renders the primary car
+        // from this data, so it matches the on-screen car exactly; the physics
+        // body only trails it on a spring.
+        // Disabled as primary for the same reason: the node buffer is the
+        // racing-ghost's data (absent in the viewer, the wrong car in races).
+        if false {
+            if let Some(car) = read_primary_node_transform() {
+                ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
+                ORBIT_ANCHOR_SOURCE.store(8, Ordering::Release);
+                ORBIT_LAST_ANCHOR = car.pos;
+                ORBIT_LAST_ANCHOR_VALID = true;
+                return Some(car);
+            }
+        }
+        // Next: the DynamicObject the stock Camera::Update follows.
+        // Replay::Update passes the viewer car's body there right after driving
+        // it via DynamicObject::SetFrame, so this MFrame is the on-screen car.
+        if let Some(car) = read_body_mframe(REPLAY_FOLLOW_OBJECT) {
+            // No extrapolation: the render pass draws the car from these same
+            // body values later in the same frame (Car::Render reads the body
+            // MFrame directly), so camera target and drawn car match exactly.
+            ORBIT_FOLLOW_PREV_POS = car.pos;
+            ORBIT_FOLLOW_PREV_VALID = true;
+            ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
+            ORBIT_ANCHOR_SOURCE.store(7, Ordering::Release);
+            ORBIT_LAST_ANCHOR = car.pos;
+            ORBIT_LAST_ANCHOR_VALID = true;
+            return Some(car);
+        }
+        // Next: the exact MFrame the renderer drew a replay/ghost car with
+        // (captured in Car::RenderGhost).
+        if REPLAY_RENDER_TRANSFORM_VALID {
+            if let Some(car) =
+                read_transform_car_frame(ptr::addr_of!(REPLAY_RENDER_TRANSFORM) as *const f32)
+            {
+                ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
+                ORBIT_ANCHOR_SOURCE.store(6, Ordering::Release);
+                ORBIT_LAST_ANCHOR = car.pos;
+                ORBIT_LAST_ANCHOR_VALID = true;
+                return Some(car);
+            }
+        }
+        // Next: the Car* Replay::Update is animating (moves with the car in
+        // post-race replays where playback drives the real physics body).
+        if let Some(car) = read_car_body_frame(REPLAY_UPDATE_CAR) {
+            ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
+            ORBIT_ANCHOR_SOURCE.store(5, Ordering::Release);
+            ORBIT_LAST_ANCHOR = car.pos;
+            ORBIT_LAST_ANCHOR_VALID = true;
+            return Some(car);
+        }
+    }
+
+    let mut best: Option<replay_camera::CarFrame> = None;
+    let mut best_score = f32::MAX;
+    let mut best_projection = FREE_CAMERA_FOLLOW_DISTANCE;
+    let mut best_source = -1i32;
+    let candidates = [
+        read_live_car_frame(game),
+        read_transform_car_frame(GHOST_TRANSFORM as *const f32),
+        read_transform_car_frame(LAST_GHOST_TRANSFORM as *const f32),
+    ];
+    for (index, candidate) in candidates.into_iter().enumerate() {
+        if let Some(candidate) = candidate {
+            if let Some((score, projection)) = stock_camera_ray_score(&candidate, cam_pos, cam_fwd)
+            {
+                if score < best_score {
+                    best_score = score;
+                    best_projection = projection;
+                    best_source = index as i32;
+                    best = Some(candidate);
+                }
+            }
+        }
+    }
+
+    if replay_camera::current_mode() != replay_camera::MODE_ORBIT {
+        return best;
+    }
+
+    // When the game exposes a real replay-car transform that the stock camera is
+    // actually looking at (small ray-offset score), anchor the orbit DIRECTLY on
+    // that world position so the car sits dead-centre every frame. Only when no
+    // such transform is readable (e.g. a passive "View Replay" that renders from
+    // the node buffer with no live Car object) do we fall back to the stock
+    // chase camera's look point, `camPos + camFwd * D` (PR #8 approach).
+    if stock_camera_frame_is_stale(cam_pos, cam_fwd) {
+        if !ORBIT_LAST_ANCHOR_VALID {
+            return None;
+        }
+        let mut anchored = best.unwrap_or_else(|| camera_basis_frame(cam_pos, cam_up, cam_fwd));
+        anchored.pos = ORBIT_LAST_ANCHOR;
+        ORBIT_ANCHOR_SOURCE.store(4, Ordering::Release);
+        return Some(anchored);
+    }
+
+    if let Some(car) = best {
+        if best_score <= FREE_CAMERA_STOCK_RAY_MAX_ANCHOR_ERROR_SQ {
+            // Keep D calibrated too, so the chase-ray fallback stays sane if the
+            // transform later drops out mid-replay.
+            let measured = clamp_camera_delta(best_projection, FREE_CAMERA_MAX_FOLLOW_DISTANCE)
+                .max(FREE_CAMERA_MIN_FOLLOW_DISTANCE);
+            if FREE_CAMERA_FOLLOW_CALIBRATED {
+                FREE_CAMERA_FOLLOW_DISTANCE += (measured - FREE_CAMERA_FOLLOW_DISTANCE) * 0.2;
+            } else {
+                FREE_CAMERA_FOLLOW_DISTANCE = measured;
+                FREE_CAMERA_FOLLOW_CALIBRATED = true;
+            }
+            ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
+            ORBIT_ANCHOR_SOURCE.store(best_source, Ordering::Release);
+            ORBIT_LAST_ANCHOR = car.pos;
+            ORBIT_LAST_ANCHOR_VALID = true;
+            return Some(car);
+        }
+    }
+
+    // No usable real transform: fall back to the stock chase look point.
+    let anchor = [
+        cam_pos[0] + (cam_fwd[0] * FREE_CAMERA_FOLLOW_DISTANCE),
+        cam_pos[1] + (cam_fwd[1] * FREE_CAMERA_FOLLOW_DISTANCE),
+        cam_pos[2] + (cam_fwd[2] * FREE_CAMERA_FOLLOW_DISTANCE),
+    ];
+    ORBIT_ANCHOR_ERROR_1000.store(-1, Ordering::Release);
+    ORBIT_ANCHOR_SOURCE.store(3, Ordering::Release);
+    ORBIT_LAST_ANCHOR = anchor;
+    ORBIT_LAST_ANCHOR_VALID = true;
+
+    let mut anchored = camera_basis_frame(cam_pos, cam_up, cam_fwd);
+    anchored.pos = anchor;
+    Some(anchored)
+}
+
+/// Fallback car basis when no car transform candidate is readable: reuse the
+/// stock camera's own axes (its up is world-up aligned during replay chase).
+fn camera_basis_frame(
+    cam_pos: [f32; 3],
+    cam_up: [f32; 3],
+    cam_fwd: [f32; 3],
+) -> replay_camera::CarFrame {
+    let right = [
+        cam_up[1] * cam_fwd[2] - cam_up[2] * cam_fwd[1],
+        cam_up[2] * cam_fwd[0] - cam_up[0] * cam_fwd[2],
+        cam_up[0] * cam_fwd[1] - cam_up[1] * cam_fwd[0],
+    ];
+    replay_camera::CarFrame {
+        pos: cam_pos,
+        right,
+        up: cam_up,
+        fwd: cam_fwd,
+    }
+}
+
+/// Build the managed-camera target frame: the replay car stock camera is
+/// already framing this frame. Orbit is a wheel around this visual axle: camera
+/// position is `car.pos + direction * radius`, and the camera's forward vector
+/// points back toward `car.pos` every frame so the car stays centered.
 unsafe fn replay_follow_frame(
     game: *mut c_void,
     camera: *const f32,
@@ -1331,58 +1737,40 @@ unsafe fn replay_follow_frame(
         return None;
     }
 
-    // Calibrate the follow distance ONCE from a live on-ground car position:
-    // project (groundPos - camPos) onto the forward axis to get the native chase
-    // distance, then freeze it. The ground vector can be zero during startup or a
-    // stale takeoff point while airborne, so only accept samples that are non-zero
-    // and close to the current chase-camera look ray. Calibration is reset when
-    // the mode activates.
-    if !FREE_CAMERA_FOLLOW_CALIBRATED && !LAST_ON_GROUND_POS.is_null() {
-        let ground = read3(LAST_ON_GROUND_POS, 0);
-        if ground.iter().all(|&v| finite_camera_value(v))
-            && ground.iter().any(|&v| v.abs() > FREE_CAMERA_MIN_LENGTH_SQ)
-        {
-            let proj = (ground[0] - cam_pos[0]) * fwd[0]
-                + (ground[1] - cam_pos[1]) * fwd[1]
-                + (ground[2] - cam_pos[2]) * fwd[2];
-            let projected = [
-                cam_pos[0] + fwd[0] * proj,
-                cam_pos[1] + fwd[1] * proj,
-                cam_pos[2] + fwd[2] * proj,
-            ];
-            let ray_dx = ground[0] - projected[0];
-            let ray_dy = ground[1] - projected[1];
-            let ray_dz = ground[2] - projected[2];
-            let ray_offset_sq = ray_dx * ray_dx + ray_dy * ray_dy + ray_dz * ray_dz;
-            if proj > FREE_CAMERA_MIN_FOLLOW_DISTANCE
-                && proj < FREE_CAMERA_MAX_FOLLOW_DISTANCE
-                && ray_offset_sq <= FREE_CAMERA_MAX_GROUND_RAY_OFFSET_SQ
+    // Seed the follow distance before the anchor is derived: prefer the last
+    // ground-contact point projected onto the stock camera's look ray, fall
+    // back to a sane default. Per-frame candidate scoring keeps refining it.
+    if !FREE_CAMERA_FOLLOW_CALIBRATED {
+        FREE_CAMERA_FOLLOW_DISTANCE = FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE;
+        if !LAST_ON_GROUND_POS.is_null() {
+            let ground = read3(LAST_ON_GROUND_POS, 0);
+            if ground.iter().all(|&v| finite_camera_value(v))
+                && ground.iter().any(|&v| v.abs() > FREE_CAMERA_MIN_LENGTH_SQ)
             {
-                FREE_CAMERA_FOLLOW_DISTANCE = proj;
-                FREE_CAMERA_FOLLOW_CALIBRATED = true;
+                let proj = (ground[0] - cam_pos[0]) * fwd[0]
+                    + (ground[1] - cam_pos[1]) * fwd[1]
+                    + (ground[2] - cam_pos[2]) * fwd[2];
+                let projected = [
+                    cam_pos[0] + fwd[0] * proj,
+                    cam_pos[1] + fwd[1] * proj,
+                    cam_pos[2] + fwd[2] * proj,
+                ];
+                let ray_dx = ground[0] - projected[0];
+                let ray_dy = ground[1] - projected[1];
+                let ray_dz = ground[2] - projected[2];
+                let ray_offset_sq = ray_dx * ray_dx + ray_dy * ray_dy + ray_dz * ray_dz;
+                if proj > FREE_CAMERA_MIN_FOLLOW_DISTANCE
+                    && proj < FREE_CAMERA_MAX_FOLLOW_DISTANCE
+                    && ray_offset_sq <= FREE_CAMERA_MAX_GROUND_RAY_OFFSET_SQ
+                {
+                    FREE_CAMERA_FOLLOW_DISTANCE = proj;
+                    FREE_CAMERA_FOLLOW_CALIBRATED = true;
+                }
             }
         }
     }
 
-    // The chase camera looks straight at the car, so its look-at point
-    // `camPos + camForward * distance` is the car centre -- the orbit anchor.
-    let distance = if FREE_CAMERA_FOLLOW_CALIBRATED {
-        FREE_CAMERA_FOLLOW_DISTANCE
-    } else {
-        FREE_CAMERA_DEFAULT_FOLLOW_DISTANCE
-    };
-    let anchor = [
-        cam_pos[0] + fwd[0] * distance,
-        cam_pos[1] + fwd[1] * distance,
-        cam_pos[2] + fwd[2] * distance,
-    ];
-    let (car_right, car_up, car_fwd) = read_live_car_basis(game).unwrap_or((right, up, fwd));
-    Some(replay_camera::CarFrame {
-        pos: anchor,
-        right: car_right,
-        up: car_up,
-        fwd: car_fwd,
-    })
+    choose_replay_camera_anchor(game, cam_pos, up, fwd)
 }
 
 /// Track whether the replay is actively playing by watching the game camera
@@ -1546,6 +1934,10 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
         reset_free_camera_car_follow();
         reset_playback_motion();
         replay_camera::invalidate();
+        // Only an actual exit from the replay ends the viewer session --
+        // Game::StartLevelIntro fires DURING viewer entry (after ViewReplay)
+        // and must not clear it via the shared reset above.
+        VIEW_REPLAY_SESSION = false;
         return;
     }
     if !FREE_CAMERA_ENABLED.load(Ordering::Acquire) {
@@ -1568,6 +1960,7 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
             capture_free_camera_frame(camera);
             replay_camera::invalidate();
             FREE_CAMERA_FOLLOW_CALIBRATED = false;
+            ORBIT_LAST_ANCHOR_VALID = false;
         }
         if FREE_CAMERA_ACTIVE.load(Ordering::Acquire) {
             if let Some(car) = replay_follow_frame(game, camera) {
@@ -1577,6 +1970,16 @@ unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds:
                     &mut *ptr::addr_of_mut!(FREE_CAMERA_FRAME),
                 ) {
                     write_free_camera_frame(camera);
+                    // The View Replay viewer renders through its own Camera
+                    // (the one Camera::Update maintains), not g_pCamera; write
+                    // the managed frame there too so the orbit is what renders.
+                    if !CAMERA_UPDATE_THIS.is_null() && CAMERA_UPDATE_THIS != camera {
+                        write_free_camera_frame(CAMERA_UPDATE_THIS);
+                    }
+                    ORBIT_PROBE_FRAME_COUNT += 1;
+                    if ORBIT_PROBE_FRAME_COUNT % 30 == 0 {
+                        orbit_probe_log(game, camera);
+                    }
                 }
             }
         }
@@ -1611,7 +2014,21 @@ unsafe fn install_free_camera_hooks() -> bool {
 
     let update_camera = resolve(b"_ZN4Game12UpdateCameraEf\0");
     let start_level_intro = resolve(b"_ZN4Game15StartLevelIntroEi\0");
-    if update_camera.is_null() || start_level_intro.is_null() || !ensure_free_camera_symbols() {
+    let camera_path_update = resolve(b"_ZN10CameraPath6UpdateEf\0");
+    let car_render_ghost = resolve(b"_ZN3Car11RenderGhostERKN2TA6MFrameE\0");
+    let camera_update = resolve(b"_ZN6Camera6UpdateEfPN2TA13DynamicObjectERKNS0_4Vec3Ebb\0");
+    let set_vel_to_frame =
+        resolve(b"_ZN2TA13DynamicObject26SetVelocitiesToMoveToFrameERKNS_6MFrameEf\0");
+    let world_render = resolve(b"_ZN5World6RenderEv\0");
+    if update_camera.is_null()
+        || start_level_intro.is_null()
+        || camera_path_update.is_null()
+        || car_render_ghost.is_null()
+        || camera_update.is_null()
+        || set_vel_to_frame.is_null()
+        || world_render.is_null()
+        || !ensure_free_camera_symbols()
+    {
         FREE_CAMERA_HOOKS_INSTALLED.store(false, Ordering::Release);
         return false;
     }
@@ -1625,8 +2042,40 @@ unsafe fn install_free_camera_hooks() -> bool {
         hooked_game_start_level_intro as *const c_void,
         GAME_START_LEVEL_INTRO_HOOK_BYTES,
     );
-    let ok =
-        !GAME_UPDATE_CAMERA_TRAMPOLINE.is_null() && !GAME_START_LEVEL_INTRO_TRAMPOLINE.is_null();
+    CAMERA_PATH_UPDATE_TRAMPOLINE = install_inline_hook(
+        camera_path_update,
+        hooked_camera_path_update as *const c_void,
+        CAMERA_PATH_UPDATE_HOOK_BYTES,
+    );
+    CAR_RENDER_GHOST_TRAMPOLINE = install_inline_hook(
+        car_render_ghost,
+        hooked_car_render_ghost_capture as *const c_void,
+        CAR_RENDER_GHOST_HOOK_BYTES,
+    );
+    CAMERA_UPDATE_TRAMPOLINE = install_inline_hook(
+        camera_update,
+        hooked_camera_update as *const c_void,
+        CAMERA_UPDATE_HOOK_BYTES,
+    );
+    SET_VEL_TO_FRAME_TRAMPOLINE = install_inline_hook(
+        set_vel_to_frame,
+        hooked_set_velocities_to_move_to_frame as *const c_void,
+        SET_VEL_TO_FRAME_HOOK_BYTES,
+    );
+    GAME_RENDER_TRAMPOLINE = install_inline_hook(
+        world_render,
+        hooked_world_render as *const c_void,
+        GAME_RENDER_HOOK_BYTES,
+    );
+    let ok = !GAME_UPDATE_CAMERA_TRAMPOLINE.is_null()
+        && !GAME_START_LEVEL_INTRO_TRAMPOLINE.is_null()
+        && !CAMERA_PATH_UPDATE_TRAMPOLINE.is_null()
+        && !CAR_RENDER_GHOST_TRAMPOLINE.is_null()
+        && !CAMERA_UPDATE_TRAMPOLINE.is_null()
+        && !SET_VEL_TO_FRAME_TRAMPOLINE.is_null()
+        && !GAME_RENDER_TRAMPOLINE.is_null()
+        && ensure_replay_update_hook()
+        && ensure_view_replay_hook();
     if !ok {
         FREE_CAMERA_HOOKS_INSTALLED.store(false, Ordering::Release);
     }
@@ -2483,6 +2932,21 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplayFre
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplayCameraDiag(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    field: c_int,
+) -> c_int {
+    if field == 7 {
+        return ORBIT_ANCHOR_ERROR_1000.load(Ordering::Acquire);
+    }
+    if field == 8 {
+        return ORBIT_ANCHOR_SOURCE.load(Ordering::Acquire);
+    }
+    replay_camera::read_diag(field)
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLatestCheckpointSplit(
     _env: *mut c_void,
     _class: *mut c_void,
@@ -3141,6 +3605,63 @@ unsafe fn swarm_apply_orientation(transform: *mut f32, node: *const u8) {
     set_orientation(transform, angles.as_ptr(), angles.as_ptr());
 }
 
+unsafe fn swarm_integrate_node_step(
+    transform: *mut f32,
+    velocity: *mut f32,
+    node: *const u8,
+    apply_orientation: bool,
+) {
+    let flags = ptr::read_volatile(node.add(GHOST_NODE_FLAGS_OFFSET));
+    if (flags & 0x08) != 0 {
+        ptr::write(velocity, 0.0);
+        ptr::write(velocity.add(1), 0.0);
+        ptr::write(velocity.add(2), 0.0);
+        ptr::write(
+            transform.add(GHOST_TRANSFORM_POS_FLOAT),
+            ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET) as *const f32),
+        );
+        ptr::write(
+            transform.add(GHOST_TRANSFORM_POS_FLOAT + 1),
+            ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 4) as *const f32),
+        );
+        ptr::write(
+            transform.add(GHOST_TRANSFORM_POS_FLOAT + 2),
+            ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 8) as *const f32),
+        );
+    } else {
+        ptr::write(
+            velocity,
+            ptr::read(velocity)
+                + ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET) as *const f32),
+        );
+        ptr::write(
+            velocity.add(1),
+            ptr::read(velocity.add(1))
+                + ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 4) as *const f32),
+        );
+        ptr::write(
+            velocity.add(2),
+            ptr::read(velocity.add(2))
+                + ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 8) as *const f32),
+        );
+        ptr::write(
+            transform.add(GHOST_TRANSFORM_POS_FLOAT),
+            ptr::read(transform.add(GHOST_TRANSFORM_POS_FLOAT)) + ptr::read(velocity),
+        );
+        ptr::write(
+            transform.add(GHOST_TRANSFORM_POS_FLOAT + 1),
+            ptr::read(transform.add(GHOST_TRANSFORM_POS_FLOAT + 1)) + ptr::read(velocity.add(1)),
+        );
+        ptr::write(
+            transform.add(GHOST_TRANSFORM_POS_FLOAT + 2),
+            ptr::read(transform.add(GHOST_TRANSFORM_POS_FLOAT + 2)) + ptr::read(velocity.add(2)),
+        );
+    }
+    if apply_orientation {
+        swarm_apply_orientation(transform, node);
+    }
+}
+
 unsafe fn swarm_integrate_transform(
     nodes: *const u8,
     node_count: i32,
@@ -3157,41 +3678,7 @@ unsafe fn swarm_integrate_transform(
     let mut index = 0i32;
     while index <= limit {
         let node = nodes.add((index as usize) * GHOST_NODE_SIZE);
-        let flags = ptr::read_volatile(node.add(GHOST_NODE_FLAGS_OFFSET));
-        if (flags & 0x08) != 0 {
-            velocity[0] = 0.0;
-            velocity[1] = 0.0;
-            velocity[2] = 0.0;
-            ptr::write(
-                transform.add(GHOST_TRANSFORM_POS_FLOAT),
-                ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET) as *const f32),
-            );
-            ptr::write(
-                transform.add(GHOST_TRANSFORM_POS_FLOAT + 1),
-                ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 4) as *const f32),
-            );
-            ptr::write(
-                transform.add(GHOST_TRANSFORM_POS_FLOAT + 2),
-                ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 8) as *const f32),
-            );
-        } else {
-            velocity[0] += ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET) as *const f32);
-            velocity[1] += ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 4) as *const f32);
-            velocity[2] += ptr::read_volatile(node.add(GHOST_NODE_VECTOR_OFFSET + 8) as *const f32);
-            ptr::write(
-                transform.add(GHOST_TRANSFORM_POS_FLOAT),
-                ptr::read(transform.add(GHOST_TRANSFORM_POS_FLOAT)) + velocity[0],
-            );
-            ptr::write(
-                transform.add(GHOST_TRANSFORM_POS_FLOAT + 1),
-                ptr::read(transform.add(GHOST_TRANSFORM_POS_FLOAT + 1)) + velocity[1],
-            );
-            ptr::write(
-                transform.add(GHOST_TRANSFORM_POS_FLOAT + 2),
-                ptr::read(transform.add(GHOST_TRANSFORM_POS_FLOAT + 2)) + velocity[2],
-            );
-        }
-        swarm_apply_orientation(transform, node);
+        swarm_integrate_node_step(transform, velocity.as_mut_ptr(), node, true);
         index += 1;
     }
     true
@@ -3230,6 +3717,9 @@ unsafe fn swarm_render_extra_ghosts(game: *mut c_void) {
     if !GHOST_TRANSFORM.is_null() {
         ptr::copy_nonoverlapping(GHOST_TRANSFORM, transform.as_mut_ptr(), transform.len());
     }
+    // Swarm ghost renders go through the hooked Car::RenderGhost too; flag them
+    // so the replay-camera capture keeps only the primary car's transform.
+    IN_SWARM_RENDER = true;
     let mut index = 0usize;
     while index < SWARM_GHOST_COUNT {
         let nodes = SWARM_GHOST_NODES[index];
@@ -3241,18 +3731,433 @@ unsafe fn swarm_render_extra_ghosts(game: *mut c_void) {
         }
         index += 1;
     }
+    IN_SWARM_RENDER = false;
 }
 
 unsafe extern "C" fn hooked_replay_update(
     replay: *mut c_void,
     car: *mut c_void,
-    a: c_int,
-    b: c_int,
+    dt: f32,
+    flags: c_int,
 ) {
+    // Cinematic slow-motion while the managed orbit camera owns the passive
+    // viewer: the car crosses the scenery more slowly, so a full orbit fits
+    // into each open section of the route.
+    let dt = if VIEW_REPLAY_SESSION
+        && replay_camera::is_managed()
+        && FREE_CAMERA_ENABLED.load(Ordering::Acquire)
+        && FREE_CAMERA_ACTIVE.load(Ordering::Acquire)
+        && dt.is_finite()
+    {
+        dt * 0.35
+    } else {
+        dt
+    };
     let original: ReplayUpdateFn = mem::transmute(REPLAY_UPDATE_TRAMPOLINE);
-    original(replay, car, a, b);
+    original(replay, car, dt, flags);
+    if !car.is_null() {
+        REPLAY_UPDATE_CAR = car as *mut u8;
+    }
     if !CURRENT_GAME.is_null() {
         swarm_render_extra_ghosts(CURRENT_GAME);
+    }
+}
+
+/// World::Render hook: draw the viewer replay car right after the track
+/// geometry, while the 3D scene matrices are active. Drawing after
+/// Game::Render returns lands in HUD/ortho state, and a Car::RenderGhost from
+/// the update phase (as from Replay::Update) has no valid GL state at all --
+/// both draw nothing. World::Render is the one 3D-pass call the viewer always
+/// makes (the track is always visible), so it is the reliable injection point.
+unsafe extern "C" fn hooked_world_render(world: *mut c_void) {
+    let original: GameRenderGhostFn = mem::transmute(GAME_RENDER_TRAMPOLINE);
+    original(world);
+    render_viewer_replay_car(CURRENT_GAME);
+}
+
+/// The passive replay viewer animates an invisible proxy body and never draws
+/// the car at the playback position, so while the managed replay camera is
+/// active there, draw the car ourselves at its anchor pose with the stock
+/// ghost renderer (the same call the swarm feature uses in this viewer).
+unsafe fn render_viewer_replay_car(game: *mut c_void) {
+    if !VIEW_REPLAY_SESSION
+        || !REPLAY_TARGET_MFRAME_VALID
+        || !replay_camera::is_managed()
+        || !FREE_CAMERA_ENABLED.load(Ordering::Acquire)
+        || !FREE_CAMERA_ACTIVE.load(Ordering::Acquire)
+        || !game_show_replay_active()
+        || game.is_null()
+        || !ensure_swarm_symbols()
+        || CAR_RENDER_GHOST.is_null()
+    {
+        return;
+    }
+    let car =
+        ptr::read_volatile((game as *mut u8).add(GAME_CURRENT_CAR_OFFSET) as *mut *mut c_void);
+    if car.is_null() {
+        return;
+    }
+    if CAR_RENDER.is_null() {
+        CAR_RENDER = resolve(b"_ZN3Car6RenderEb\0");
+        if CAR_RENDER.is_null() {
+            return;
+        }
+    }
+    ORBIT_PROBE_VIEWER_CAR_DRAWS.fetch_add(1, Ordering::AcqRel);
+    if CAR_SET_LIGHT_COLOUR.is_null() {
+        CAR_SET_LIGHT_COLOUR = resolve(b"_ZN3Car14SetLightColourEjf\0");
+    }
+    if !CAR_SET_LIGHT_COLOUR.is_null() {
+        let set_light: CarSetLightColourFn = mem::transmute(CAR_SET_LIGHT_COLOUR);
+        set_light(car, 0xffff_ffff, 1.0);
+    }
+    // Car::Render(false) needs no external ghost state (the ghost path draws
+    // with a race-only alpha that is zero in the viewer, i.e. invisible) and
+    // applies the car body transform itself -- the body is driven along the
+    // replay path, so the car appears exactly where playback has it.
+    let render: CarRenderFn = mem::transmute(CAR_RENDER);
+    IN_SWARM_RENDER = true;
+    render(car, 0);
+    IN_SWARM_RENDER = false;
+}
+
+/// Install the Game::ViewReplay hook once; shared by the free-camera and swarm
+/// installers (an inline hook must never be applied to the same target twice).
+unsafe fn ensure_view_replay_hook() -> bool {
+    if VIEW_REPLAY_HOOK_INSTALLED.load(Ordering::Acquire) {
+        return !GAME_VIEW_REPLAY_TRAMPOLINE.is_null();
+    }
+    if VIEW_REPLAY_HOOK_INSTALLED.swap(true, Ordering::AcqRel) {
+        return !GAME_VIEW_REPLAY_TRAMPOLINE.is_null();
+    }
+    let view_replay = resolve(b"_ZN4Game10ViewReplayEPhPc\0");
+    if view_replay.is_null() {
+        return false;
+    }
+    GAME_VIEW_REPLAY_TRAMPOLINE = install_inline_hook(
+        view_replay,
+        hooked_game_view_replay as *const c_void,
+        GAME_VIEW_REPLAY_HOOK_BYTES,
+    );
+    !GAME_VIEW_REPLAY_TRAMPOLINE.is_null()
+}
+
+/// Install the Replay::Update hook once; shared by the free-camera and swarm
+/// installers (an inline hook must never be applied to the same target twice).
+unsafe fn ensure_replay_update_hook() -> bool {
+    if REPLAY_UPDATE_HOOK_INSTALLED.load(Ordering::Acquire) {
+        return !REPLAY_UPDATE_TRAMPOLINE.is_null();
+    }
+    if REPLAY_UPDATE_HOOK_INSTALLED.swap(true, Ordering::AcqRel) {
+        return !REPLAY_UPDATE_TRAMPOLINE.is_null();
+    }
+    let replay_update = resolve(b"_ZN6Replay6UpdateEP3Carfi\0");
+    if replay_update.is_null() {
+        return false;
+    }
+    REPLAY_UPDATE_TRAMPOLINE = install_inline_hook(
+        replay_update,
+        hooked_replay_update as *const c_void,
+        REPLAY_UPDATE_HOOK_BYTES,
+    );
+    !REPLAY_UPDATE_TRAMPOLINE.is_null()
+}
+
+/// The View Replay viewer animates its cinematic camera from CameraPath::Update
+/// AFTER Game::UpdateCamera, so it silently overwrites the managed orbit frame
+/// (the render then shows the cinematic while the orbit only exists in our
+/// diagnostics). Skip the stock path writer while the managed replay camera
+/// owns the frame; menu fly-throughs (not show-replay) keep the original path.
+unsafe extern "C" fn hooked_car_render_ghost_capture(car: *mut c_void, frame: *const f32) {
+    ORBIT_PROBE_RENDER_GHOST_CALLS.fetch_add(1, Ordering::AcqRel);
+    if !IN_SWARM_RENDER && !frame.is_null() {
+        ptr::copy_nonoverlapping(
+            frame,
+            ptr::addr_of_mut!(REPLAY_RENDER_TRANSFORM) as *mut f32,
+            GHOST_TRANSFORM_BYTES / 4,
+        );
+        REPLAY_RENDER_TRANSFORM_VALID = true;
+    }
+    let original: CarRenderGhostFn = mem::transmute(CAR_RENDER_GHOST_TRAMPOLINE);
+    original(car, frame);
+}
+
+fn probe_push(buf: &mut [u8; 512], len: &mut usize, bytes: &[u8]) {
+    for &b in bytes {
+        if *len < buf.len() {
+            buf[*len] = b;
+            *len += 1;
+        }
+    }
+}
+
+fn probe_push_i32(buf: &mut [u8; 512], len: &mut usize, value: i32) {
+    let mut digits = [0u8; 12];
+    let mut n = value;
+    let mut count = 0usize;
+    if n < 0 {
+        probe_push(buf, len, b"-");
+    }
+    loop {
+        let digit = (n % 10).unsigned_abs() as u8;
+        digits[count] = b'0' + digit;
+        count += 1;
+        n /= 10;
+        if n == 0 {
+            break;
+        }
+    }
+    while count > 0 {
+        count -= 1;
+        probe_push(buf, len, &digits[count..count + 1]);
+    }
+}
+
+fn probe_push_vec(buf: &mut [u8; 512], len: &mut usize, tag: &[u8], v: Option<[f32; 3]>) {
+    probe_push(buf, len, tag);
+    match v {
+        Some(v) => {
+            for (i, value) in v.iter().enumerate() {
+                if i > 0 {
+                    probe_push(buf, len, b",");
+                }
+                probe_push_i32(buf, len, (*value * 10.0) as i32);
+            }
+        }
+        None => probe_push(buf, len, b"none"),
+    }
+}
+
+/// Read the MFrame the viewer's ghost car renders with (Game::Render passes
+/// Replay::GetGhostTransform() straight to Car::RenderGhost).
+unsafe fn read_viewer_ghost_frame(game: *mut c_void) -> Option<replay_camera::CarFrame> {
+    if game.is_null() {
+        return None;
+    }
+    if REPLAY_GET_GHOST_TRANSFORM.is_null() {
+        REPLAY_GET_GHOST_TRANSFORM = resolve(b"_ZN6Replay17GetGhostTransformEv\0");
+        if REPLAY_GET_GHOST_TRANSFORM.is_null() {
+            return None;
+        }
+    }
+    let replay =
+        ptr::read_volatile((game as *mut u8).add(GAME_REPLAY_OBJECT_OFFSET) as *mut *mut c_void);
+    if replay.is_null() {
+        return None;
+    }
+    let getter: ReplayGetGhostTransformFn = mem::transmute(REPLAY_GET_GHOST_TRANSFORM);
+    read_transform_car_frame(getter(replay))
+}
+
+/// Append one diagnostic line describing every anchor/camera capture source.
+unsafe fn orbit_probe_log(game: *mut c_void, camera: *const f32) {
+    let mut buf = [0u8; 512];
+    let mut len = 0usize;
+    probe_push(&mut buf, &mut len, b"probe f=");
+    probe_push_i32(&mut buf, &mut len, ORBIT_PROBE_FRAME_COUNT);
+    probe_push(&mut buf, &mut len, b" rg=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        ORBIT_PROBE_RENDER_GHOST_CALLS.load(Ordering::Acquire),
+    );
+    probe_push(&mut buf, &mut len, b" cu=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        ORBIT_PROBE_CAMERA_UPDATE_CALLS.load(Ordering::Acquire),
+    );
+    probe_push(&mut buf, &mut len, b" sva=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        ORBIT_PROBE_SETVEL_ALL_CALLS.load(Ordering::Acquire),
+    );
+    probe_push(&mut buf, &mut len, b" svc=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        ORBIT_PROBE_SETVEL_CAPTURES.load(Ordering::Acquire),
+    );
+    probe_push(&mut buf, &mut len, b" wrv=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        ORBIT_PROBE_VIEWER_CAR_DRAWS.load(Ordering::Acquire),
+    );
+    probe_push(&mut buf, &mut len, b" eqc=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        (CAMERA_UPDATE_THIS == camera as *mut f32) as i32,
+    );
+    probe_push(&mut buf, &mut len, b" rp=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        if REPLAY_POS.is_null() {
+            -1
+        } else {
+            ptr::read_volatile(REPLAY_POS)
+        },
+    );
+    probe_push(&mut buf, &mut len, b" gs=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        if GHOST_SIZE.is_null() {
+            -1
+        } else {
+            ptr::read_volatile(GHOST_SIZE)
+        },
+    );
+    let vec_of = |frame: Option<replay_camera::CarFrame>| frame.map(|f| f.pos);
+    probe_push_vec(
+        &mut buf,
+        &mut len,
+        b" cam=",
+        Some([
+            ptr::read_volatile(camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS)),
+            ptr::read_volatile(camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS + 1)),
+            ptr::read_volatile(camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS + 2)),
+        ]),
+    );
+    probe_push_vec(
+        &mut buf,
+        &mut len,
+        b" t9=",
+        if REPLAY_TARGET_MFRAME_VALID {
+            vec_of(read_transform_car_frame(
+                ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32,
+            ))
+        } else {
+            None
+        },
+    );
+    probe_push_vec(
+        &mut buf,
+        &mut len,
+        b" t7=",
+        vec_of(read_body_mframe(REPLAY_FOLLOW_OBJECT)),
+    );
+    probe_push_vec(
+        &mut buf,
+        &mut len,
+        b" t6=",
+        if REPLAY_RENDER_TRANSFORM_VALID {
+            vec_of(read_transform_car_frame(
+                ptr::addr_of!(REPLAY_RENDER_TRANSFORM) as *const f32,
+            ))
+        } else {
+            None
+        },
+    );
+    probe_push_vec(
+        &mut buf,
+        &mut len,
+        b" gt=",
+        vec_of(read_transform_car_frame(GHOST_TRANSFORM as *const f32)),
+    );
+    probe_push_vec(
+        &mut buf,
+        &mut len,
+        b" lc=",
+        vec_of(read_live_car_frame(game)),
+    );
+    probe_push_vec(
+        &mut buf,
+        &mut len,
+        b" gg=",
+        vec_of(read_viewer_ghost_frame(game)),
+    );
+    probe_push(&mut buf, &mut len, b"\n");
+
+    let fd = open(
+        ORBIT_PROBE_LOG_PATH.as_ptr() as *const c_char,
+        O_WRONLY | O_CREAT | O_APPEND,
+        0o644,
+    );
+    if fd >= 0 {
+        write(fd, buf.as_ptr() as *const c_void, len);
+        close(fd);
+    }
+}
+
+unsafe extern "C" fn hooked_set_velocities_to_move_to_frame(
+    object: *mut c_void,
+    frame: *const f32,
+    dt: f32,
+) {
+    ORBIT_PROBE_SETVEL_ALL_CALLS.fetch_add(1, Ordering::AcqRel);
+    if !frame.is_null()
+        && !REPLAY_FOLLOW_OBJECT.is_null()
+        && object == REPLAY_FOLLOW_OBJECT as *mut c_void
+    {
+        ORBIT_PROBE_SETVEL_CAPTURES.fetch_add(1, Ordering::AcqRel);
+        ptr::copy_nonoverlapping(
+            frame,
+            ptr::addr_of_mut!(REPLAY_TARGET_MFRAME) as *mut f32,
+            GHOST_TRANSFORM_BYTES / 4,
+        );
+        REPLAY_TARGET_MFRAME_VALID = true;
+    }
+    let original: SetVelocitiesToMoveToFrameFn = mem::transmute(SET_VEL_TO_FRAME_TRAMPOLINE);
+    original(object, frame, dt);
+}
+
+unsafe extern "C" fn hooked_camera_update(
+    camera: *mut c_void,
+    dt: f32,
+    object: *mut c_void,
+    look_offset: *const f32,
+    flag_a: u8,
+    flag_b: u8,
+) {
+    if !object.is_null() {
+        REPLAY_FOLLOW_OBJECT = object as *mut f32;
+    }
+    ORBIT_PROBE_CAMERA_UPDATE_CALLS.fetch_add(1, Ordering::AcqRel);
+    if !camera.is_null() {
+        CAMERA_UPDATE_THIS = camera as *mut f32;
+    }
+    let original: CameraUpdateFn = mem::transmute(CAMERA_UPDATE_TRAMPOLINE);
+    original(camera, dt, object, look_offset, flag_a, flag_b);
+    // While the managed replay camera owns the frame, re-pin the pose to the
+    // car body that was JUST driven (this hook runs inside Replay::Update,
+    // right after SetFrame/SetVelocitiesToMoveToFrame moved it). This both
+    // out-writes the stock chase pose and removes the one-frame skew between
+    // the camera (computed in Game::UpdateCamera, possibly before the body
+    // update) and the rendered car (drawn from the body afterwards).
+    if !camera.is_null()
+        && replay_camera::is_managed()
+        && FREE_CAMERA_ENABLED.load(Ordering::Acquire)
+        && FREE_CAMERA_ACTIVE.load(Ordering::Acquire)
+        && game_show_replay_active()
+    {
+        if let Some(car) = read_body_mframe(object as *mut f32) {
+            replay_camera::recompute_pose(&car, &mut *ptr::addr_of_mut!(FREE_CAMERA_FRAME));
+        }
+        write_free_camera_frame(camera as *mut f32);
+    }
+}
+
+unsafe extern "C" fn hooked_camera_path_update(path: *mut c_void, dt: f32) {
+    // Always run the stock camera path: skipping it freezes its side state
+    // (e.g. the hide-the-car flag used by onboard segments), which leaves the
+    // replay car invisible. It runs after Game::UpdateCamera, so while the
+    // managed replay camera owns the frame, re-assert our pose right after --
+    // last writer wins and the orbit is what actually renders.
+    let original: CameraPathUpdateFn = mem::transmute(CAMERA_PATH_UPDATE_TRAMPOLINE);
+    original(path, dt);
+    if replay_camera::is_managed()
+        && FREE_CAMERA_ENABLED.load(Ordering::Acquire)
+        && FREE_CAMERA_ACTIVE.load(Ordering::Acquire)
+        && game_show_replay_active()
+    {
+        let camera = current_camera();
+        if !camera.is_null() {
+            write_free_camera_frame(camera);
+        }
     }
 }
 
@@ -3267,6 +4172,7 @@ unsafe extern "C" fn hooked_game_view_replay(
     path: *const c_char,
 ) -> u8 {
     CURRENT_GAME = game;
+    VIEW_REPLAY_SESSION = true;
     swarm_catalog_note_path(path);
     if REPLAY_SWARM_ENABLED.load(Ordering::Acquire) && !path.is_null() {
         let index = swarm_catalog_find(path as *const u8, c_strlen(path as *const u8));
@@ -3290,9 +4196,7 @@ unsafe fn install_replay_swarm_hooks() -> bool {
         return false;
     }
     let render_ghost = resolve(b"_ZN4Game11RenderGhostEv\0");
-    let view_replay = resolve(b"_ZN4Game10ViewReplayEPhPc\0");
-    let replay_update = resolve(b"_ZN6Replay6UpdateEP3Carfi\0");
-    if render_ghost.is_null() || view_replay.is_null() || replay_update.is_null() {
+    if render_ghost.is_null() {
         REPLAY_SWARM_HOOKS_INSTALLED.store(false, Ordering::Release);
         return false;
     }
@@ -3301,19 +4205,9 @@ unsafe fn install_replay_swarm_hooks() -> bool {
         hooked_game_render_ghost as *const c_void,
         GAME_RENDER_GHOST_HOOK_BYTES,
     );
-    GAME_VIEW_REPLAY_TRAMPOLINE = install_inline_hook(
-        view_replay,
-        hooked_game_view_replay as *const c_void,
-        GAME_VIEW_REPLAY_HOOK_BYTES,
-    );
-    REPLAY_UPDATE_TRAMPOLINE = install_inline_hook(
-        replay_update,
-        hooked_replay_update as *const c_void,
-        REPLAY_UPDATE_HOOK_BYTES,
-    );
     let ok = !GAME_RENDER_GHOST_TRAMPOLINE.is_null()
-        && !GAME_VIEW_REPLAY_TRAMPOLINE.is_null()
-        && !REPLAY_UPDATE_TRAMPOLINE.is_null();
+        && ensure_view_replay_hook()
+        && ensure_replay_update_hook();
     if !ok {
         REPLAY_SWARM_HOOKS_INSTALLED.store(false, Ordering::Release);
     }

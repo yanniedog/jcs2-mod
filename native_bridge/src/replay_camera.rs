@@ -1,4 +1,4 @@
-//! Replay camera-mode state machine (Orbit / Helicopter / GoPro / Trackside).
+﻿//! Replay camera-mode state machine (Orbit / Helicopter / GoPro / Trackside).
 //!
 //! This module is intentionally self-contained: it owns all camera-mode state
 //! and operates only on plain data passed in from `lib.rs` (the car world frame
@@ -39,14 +39,29 @@ pub const MODE_GOPRO: i32 = 3;
 // mode value the Java spinner (`ModMenu.REPLAY_CAMERA_MODE_NAMES`) can emit;
 // when adding a mode, bump this and add the matching Java name. `mode_index()`
 // additionally clamps any out-of-range value to 0, so a mismatch can never
-// index out of bounds — it would only mis-map a mode.
+// index out of bounds -- it would only mis-map a mode.
 const MODE_COUNT: usize = 5;
 // Compile-time guard: the highest implemented mode must own a state slot.
 const _: () = assert!((MODE_GOPRO as usize) < MODE_COUNT);
 
-/// One full revolution every 10 s => 36 deg/s = TAU / 10 rad/s.
-const ORBIT_RATE_RAD_PER_S: f32 = 0.628_318_55;
+/// One full revolution every ~5 s (72 deg/s). Brisk enough that a whole orbit
+/// fits inside the open opening section of a typical replay.
+const ORBIT_RATE_RAD_PER_S: f32 = 1.25;
 const MIN_RADIUS: f32 = 2.0;
+// Keep Orbit close to the car: the buggy is ~2 units long, so 6 units frames
+// it large, and a short camera-to-car gap leaves track furniture little room
+// to slide between them and occlude the car.
+const ORBIT_MIN_RADIUS: f32 = 5.0;
+// The Orbit anchor is already projected from the stock replay camera's visual
+// centre ray; do not add a mesh-origin correction on top of that or the car
+// drifts off the middle of the captured video.
+const ORBIT_TARGET_UP_OFFSET: f32 = 0.0;
+const ORBIT_TARGET_FWD_OFFSET: f32 = 0.0;
+// Initial elevation as an up-component mixed into the horizontal start
+// direction: 0.35 => sin ~= 0.33 (~19 deg above the car). Kept low because the
+// stunt tracks hang platforms above the route; a high orbit keeps putting the
+// camera inside them, while a near-side-on view stays in open air.
+const ORBIT_INITIAL_ELEVATION: f32 = 0.35;
 const MAX_RADIUS: f32 = 600.0;
 /// Keep elevation just short of the poles so the look-at basis never degenerates.
 /// sin(83 deg) ~= 0.993.
@@ -76,6 +91,15 @@ static mut UP_REF: [[f32; 3]; MODE_COUNT] = [[0.0, 1.0, 0.0]; MODE_COUNT];
 // Captured defaults, restored by reset().
 static mut DEFAULT_RADIUS: [f32; MODE_COUNT] = [0.0; MODE_COUNT];
 static mut DEFAULT_DIR: [[f32; 3]; MODE_COUNT] = [[0.0, 0.0, 1.0]; MODE_COUNT];
+static DIAG_SAMPLES: AtomicI32 = AtomicI32::new(0);
+static DIAG_RADIUS_1000: AtomicI32 = AtomicI32::new(0);
+static DIAG_INWARD_DOT_1000: AtomicI32 = AtomicI32::new(0);
+static DIAG_ORBIT_CHORD_1000: AtomicI32 = AtomicI32::new(0);
+static DIAG_DIR_X_1000: AtomicI32 = AtomicI32::new(0);
+static DIAG_DIR_Y_1000: AtomicI32 = AtomicI32::new(0);
+static DIAG_DIR_Z_1000: AtomicI32 = AtomicI32::new(0);
+static mut DIAG_LAST_DIR: [f32; 3] = [0.0; 3];
+static mut DIAG_LAST_DIR_VALID: bool = false;
 
 /// Car world frame, supplied by lib.rs from the ghost transform. The basis
 /// vectors are the car's local axes expressed in world space.
@@ -117,7 +141,12 @@ pub fn invalidate() {
     unsafe {
         // Direct whole-array store: no reference to the mutable static is taken.
         INITIALISED = [false; MODE_COUNT];
+        DIAG_LAST_DIR_VALID = false;
     }
+    DIAG_SAMPLES.store(0, Ordering::Release);
+    DIAG_RADIUS_1000.store(0, Ordering::Release);
+    DIAG_INWARD_DOT_1000.store(0, Ordering::Release);
+    DIAG_ORBIT_CHORD_1000.store(0, Ordering::Release);
 }
 
 /// Double-tap / "Reset camera": restore the active mode's captured default
@@ -136,7 +165,11 @@ pub fn reset() {
 pub fn zoom(delta: f32) {
     unsafe {
         let i = mode_index();
-        RADIUS[i] = clamp(RADIUS[i] - delta, MIN_RADIUS, MAX_RADIUS);
+        RADIUS[i] = clamp(
+            RADIUS[i] - delta,
+            min_radius_for_mode(current_mode()),
+            MAX_RADIUS,
+        );
     }
 }
 
@@ -205,11 +238,56 @@ pub fn update(dt: f32, car: &CarFrame, frame: &mut [f32; 12]) -> bool {
             Some(d) => d,
             None => return false,
         };
-        let cam_pos = add(car.pos, scale(world_dir, RADIUS[i]));
-        // Camera looks straight at the car centre => car is pinned to frame centre.
+        RADIUS[i] = clamp(RADIUS[i], min_radius_for_mode(mode), MAX_RADIUS);
+        let target = camera_target(mode, car);
+        let cam_pos = add(target, scale(world_dir, RADIUS[i]));
+        // Camera looks straight at the replay car centre on every frame.
+        let forward = scale(world_dir, -1.0);
+        write_look_at(frame, cam_pos, forward, look_up);
+        update_diag(frame, world_dir, target);
+        true
+    }
+}
+
+/// Rebuild the managed camera pose from the CURRENT car frame without
+/// advancing the orbit or touching diagnostics. Used to re-pin the camera to
+/// the freshest car pose right after the game moves the car (update() may run
+/// earlier in the frame than the car update, which would leave the camera one
+/// frame behind the rendered car).
+pub fn recompute_pose(car: &CarFrame, frame: &mut [f32; 12]) -> bool {
+    unsafe {
+        let mode = current_mode();
+        let i = mode_index();
+        if !INITIALISED[i] {
+            return false;
+        }
+        let (world_dir, look_up) = match mode {
+            MODE_ORBIT | MODE_HELICOPTER => (DIR[i], UP_REF[i]),
+            MODE_GOPRO => (local_to_world(DIR[i], car), car.up),
+            _ => return false,
+        };
+        let world_dir = match normalize(world_dir) {
+            Some(d) => d,
+            None => return false,
+        };
+        let target = camera_target(mode, car);
+        let cam_pos = add(target, scale(world_dir, RADIUS[i]));
         let forward = scale(world_dir, -1.0);
         write_look_at(frame, cam_pos, forward, look_up);
         true
+    }
+}
+
+pub fn read_diag(field: i32) -> i32 {
+    match field {
+        0 => DIAG_SAMPLES.load(Ordering::Acquire),
+        1 => DIAG_RADIUS_1000.load(Ordering::Acquire),
+        2 => DIAG_INWARD_DOT_1000.load(Ordering::Acquire),
+        3 => DIAG_ORBIT_CHORD_1000.load(Ordering::Acquire),
+        4 => DIAG_DIR_X_1000.load(Ordering::Acquire),
+        5 => DIAG_DIR_Y_1000.load(Ordering::Acquire),
+        6 => DIAG_DIR_Z_1000.load(Ordering::Acquire),
+        _ => 0,
     }
 }
 
@@ -217,16 +295,36 @@ pub fn update(dt: f32, car: &CarFrame, frame: &mut [f32; 12]) -> bool {
 /// pose so the managed camera starts exactly where the game camera was.
 unsafe fn init_mode(mode: i32, i: usize, car: &CarFrame, frame: &[f32; 12]) -> bool {
     let cam_pos = [frame[9], frame[10], frame[11]];
-    let up = match normalize([frame[3], frame[4], frame[5]]) {
+    let captured_up = match normalize([frame[3], frame[4], frame[5]]) {
         Some(u) => u,
         None => return false,
     };
-    let offset = sub(cam_pos, car.pos);
-    let world_dir = match normalize(offset) {
+    let target = camera_target(mode, car);
+    let offset = sub(cam_pos, target);
+    let captured_world_dir = match normalize(offset) {
         Some(d) => d,
         None => return false,
     };
-    let radius = clamp(length(offset), MIN_RADIUS, MAX_RADIUS);
+    // Orbit revolves about WORLD up: the car's own up at capture can be badly
+    // tilted (levels start on ramps), which would tilt the whole orbit plane
+    // and turn side views into diagonal ones.
+    let up_ref = if mode == MODE_ORBIT {
+        [0.0, 1.0, 0.0]
+    } else {
+        captured_up
+    };
+    let world_dir = if mode == MODE_ORBIT {
+        orbit_initial_dir(car).unwrap_or(captured_world_dir)
+    } else {
+        captured_world_dir
+    };
+    // Orbit always starts at its close car-framing distance; the other modes
+    // keep the captured camera distance so activation is seamless.
+    let radius = if mode == MODE_ORBIT {
+        ORBIT_MIN_RADIUS
+    } else {
+        clamp(length(offset), min_radius_for_mode(mode), MAX_RADIUS)
+    };
 
     // GoPro stores the direction in the car's local frame so it tracks the car's
     // orientation; the world-fixed modes store the world direction directly.
@@ -241,7 +339,7 @@ unsafe fn init_mode(mode: i32, i: usize, car: &CarFrame, frame: &[f32; 12]) -> b
     };
     let dir = normalize(dir).unwrap_or(world_dir);
 
-    UP_REF[i] = up;
+    UP_REF[i] = up_ref;
     DIR[i] = dir;
     RADIUS[i] = radius;
     DEFAULT_DIR[i] = dir;
@@ -255,6 +353,54 @@ fn local_to_world(local: [f32; 3], car: &CarFrame) -> [f32; 3] {
         add(scale(car.right, local[0]), scale(car.up, local[1])),
         scale(car.fwd, local[2]),
     )
+}
+
+fn min_radius_for_mode(mode: i32) -> f32 {
+    if mode == MODE_ORBIT {
+        ORBIT_MIN_RADIUS
+    } else {
+        MIN_RADIUS
+    }
+}
+
+fn camera_target(mode: i32, car: &CarFrame) -> [f32; 3] {
+    if mode == MODE_ORBIT {
+        add(
+            add(car.pos, scale(car.up, ORBIT_TARGET_UP_OFFSET)),
+            scale(car.fwd, ORBIT_TARGET_FWD_OFFSET),
+        )
+    } else {
+        car.pos
+    }
+}
+
+fn orbit_initial_dir(car: &CarFrame) -> Option<[f32; 3]> {
+    normalize(add(
+        scale(car.fwd, -1.0),
+        scale(car.up, ORBIT_INITIAL_ELEVATION),
+    ))
+}
+
+fn update_diag(frame: &[f32; 12], world_dir: [f32; 3], target: [f32; 3]) {
+    let cam_pos = [frame[9], frame[10], frame[11]];
+    let to_car = sub(target, cam_pos);
+    let radius = length(to_car);
+    let forward = normalize([frame[6], frame[7], frame[8]]).unwrap_or([0.0, 0.0, 1.0]);
+    let inward = normalize(to_car).unwrap_or(forward);
+    DIAG_SAMPLES.fetch_add(1, Ordering::AcqRel);
+    DIAG_RADIUS_1000.store((radius * 1000.0) as i32, Ordering::Release);
+    DIAG_INWARD_DOT_1000.store((dot(forward, inward) * 1000.0) as i32, Ordering::Release);
+    DIAG_DIR_X_1000.store((world_dir[0] * 1000.0) as i32, Ordering::Release);
+    DIAG_DIR_Y_1000.store((world_dir[1] * 1000.0) as i32, Ordering::Release);
+    DIAG_DIR_Z_1000.store((world_dir[2] * 1000.0) as i32, Ordering::Release);
+    unsafe {
+        if DIAG_LAST_DIR_VALID {
+            let chord = length(sub(world_dir, DIAG_LAST_DIR));
+            DIAG_ORBIT_CHORD_1000.fetch_add((chord * 1000.0) as i32, Ordering::AcqRel);
+        }
+        DIAG_LAST_DIR = world_dir;
+        DIAG_LAST_DIR_VALID = true;
+    }
 }
 
 /// Build an orthonormal camera basis that looks along `forward`, keeping `up_ref`
