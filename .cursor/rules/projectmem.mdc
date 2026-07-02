@@ -1,0 +1,6 @@
+---
+description: projectmem memory layer — mandatory workflow for this repo
+alwaysApply: true
+---
+
+Follow `AGENTS.md` at the repo root: read `.projectmem/AI_INSTRUCTIONS.md`, `.projectmem/summary.md`, and `.projectmem/PROJECT_MAP.md` before working (never re-derive project state by rescanning sources); log bugs/attempts/fixes/decisions through the `pjm` CLI (or projectmem MCP tools); never edit `.projectmem/summary.md` or `events.jsonl` directly.
