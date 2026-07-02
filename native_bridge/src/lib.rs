@@ -1388,31 +1388,6 @@ unsafe fn read_car_body_frame(car: *mut u8) -> Option<replay_camera::CarFrame> {
     read_body_mframe(body)
 }
 
-/// Integrate the primary replay's node buffer up to the current playback index
-/// with the proven swarm routine, yielding the rendered car pose (position and
-/// basis). Gated on active playback so a freed node buffer is never touched.
-unsafe fn read_primary_node_transform() -> Option<replay_camera::CarFrame> {
-    if !FREE_CAMERA_PLAYBACK_MOVING.load(Ordering::Acquire) {
-        return None;
-    }
-    if !ensure_swarm_symbols() || GHOST_POINTER.is_null() || GHOST_SIZE.is_null() {
-        return None;
-    }
-    let nodes = ptr::read_volatile(GHOST_POINTER);
-    let count = ptr::read_volatile(GHOST_SIZE);
-    let master = swarm_master_node_index();
-    if nodes.is_null() || count < 2 || master < 1 || master >= count {
-        return None;
-    }
-    // swarm_integrate_transform zeroes GHOST_TRANSFORM_BYTES f32 ELEMENTS (not
-    // bytes), so give it that many floats of scratch to stay in bounds.
-    let mut transform = [0.0f32; GHOST_TRANSFORM_BYTES];
-    if !swarm_integrate_transform(nodes, count, master, transform.as_mut_ptr()) {
-        return None;
-    }
-    read_transform_car_frame(transform.as_ptr())
-}
-
 /// Read the current MFrame of a TA::DynamicObject (the body pointer itself).
 unsafe fn read_body_mframe(body: *mut f32) -> Option<replay_camera::CarFrame> {
     if body.is_null() {
@@ -1539,40 +1514,11 @@ unsafe fn choose_replay_camera_anchor(
     cam_fwd: [f32; 3],
 ) -> Option<replay_camera::CarFrame> {
     if replay_camera::current_mode() == replay_camera::MODE_ORBIT {
-        // Highest priority: the exact MFrame the viewer is currently driving
-        // the followed body toward (captured in SetVelocitiesToMoveToFrame
-        // inside Replay::Update) -- the node pose of the on-screen car.
-        // Disabled as primary: the SetVel target leads the rendered body by up
-        // to a frame; the followed body's own MFrame below is what Car::Render
-        // draws with, so anchoring there keeps the car dead-centre.
-        if false && REPLAY_TARGET_MFRAME_VALID {
-            if let Some(car) =
-                read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
-            {
-                ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
-                ORBIT_ANCHOR_SOURCE.store(9, Ordering::Release);
-                ORBIT_LAST_ANCHOR = car.pos;
-                ORBIT_LAST_ANCHOR_VALID = true;
-                return Some(car);
-            }
-        }
-        // Next: the node-buffer pose at the current playback index,
-        // integrated with the same routine the swarm feature uses to place its
-        // (visually correct) ghost cars. The viewer renders the primary car
-        // from this data, so it matches the on-screen car exactly; the physics
-        // body only trails it on a spring.
-        // Disabled as primary for the same reason: the node buffer is the
-        // racing-ghost's data (absent in the viewer, the wrong car in races).
-        if false {
-            if let Some(car) = read_primary_node_transform() {
-                ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
-                ORBIT_ANCHOR_SOURCE.store(8, Ordering::Release);
-                ORBIT_LAST_ANCHOR = car.pos;
-                ORBIT_LAST_ANCHOR_VALID = true;
-                return Some(car);
-            }
-        }
-        // Next: the DynamicObject the stock Camera::Update follows.
+        // Highest priority: the DynamicObject the stock Camera::Update follows.
+        // (Rejected alternatives, for the record: the SetVelocitiesToMoveToFrame
+        // target MFrame leads the rendered body by up to a frame, and the ghost
+        // node-buffer integration tracks the racing ghost -- absent in the
+        // viewer, the wrong car in races.)
         // Replay::Update passes the viewer car's body there right after driving
         // it via DynamicObject::SetFrame, so this MFrame is the on-screen car.
         if let Some(car) = read_body_mframe(REPLAY_FOLLOW_OBJECT) {

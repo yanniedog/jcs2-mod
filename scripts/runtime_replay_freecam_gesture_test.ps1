@@ -29,7 +29,7 @@ Set-Location $Root
 if (-not (Test-Path -LiteralPath $Adb)) {
     throw "adb not found: $Adb"
 }
-if (-not (Test-Path -LiteralPath $ApkPath)) {
+if (-not $SkipInstall -and -not (Test-Path -LiteralPath $ApkPath)) {
     throw "APK not found: $ApkPath"
 }
 
