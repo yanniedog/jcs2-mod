@@ -44,6 +44,15 @@ tools/
 jadx-out/
 *.dex
 
+# Local scratch: ad-hoc emulator screenshots, one-off disasm/probe scripts,
+# debug log dumps, and bot-coordination temp dirs left in the repo root.
+/_*.png
+/_*.py
+/debug-*.log
+.jcs2-bot-wait/
+__pycache__/
+*.pyc
+
 # OS/editor files
 .DS_Store
 Thumbs.db

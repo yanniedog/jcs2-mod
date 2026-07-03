@@ -176,9 +176,17 @@ function Prepare-EmulatorDisplay {
 
 function Assert-LandscapeGameSurface {
     param([string]$Name)
-    $xml = Dump-WindowXml
+    # Retry the dump: on a cold emulator the game SurfaceView can appear tens
+    # of seconds after the activity resumes, and a single dump races that.
+    $match = $null
+    $deadline = (Get-Date).AddSeconds(60)
+    do {
+        $xml = Dump-WindowXml
+        $match = [regex]::Match($xml, 'class="android\.view\.SurfaceView"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"')
+        if ($match.Success) { break }
+        Start-Sleep -Seconds 3
+    } while ((Get-Date) -lt $deadline)
     $xml | Set-Content -LiteralPath (Join-Path $RunDir "$Name-window.xml") -Encoding UTF8
-    $match = [regex]::Match($xml, 'class="android\.view\.SurfaceView"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"')
     if (-not $match.Success) {
         throw "$Name did not expose the game SurfaceView. See $RunDir\$Name-window.xml"
     }
@@ -503,6 +511,44 @@ function Get-ScreenText {
     return ($text -join "`n")
 }
 
+# Fullscreen OCR routinely misses the stylized italic "VIEW REPLAY" banner
+# text. Second chance: crop the button region from the framebuffer, upscale
+# and binarize it (white-on-dark banner), and OCR just that strip. The crop
+# only spans the VIEW REPLAY button, so matching "REPLAY" alone is safe.
+function Test-ViewReplayButtonVisible {
+    $exe = Get-TesseractExe
+    if (-not $exe) { return $false }
+    $raw = Join-Path $RunDir "_ocr-view-replay-probe.png"
+    if (-not (Test-Path -LiteralPath $raw)) { return $false }
+    try {
+        Add-Type -AssemblyName System.Drawing
+        $src = [System.Drawing.Bitmap]::FromFile((Resolve-Path -LiteralPath $raw))
+        if ($src.Width -lt 360 -or $src.Height -lt 318) { $src.Dispose(); return $false }
+        $rect = New-Object System.Drawing.Rectangle(120, 288, 240, 30)
+        $crop = $src.Clone($rect, $src.PixelFormat)
+        $big = New-Object System.Drawing.Bitmap(($crop.Width * 4), ($crop.Height * 4))
+        $g = [System.Drawing.Graphics]::FromImage($big)
+        $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+        $g.DrawImage($crop, 0, 0, $big.Width, $big.Height)
+        $g.Dispose()
+        for ($y = 0; $y -lt $big.Height; $y++) {
+            for ($x = 0; $x -lt $big.Width; $x++) {
+                $p = $big.GetPixel($x, $y)
+                $lum = (0.3 * $p.R + 0.59 * $p.G + 0.11 * $p.B)
+                if ($lum -gt 150) { $big.SetPixel($x, $y, [System.Drawing.Color]::Black) }
+                else { $big.SetPixel($x, $y, [System.Drawing.Color]::White) }
+            }
+        }
+        $out = Join-Path $RunDir "_ocr-view-replay-crop.png"
+        $big.Save($out, [System.Drawing.Imaging.ImageFormat]::Png)
+        $src.Dispose(); $crop.Dispose(); $big.Dispose()
+        $text = (& $exe $out stdout --psm 7 2>$null) -join "`n"
+        return ($text -imatch "REPLAY")
+    } catch {
+        return $false
+    }
+}
+
 function Test-GlLoginPrompt {
     param([string]$Text)
     if (-not $Text) { return $false }
@@ -737,20 +783,34 @@ function Run-StraightOnRace {
 function Open-RegularStraightOnPassiveReplay {
     Open-RegularStraightOnLevelDetail
     Write-Host "Starting Straight On replay fly-through"
-    foreach ($point in @(@(217, 298), @(240, 302), @(280, 302))) {
-        # The TrueAxis/Facebook LOGIN dialog can re-appear on the replay path
-        # and intercept the View Replay tap; clear it before each attempt.
+    # The VIEW REPLAY button lives inside the GL SurfaceView (invisible to
+    # uiautomator) and only appears once the level-detail leaderboard finishes
+    # "Connecting to server". Wait for OCR to actually see the button before
+    # tapping it, then retry the tap until playback diagnostics appear.
+    $points = @(@(240, 302), @(217, 298), @(280, 302))
+    $entered = $false
+    for ($attempt = 0; $attempt -lt 20 -and -not $entered; $attempt++) {
         Submit-PlayerNamePromptIfPresent | Out-Null
         Dismiss-LoginOverlayIfPresent | Out-Null
+        $ocr = Get-ScreenText "view-replay-probe"
+        if ($ocr -notmatch "VIEW\s*REPLAY" -and -not (Test-ViewReplayButtonVisible)) {
+            # Button not up yet (leaderboard still connecting); keep waiting.
+            Start-Sleep -Seconds 3
+            continue
+        }
+        $point = $points[$attempt % $points.Count]
         Tap-Input $point[0] $point[1]
         Start-Sleep -Seconds 4
         Submit-PlayerNamePromptIfPresent | Out-Null
-        Dismiss-LoginOverlayIfPresent | Out-Null
+        if (Dismiss-LoginOverlayIfPresent) { continue }
         $debug = Read-AdbText shell cat /sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log
-        if ($debug -match "gesture_layer touchable=true|orbit_diag") { break }
+        if ($debug -match "gesture_layer touchable=true|orbit_diag") { $entered = $true }
     }
     Start-Sleep -Seconds 4
     Save-Screenshot "04-passive-replay-open.png"
+    if (-not $entered) {
+        throw "View Replay playback did not start (no gesture_layer/orbit_diag evidence) after waiting for and tapping the VIEW REPLAY button. See $RunDir\04-passive-replay-open.png"
+    }
 }
 
 function Write-UiautomatorGestureSource {
@@ -1140,6 +1200,8 @@ function Collect-Evidence {
     Save-AdbText (Join-Path $RunDir "public_ycs2_mod_native_crash.log") shell cat /sdcard/YCS2CommunityMod/logs/ycs2_mod_native_crash.log | Out-Null
     Save-AdbText (Join-Path $RunDir "debug-04e8a3.log") shell cat /sdcard/YCS2CommunityMod/logs/debug-04e8a3.log | Out-Null
     Copy-Item -LiteralPath (Join-Path $RunDir "debug-04e8a3.log") -Destination (Join-Path $Root "debug-04e8a3.log") -Force -ErrorAction SilentlyContinue
+    Save-AdbText (Join-Path $RunDir "debug-cf277a.log") shell cat /sdcard/YCS2CommunityMod/logs/debug-cf277a.log | Out-Null
+    Copy-Item -LiteralPath (Join-Path $RunDir "debug-cf277a.log") -Destination (Join-Path $Root "debug-cf277a.log") -Force -ErrorAction SilentlyContinue
     Save-AdbText (Join-Path $RunDir "logcat.txt") logcat -d -t 5000 | Out-Null
     Dump-WindowXml | Set-Content -LiteralPath (Join-Path $RunDir "window.xml") -Encoding UTF8
 }
@@ -1235,7 +1297,7 @@ if ($ClearAppDataBeforeRun) {
 }
 Invoke-Adb shell am force-stop $Package
 Invoke-Adb shell am force-stop com.android.chrome
-Invoke-Adb shell rm -f /sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log /sdcard/YCS2CommunityMod/logs/ycs2_mod_native_crash.log /sdcard/YCS2CommunityMod/logs/debug-04e8a3.log
+Invoke-Adb shell rm -f /sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log /sdcard/YCS2CommunityMod/logs/ycs2_mod_native_crash.log /sdcard/YCS2CommunityMod/logs/debug-04e8a3.log /sdcard/YCS2CommunityMod/logs/debug-cf277a.log
 Invoke-Adb logcat -c
 Prepare-EmulatorDisplay
 

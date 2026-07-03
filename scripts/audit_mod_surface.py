@@ -151,7 +151,13 @@ def check_sources(skip_local_assets=False):
             if file_path.is_file():
                 ok = check_blob(str(file_path.relative_to(ROOT)), file_path.read_bytes()) and ok
 
-    bridge = (ROOT / "native_bridge/src/lib.rs").read_text(encoding="utf-8")
+    # The native bridge is split into topical modules; audit the concatenation
+    # of every Rust source file so the textual invariants keep working no
+    # matter which module an item lives in.
+    bridge = "\n".join(
+        rs_path.read_text(encoding="utf-8")
+        for rs_path in sorted((ROOT / "native_bridge/src").glob("*.rs"))
+    )
     allowed_native_symbols = (
         "g_nMaxNumCheckPointTimes",
         "g_dlcConnections",
@@ -212,6 +218,7 @@ def check_sources(skip_local_assets=False):
         "_ZN2TA13DynamicObject26SetVelocitiesToMoveToFrameERKNS_6MFrameEf",
         "_ZN6Replay17GetGhostTransformEv",
         "_ZN5World6RenderEv",
+        "_ZN4Game6RenderEv",
         "_ZN3Car6RenderEb",
         "_ZN3Car14SetLightColourEjf",
     )
