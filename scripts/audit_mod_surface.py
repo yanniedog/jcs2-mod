@@ -206,6 +206,14 @@ def check_sources(skip_local_assets=False):
         "g_v3LastOnGroundPos",
         "_ZN4Game12UpdateCameraEf",
         "_ZN4Game15StartLevelIntroEi",
+        "_ZN10CameraPath6UpdateEf",
+        "_ZN3Car11RenderGhostERKN2TA6MFrameE",
+        "_ZN6Camera6UpdateEfPN2TA13DynamicObjectERKNS0_4Vec3Ebb",
+        "_ZN2TA13DynamicObject26SetVelocitiesToMoveToFrameERKNS_6MFrameEf",
+        "_ZN6Replay17GetGhostTransformEv",
+        "_ZN5World6RenderEv",
+        "_ZN3Car6RenderEb",
+        "_ZN3Car14SetLightColourEjf",
     )
     for line in bridge.splitlines():
         if 'resolve(b"' in line and not any(symbol in line for symbol in allowed_native_symbols):
@@ -435,11 +443,24 @@ def check_sources(skip_local_assets=False):
     ):
         ok = fail("replay follow distance calibration no longer rejects zero/stale ground-position samples") and ok
     if (
-        "read_live_car_basis" not in bridge
+        "read_live_car_frame" not in bridge
+        or "choose_replay_camera_anchor(game, cam_pos, up, fwd)" not in bridge
+        or "stock_camera_ray_score" not in bridge
+        or "stock_camera_frame_is_stale" not in bridge
+        or "ORBIT_LAST_ANCHOR_VALID" not in bridge
+        or "cam_pos[0] + (cam_fwd[0] * FREE_CAMERA_FOLLOW_DISTANCE)" not in bridge
+        or "GHOST_TRANSFORM as *const f32" not in bridge
+        or "LAST_GHOST_TRANSFORM as *const f32" not in bridge
         or "CAR_BODY_RIGHT_FLOAT" not in bridge
-        or "read_live_car_basis(game).unwrap_or((right, up, fwd))" not in bridge
+        or "CAR_BODY_POS_FLOAT" not in bridge
+        or "ORBIT_ANCHOR_ERROR_1000" not in bridge
+        # The replay-node position integration drifted off the rendered car
+        # (no collision response) and must not come back as an orbit anchor.
+        or "read_primary_replay_node_frame" in bridge
+        or "orbit_replay_node_copy" in bridge
+        or "read_replay_visual_car_frame" in bridge
     ):
-        ok = fail("replay managed camera no longer preserves the live car basis for GoPro mode") and ok
+        ok = fail("replay managed camera no longer anchors the orbit on the stock chase camera's car-framing look point") and ok
     if (
         "write_free_camera_frame" not in bridge
         or "ptr::copy_nonoverlapping" not in bridge

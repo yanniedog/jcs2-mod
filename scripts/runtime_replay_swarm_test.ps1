@@ -863,11 +863,11 @@ function Install-ApkWithRetry {
     param([string]$Path, [int]$Seconds = 300)
     $deadline = (Get-Date).AddSeconds($Seconds)
     do {
-        & $Adb install -r $Path 2>&1 | Out-Host
+        & $Adb install --no-incremental -r $Path 2>&1 | Out-Host
         if ($LASTEXITCODE -eq 0) { return }
         Start-Sleep -Seconds 10
     } while ((Get-Date) -lt $deadline)
-    throw "adb install -r $Path failed after waiting ${Seconds}s"
+    throw "adb install --no-incremental -r $Path failed after waiting ${Seconds}s"
 }
 
 Write-Host "Installing $ApkPath"

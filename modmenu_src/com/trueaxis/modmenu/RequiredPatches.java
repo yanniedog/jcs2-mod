@@ -116,6 +116,7 @@ public final class RequiredPatches {
                                                float yaw, float pitch,
                                                float carRight, float carUp);
     static native int readReplayFreeCameraStatus();
+    static native int readReplayCameraDiag(int field);
     static native long readLatestCheckpointSplit();
     static native int readLatestCheckpointCurrentMillis();
     static native int readLatestCheckpointGhostMillis();

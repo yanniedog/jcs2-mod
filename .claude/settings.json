@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__projectmem__get_instructions",
+      "mcp__projectmem__get_summary",
+      "mcp__projectmem__get_project_map",
+      "mcp__projectmem__get_context",
+      "mcp__projectmem__get_global_gotchas",
+      "mcp__projectmem__get_instructions",
+      "mcp__projectmem__get_issue",
+      "mcp__projectmem__get_score",
+      "mcp__projectmem__precheck_file",
+      "mcp__projectmem__search_events",
+      "mcp__projectmem__log_issue",
+      "mcp__projectmem__record_attempt",
+      "mcp__projectmem__record_fix",
+      "mcp__projectmem__add_decision",
+      "mcp__projectmem__add_note",
+      "Bash(pjm *)",
+      "Bash(pjm:*)",
+      "PowerShell(pjm *)"
+    ]
+  }
+}
