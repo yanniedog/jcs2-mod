@@ -24,10 +24,10 @@
 .method constructor <init>(I)V
     .registers 4
 
-    .line 1540
+    .line 1716
     invoke-direct {p0}, Landroid/graphics/drawable/Drawable;-><init>()V
 
-    .line 1537
+    .line 1713
     new-instance v0, Landroid/graphics/Paint;
 
     const/4 v1, 0x1
@@ -36,47 +36,47 @@
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
-    .line 1538
+    .line 1714
     new-instance v0, Landroid/graphics/Path;
 
     invoke-direct {v0}, Landroid/graphics/Path;-><init>()V
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
-    .line 1541
+    .line 1717
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
     sget-object v1, Landroid/graphics/Paint$Style;->STROKE:Landroid/graphics/Paint$Style;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 1542
+    .line 1718
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
     const v1, 0x3fcccccd
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStrokeWidth(F)V
 
-    .line 1543
+    .line 1719
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
     sget-object v1, Landroid/graphics/Paint$Cap;->ROUND:Landroid/graphics/Paint$Cap;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStrokeCap(Landroid/graphics/Paint$Cap;)V
 
-    .line 1544
+    .line 1720
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
     sget-object v1, Landroid/graphics/Paint$Join;->ROUND:Landroid/graphics/Paint$Join;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStrokeJoin(Landroid/graphics/Paint$Join;)V
 
-    .line 1545
+    .line 1721
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 1546
+    .line 1722
     return-void
 .end method
 
@@ -85,12 +85,12 @@
 .method public draw(Landroid/graphics/Canvas;)V
     .registers 10
 
-    .line 1549
+    .line 1725
     invoke-virtual {p0}, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->getBounds()Landroid/graphics/Rect;
 
     move-result-object v0
 
-    .line 1550
+    .line 1726
     invoke-virtual {v0}, Landroid/graphics/Rect;->width()I
 
     move-result v1
@@ -105,7 +105,7 @@
 
     int-to-float v1, v1
 
-    .line 1551
+    .line 1727
     iget v2, v0, Landroid/graphics/Rect;->left:I
 
     int-to-float v2, v2
@@ -124,7 +124,7 @@
 
     add-float/2addr v2, v3
 
-    .line 1552
+    .line 1728
     iget v3, v0, Landroid/graphics/Rect;->top:I
 
     int-to-float v3, v3
@@ -141,22 +141,22 @@
 
     add-float/2addr v3, v0
 
-    .line 1553
+    .line 1729
     const/high16 v0, 0x41c00000
 
     div-float/2addr v1, v0
 
-    .line 1554
+    .line 1730
     const v0, 0x3fcccccd
 
     mul-float v0, v0, v1
 
-    .line 1555
+    .line 1731
     iget-object v4, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v4, v0}, Landroid/graphics/Paint;->setStrokeWidth(F)V
 
-    .line 1557
+    .line 1733
     new-instance v0, Landroid/graphics/RectF;
 
     const/high16 v4, 0x40400000
@@ -185,7 +185,7 @@
 
     invoke-direct {v0, v4, v5, v6, v7}, Landroid/graphics/RectF;-><init>(FFFF)V
 
-    .line 1559
+    .line 1735
     const/high16 v4, 0x3fc00000
 
     mul-float v4, v4, v1
@@ -194,12 +194,12 @@
 
     invoke-virtual {p1, v0, v4, v4, v5}, Landroid/graphics/Canvas;->drawRoundRect(Landroid/graphics/RectF;FFLandroid/graphics/Paint;)V
 
-    .line 1561
+    .line 1737
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v0}, Landroid/graphics/Path;->reset()V
 
-    .line 1562
+    .line 1738
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v4, 0x41200000
@@ -210,7 +210,7 @@
 
     invoke-virtual {v0, v4, v7}, Landroid/graphics/Path;->moveTo(FF)V
 
-    .line 1563
+    .line 1739
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v4, 0x41000000
@@ -227,7 +227,7 @@
 
     invoke-virtual {v0, v4, v3}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1564
+    .line 1740
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v4, 0x41800000
@@ -238,7 +238,7 @@
 
     invoke-virtual {v0, v4, v3}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1565
+    .line 1741
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v4, 0x41600000
@@ -249,19 +249,19 @@
 
     invoke-virtual {v0, v4, v7}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1566
+    .line 1742
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
     iget-object v4, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {p1, v0, v4}, Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V
 
-    .line 1568
+    .line 1744
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v0}, Landroid/graphics/Path;->reset()V
 
-    .line 1569
+    .line 1745
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v4, 0x40e00000
@@ -272,7 +272,7 @@
 
     invoke-virtual {v0, v4, v3}, Landroid/graphics/Path;->moveTo(FF)V
 
-    .line 1570
+    .line 1746
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v4, 0x41880000
@@ -283,21 +283,21 @@
 
     invoke-virtual {v0, v2, v3}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1571
+    .line 1747
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->path:Landroid/graphics/Path;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {p1, v0, v1}, Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V
 
-    .line 1572
+    .line 1748
     return-void
 .end method
 
 .method public getIntrinsicHeight()I
     .registers 2
 
-    .line 1591
+    .line 1767
     const/16 v0, 0x18
 
     return v0
@@ -306,7 +306,7 @@
 .method public getIntrinsicWidth()I
     .registers 2
 
-    .line 1587
+    .line 1763
     const/16 v0, 0x18
 
     return v0
@@ -315,7 +315,7 @@
 .method public getOpacity()I
     .registers 2
 
-    .line 1583
+    .line 1759
     const/4 v0, -0x3
 
     return v0
@@ -324,23 +324,23 @@
 .method public setAlpha(I)V
     .registers 3
 
-    .line 1575
+    .line 1751
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setAlpha(I)V
 
-    .line 1576
+    .line 1752
     return-void
 .end method
 
 .method public setColorFilter(Landroid/graphics/ColorFilter;)V
     .registers 3
 
-    .line 1579
+    .line 1755
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setColorFilter(Landroid/graphics/ColorFilter;)Landroid/graphics/ColorFilter;
 
-    .line 1580
+    .line 1756
     return-void
 .end method

@@ -8,7 +8,7 @@
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Runnable;)Landroid/widget/CheckBox;
+    value = Lcom/trueaxis/modmenu/ModMenu;->showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -18,32 +18,20 @@
 
 
 # instance fields
-.field final synthetic val$afterChange:Ljava/lang/Runnable;
-
-.field final synthetic val$c:Landroid/content/Context;
-
-.field final synthetic val$checkBox:Landroid/widget/CheckBox;
-
-.field final synthetic val$key:Ljava/lang/String;
+.field final synthetic val$displaySliders:Landroid/widget/LinearLayout;
 
 
 # direct methods
-.method constructor <init>(Landroid/content/Context;Ljava/lang/String;Landroid/widget/CheckBox;Ljava/lang/Runnable;)V
-    .registers 5
+.method constructor <init>(Landroid/widget/LinearLayout;)V
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 939
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$c:Landroid/content/Context;
-
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$key:Ljava/lang/String;
-
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$checkBox:Landroid/widget/CheckBox;
-
-    iput-object p4, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$afterChange:Ljava/lang/Runnable;
+    .line 983
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$displaySliders:Landroid/widget/LinearLayout;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -55,73 +43,50 @@
 .method public onClick(Landroid/view/View;)V
     .registers 4
 
-    .line 941
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$c:Landroid/content/Context;
+    .line 985
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$displaySliders:Landroid/widget/LinearLayout;
 
-    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+    invoke-virtual {p1}, Landroid/widget/LinearLayout;->getVisibility()I
 
-    move-result-object p1
+    move-result p1
 
-    invoke-interface {p1}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
+    const/4 v0, 0x0
 
-    move-result-object p1
+    if-eqz p1, :cond_b
 
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$key:Ljava/lang/String;
+    const/4 p1, 0x1
 
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$checkBox:Landroid/widget/CheckBox;
+    goto :goto_c
 
-    invoke-virtual {v1}, Landroid/widget/CheckBox;->isChecked()Z
+    :cond_b
+    const/4 p1, 0x0
 
-    move-result v1
+    .line 986
+    :goto_c
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$displaySliders:Landroid/widget/LinearLayout;
 
-    invoke-interface {p1, v0, v1}, Landroid/content/SharedPreferences$Editor;->putBoolean(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;
+    if-eqz p1, :cond_11
 
-    move-result-object p1
+    goto :goto_13
 
-    invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
+    :cond_11
+    const/16 v0, 0x8
 
-    .line 942
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$afterChange:Ljava/lang/Runnable;
+    :goto_13
+    invoke-virtual {v1, v0}, Landroid/widget/LinearLayout;->setVisibility(I)V
 
-    if-eqz p1, :cond_22
+    .line 987
+    new-instance v0, Ljava/lang/StringBuilder;
 
-    .line 943
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$afterChange:Ljava/lang/Runnable;
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
 
-    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
+    const-string v1, "split display sliders toggled visible="
 
-    .line 945
-    :cond_22
-    new-instance p1, Ljava/lang/StringBuilder;
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
+    move-result-object v0
 
-    const-string v0, "option toggled key="
-
-    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p1
-
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$key:Ljava/lang/String;
-
-    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p1
-
-    const-string v0, " value="
-
-    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p1
-
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$checkBox:Landroid/widget/CheckBox;
-
-    .line 946
-    invoke-virtual {v0}, Landroid/widget/CheckBox;->isChecked()Z
-
-    move-result v0
-
-    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+    invoke-virtual {v0, p1}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
 
     move-result-object p1
 
@@ -129,11 +94,10 @@
 
     move-result-object p1
 
-    .line 945
     const-string v0, "launcher"
 
     invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 947
+    .line 989
     return-void
 .end method

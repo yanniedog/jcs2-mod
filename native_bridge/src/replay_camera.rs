@@ -72,15 +72,18 @@ const ORBIT_TARGET_FWD_OFFSET: f32 = 0.0;
 // steeper down-angle looks over the near track lip onto the car without
 // climbing into the platforms overhead. User-tunable via `configure_orbit`.
 const ORBIT_DEFAULT_ELEV_SIN_1000: i32 = 669;
-// Trackside placement: the camera cut range (how far the car may travel from a
-// camera before the view cuts to a fresh one) lives in the mode's RADIUS slot
-// so the existing zoom gesture tunes it. The placement offsets below are
-// fractions of that range.
-const TRACKSIDE_DEFAULT_RANGE: f32 = 55.0;
-const TRACKSIDE_MIN_RANGE: f32 = 15.0;
-const TRACKSIDE_AHEAD_FRAC: f32 = 0.6;
-const TRACKSIDE_SIDE_FRAC: f32 = 0.2;
-const TRACKSIDE_UP_FRAC: f32 = 0.12;
+// Trackside placement defaults (all user-tunable via `configure_trackside`):
+// side selection (0 alternate, 1 left, 2 right), lateral offset from the
+// car's path, height above the track, placement distance ahead of the car
+// (the MINIMUM the car starts from a fresh camera), and the switch threshold
+// (the MAXIMUM distance from the camera before cutting to the next one).
+const TRACKSIDE_SIDE_ALTERNATE: i32 = 0;
+const TRACKSIDE_SIDE_LEFT: i32 = 1;
+const TRACKSIDE_SIDE_RIGHT: i32 = 2;
+const TRACKSIDE_DEFAULT_SIDE_DIST_1000: i32 = 11_000;
+const TRACKSIDE_DEFAULT_HEIGHT_1000: i32 = 7_000;
+const TRACKSIDE_DEFAULT_MIN_DIST_1000: i32 = 35_000;
+const TRACKSIDE_DEFAULT_MAX_DIST_1000: i32 = 55_000;
 const MAX_RADIUS: f32 = 600.0;
 /// Keep elevation just short of the poles so the look-at basis never degenerates.
 /// sin(83 deg) ~= 0.993.
@@ -120,6 +123,19 @@ static ORBIT_ELEV_SIN_1000: AtomicI32 = AtomicI32::new(ORBIT_DEFAULT_ELEV_SIN_10
 static mut TRACKSIDE_CAM: [f32; 3] = [0.0; 3];
 static mut TRACKSIDE_VALID: bool = false;
 static mut TRACKSIDE_SIDE: f32 = 1.0;
+// User-configurable Trackside tuning (mod menu), x1000 atomics.
+static TRACKSIDE_SIDE_MODE: AtomicI32 = AtomicI32::new(TRACKSIDE_SIDE_ALTERNATE);
+static TRACKSIDE_SIDE_DIST_1000: AtomicI32 = AtomicI32::new(TRACKSIDE_DEFAULT_SIDE_DIST_1000);
+static TRACKSIDE_HEIGHT_1000: AtomicI32 = AtomicI32::new(TRACKSIDE_DEFAULT_HEIGHT_1000);
+static TRACKSIDE_MIN_DIST_1000: AtomicI32 = AtomicI32::new(TRACKSIDE_DEFAULT_MIN_DIST_1000);
+static TRACKSIDE_MAX_DIST_1000: AtomicI32 = AtomicI32::new(TRACKSIDE_DEFAULT_MAX_DIST_1000);
+// Mode auto-cycling: dwell milliseconds per mode, elapsed accumulator.
+static CYCLE_ENABLED: AtomicI32 = AtomicI32::new(0);
+static CYCLE_DWELL_MS: AtomicI32 = AtomicI32::new(10_000);
+static mut CYCLE_ACCUM_MS: f32 = 0.0;
+/// Cycle order: each dwell period hops to the next managed mode, so one replay
+/// shows every camera style using that mode's own configuration.
+const CYCLE_ORDER: [i32; 4] = [MODE_ORBIT, MODE_HELICOPTER, MODE_GOPRO, MODE_TRACKSIDE];
 static DIAG_SAMPLES: AtomicI32 = AtomicI32::new(0);
 static DIAG_RADIUS_1000: AtomicI32 = AtomicI32::new(0);
 static DIAG_INWARD_DOT_1000: AtomicI32 = AtomicI32::new(0);
@@ -166,9 +182,13 @@ pub fn is_managed() -> bool {
 }
 
 /// Modes that must anchor on the exact drawn-car body pose (dead-centre
-/// framing); the anchor chooser in free_camera.rs consults this.
+/// framing); the anchor chooser in free_camera.rs consults this. ALL managed
+/// modes need it: the passive viewer exposes no live car/ghost transform, so
+/// the chase-ray candidate scoring returns nothing there and Helicopter/GoPro
+/// would never track the car (they also need the real car BASIS, which only
+/// the body MFrame provides).
 pub fn anchors_on_body() -> bool {
-    matches!(current_mode(), MODE_ORBIT | MODE_TRACKSIDE)
+    is_managed()
 }
 
 /// Cinematic slow-motion is an Orbit-only effect: a full revolution then fits
@@ -208,6 +228,62 @@ fn orbit_elevation_sin() -> f32 {
         0.05,
         ELEVATION_SIN_LIMIT,
     )
+}
+
+/// Apply the mod-menu Trackside tuning: side selection (0 alternate, 1 left,
+/// 2 right), lateral offset and height (world units), placement-ahead (min)
+/// distance and switch (max) distance. Max is kept at least 10 units beyond
+/// min so a fresh camera can never be instantly out of range.
+pub fn configure_trackside(side_mode: i32, side_dist: i32, height: i32, min_d: i32, max_d: i32) {
+    let side_mode = clamp(side_mode as f32, 0.0, 2.0) as i32;
+    let side = clamp(side_dist as f32, 1.0, 60.0);
+    let height = clamp(height as f32, 0.0, 60.0);
+    let min_d = clamp(min_d as f32, 5.0, 250.0);
+    // A fresh camera actually sits sqrt(min^2 + side^2 + height^2) from the
+    // car; max must exceed THAT (not just min) or the out-of-range check cuts
+    // to a new camera every frame.
+    let placement_dist = length([min_d, side, height]);
+    let max_d = clamp(max_d as f32, placement_dist + 10.0, 460.0);
+    TRACKSIDE_SIDE_MODE.store(side_mode, Ordering::Release);
+    TRACKSIDE_SIDE_DIST_1000.store((side * 1000.0) as i32, Ordering::Release);
+    TRACKSIDE_HEIGHT_1000.store((height * 1000.0) as i32, Ordering::Release);
+    TRACKSIDE_MIN_DIST_1000.store((min_d * 1000.0) as i32, Ordering::Release);
+    TRACKSIDE_MAX_DIST_1000.store((max_d * 1000.0) as i32, Ordering::Release);
+    unsafe {
+        TRACKSIDE_VALID = false;
+    }
+}
+
+fn ts_param(atom: &AtomicI32) -> f32 {
+    atom.load(Ordering::Acquire) as f32 / 1000.0
+}
+
+/// Enable/disable camera-mode auto-cycling and set the per-mode dwell seconds.
+pub fn configure_cycle(enabled: bool, seconds: i32) {
+    CYCLE_ENABLED.store(enabled as i32, Ordering::Release);
+    let secs = clamp(seconds as f32, 3.0, 120.0);
+    CYCLE_DWELL_MS.store((secs * 1000.0) as i32, Ordering::Release);
+    unsafe {
+        CYCLE_ACCUM_MS = 0.0;
+    }
+}
+
+/// Advance the cycle clock; hop to the next managed mode when the dwell
+/// elapses. Called once per managed-camera frame.
+fn advance_cycle(dt: f32) {
+    if CYCLE_ENABLED.load(Ordering::Acquire) == 0 || !(dt > 0.0) {
+        return;
+    }
+    unsafe {
+        CYCLE_ACCUM_MS += dt * 1000.0;
+        if CYCLE_ACCUM_MS < CYCLE_DWELL_MS.load(Ordering::Acquire) as f32 {
+            return;
+        }
+        CYCLE_ACCUM_MS = 0.0;
+        let mode = current_mode();
+        let at = CYCLE_ORDER.iter().position(|&m| m == mode).unwrap_or(0);
+        set_mode(CYCLE_ORDER[(at + 1) % CYCLE_ORDER.len()]);
+    }
 }
 
 fn mode_index() -> usize {
@@ -254,8 +330,13 @@ pub fn reset() {
 }
 
 /// Zoom gesture: positive `delta` moves the camera closer to the car.
+/// Trackside is configured in the mod menu instead; its cameras have no
+/// meaningful zoom radius.
 pub fn zoom(delta: f32) {
     unsafe {
+        if current_mode() == MODE_TRACKSIDE {
+            return;
+        }
         let i = mode_index();
         RADIUS[i] = clamp(
             RADIUS[i] - delta,
@@ -306,6 +387,7 @@ pub fn perspective(dx: f32, dy: f32) {
 /// activation; afterwards this function fully owns it. Returns `true` if it
 /// wrote a valid frame.
 pub fn update(dt: f32, car: &CarFrame, frame: &mut [f32; 12]) -> bool {
+    advance_cycle(dt);
     unsafe {
         let mode = current_mode();
         let i = mode_index();
@@ -328,26 +410,33 @@ pub fn update(dt: f32, car: &CarFrame, frame: &mut [f32; 12]) -> bool {
             // GoPro: DIR[i] is in car-local coords; rebuild world direction and
             // use the car's up so the car keeps a constant pose in frame.
             MODE_GOPRO => (local_to_world(DIR[i], car), car.up),
-            // Trackside: keep the camera parked; when the car leaves the cut
-            // range, place a fresh camera ahead of it and cut there. The
-            // direction below is derived from the static position each frame.
+            // Trackside: keep the camera parked; when the car travels past the
+            // configured MAX distance, place a fresh camera MIN distance ahead
+            // of it (on the configured side, at the configured lateral offset
+            // and height) and cut there.
             MODE_TRACKSIDE => {
-                RADIUS[i] = clamp(RADIUS[i], TRACKSIDE_MIN_RANGE, MAX_RADIUS);
-                let range = RADIUS[i];
-                let out_of_range = !TRACKSIDE_VALID || length(sub(TRACKSIDE_CAM, car.pos)) > range;
+                let max_d = ts_param(&TRACKSIDE_MAX_DIST_1000);
+                let out_of_range = !TRACKSIDE_VALID || length(sub(TRACKSIDE_CAM, car.pos)) > max_d;
                 if out_of_range {
                     let up = UP_REF[i];
                     let fwd_h = horizontal_dir(car.fwd, up)
                         .or_else(|| horizontal_dir(car.right, up))
                         .unwrap_or([1.0, 0.0, 0.0]);
                     let right_h = normalize(cross(up, fwd_h)).unwrap_or([fwd_h[2], 0.0, -fwd_h[0]]);
-                    TRACKSIDE_SIDE = -TRACKSIDE_SIDE;
+                    TRACKSIDE_SIDE = match TRACKSIDE_SIDE_MODE.load(Ordering::Acquire) {
+                        TRACKSIDE_SIDE_LEFT => 1.0,
+                        TRACKSIDE_SIDE_RIGHT => -1.0,
+                        _ => -TRACKSIDE_SIDE,
+                    };
                     TRACKSIDE_CAM = add(
                         add(
-                            add(car.pos, scale(fwd_h, range * TRACKSIDE_AHEAD_FRAC)),
-                            scale(right_h, range * TRACKSIDE_SIDE_FRAC * TRACKSIDE_SIDE),
+                            add(car.pos, scale(fwd_h, ts_param(&TRACKSIDE_MIN_DIST_1000))),
+                            scale(
+                                right_h,
+                                ts_param(&TRACKSIDE_SIDE_DIST_1000) * TRACKSIDE_SIDE,
+                            ),
                         ),
-                        scale(up, range * TRACKSIDE_UP_FRAC),
+                        scale(up, ts_param(&TRACKSIDE_HEIGHT_1000)),
                     );
                     TRACKSIDE_VALID = true;
                 }
@@ -466,13 +555,11 @@ unsafe fn init_mode(mode: i32, i: usize, car: &CarFrame, frame: &[f32; 12]) -> b
     } else {
         captured_world_dir
     };
-    // Orbit always starts at its configured car-framing distance and Trackside
-    // at its default cut range; the other modes keep the captured camera
-    // distance so activation is seamless.
+    // Orbit always starts at its configured car-framing distance; the other
+    // modes keep the captured camera distance so activation is seamless.
+    // (Trackside ignores its RADIUS slot entirely.)
     let radius = if mode == MODE_ORBIT {
         orbit_radius()
-    } else if mode == MODE_TRACKSIDE {
-        TRACKSIDE_DEFAULT_RANGE
     } else {
         clamp(length(offset), min_radius_for_mode(mode), MAX_RADIUS)
     };
@@ -509,8 +596,6 @@ fn local_to_world(local: [f32; 3], car: &CarFrame) -> [f32; 3] {
 fn min_radius_for_mode(mode: i32) -> f32 {
     if mode == MODE_ORBIT {
         ORBIT_MIN_RADIUS
-    } else if mode == MODE_TRACKSIDE {
-        TRACKSIDE_MIN_RANGE
     } else {
         MIN_RADIUS
     }

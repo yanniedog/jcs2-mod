@@ -10,6 +10,8 @@ pub(crate) const GAME_VIEW_REPLAY_HOOK_BYTES: usize = 16;
 
 pub(crate) const REPLAY_UPDATE_HOOK_BYTES: usize = 16;
 
+pub(crate) const REPLAY_LOAD_HOOK_BYTES: usize = 16;
+
 pub(crate) const GHOST_NODE_SIZE: usize = 0x14;
 
 pub(crate) const GHOST_NODE_FLAGS_OFFSET: usize = 1;
@@ -51,6 +53,10 @@ pub(crate) static mut GAME_VIEW_REPLAY_TRAMPOLINE: *mut c_void = ptr::null_mut()
 pub(crate) static mut REPLAY_UPDATE_TRAMPOLINE: *mut c_void = ptr::null_mut();
 
 pub(crate) static REPLAY_UPDATE_HOOK_INSTALLED: AtomicBool = AtomicBool::new(false);
+
+pub(crate) static mut REPLAY_LOAD_TRAMPOLINE: *mut c_void = ptr::null_mut();
+
+pub(crate) static REPLAY_LOAD_HOOK_INSTALLED: AtomicBool = AtomicBool::new(false);
 
 /// True between Game::ViewReplay (entering the passive replay viewer) and the
 /// next leave-replay reset. The passive viewer animates an invisible proxy
@@ -598,6 +604,40 @@ pub(crate) unsafe extern "C" fn hooked_replay_update(
     // issued here, in the update phase, has no GL state and shows nothing.
 }
 
+/// Every path-based replay file load feeds the swarm catalog. Game::ViewReplay
+/// only fires for the passive viewer entry (and its path can be absent), so
+/// hooking the loader itself is what actually populates the picker as the
+/// player opens replays. Our own swarm ghost loads also land here; the
+/// catalog dedups, so that is harmless.
+pub(crate) unsafe extern "C" fn hooked_replay_load_path(
+    replay: *mut c_void,
+    path: *const c_char,
+) -> c_int {
+    swarm_catalog_note_path(path);
+    let original: ReplayLoadPathFn = mem::transmute(REPLAY_LOAD_TRAMPOLINE);
+    original(replay, path)
+}
+
+/// Install the Replay::Load(const char*) hook once.
+pub(crate) unsafe fn ensure_replay_load_hook() -> bool {
+    if REPLAY_LOAD_HOOK_INSTALLED.load(Ordering::Acquire) {
+        return !REPLAY_LOAD_TRAMPOLINE.is_null();
+    }
+    if REPLAY_LOAD_HOOK_INSTALLED.swap(true, Ordering::AcqRel) {
+        return !REPLAY_LOAD_TRAMPOLINE.is_null();
+    }
+    let load = resolve(b"_ZN6Replay4LoadEPKc\0");
+    if load.is_null() {
+        return false;
+    }
+    REPLAY_LOAD_TRAMPOLINE = install_inline_hook(
+        load,
+        hooked_replay_load_path as *const c_void,
+        REPLAY_LOAD_HOOK_BYTES,
+    );
+    !REPLAY_LOAD_TRAMPOLINE.is_null()
+}
+
 /// Install the Game::ViewReplay hook once; shared by the free-camera and swarm
 /// installers (an inline hook must never be applied to the same target twice).
 pub(crate) unsafe fn ensure_view_replay_hook() -> bool {
@@ -688,6 +728,7 @@ pub(crate) unsafe fn install_replay_swarm_hooks() -> bool {
     let ok = !GAME_RENDER_GHOST_TRAMPOLINE.is_null()
         && ensure_view_replay_hook()
         && ensure_replay_update_hook()
+        && ensure_replay_load_hook()
         // Swarm cars draw from the shared World::Render hook (3D pass).
         && ensure_world_render_hook();
     if !ok {

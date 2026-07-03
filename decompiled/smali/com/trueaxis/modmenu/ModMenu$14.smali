@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Landroid/view/View$OnClickListener;
+.implements Ljava/lang/Runnable;
 
 
 # annotations
@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 878
+    .line 949
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$14;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -40,21 +40,29 @@
 
 
 # virtual methods
-.method public onClick(Landroid/view/View;)V
-    .registers 3
+.method public run()V
+    .registers 2
 
-    .line 880
-    const-string p1, "launcher"
+    .line 952
+    :try_start_0
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$14;->val$a:Landroid/app/Activity;
 
-    const-string v0, "upload debug logs clicked"
+    invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->raceSwarmEnabled(Landroid/content/Context;)Z
 
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    move-result v0
 
-    .line 881
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$14;->val$a:Landroid/app/Activity;
+    invoke-static {v0}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayRaceSwarmEnabled(Z)V
+    :try_end_9
+    .catchall {:try_start_0 .. :try_end_9} :catchall_a
 
-    invoke-static {p1}, Lcom/trueaxis/modmenu/DebugLogExporter;->uploadNow(Landroid/app/Activity;)V
+    .line 954
+    goto :goto_b
 
-    .line 882
+    .line 953
+    :catchall_a
+    move-exception v0
+
+    .line 955
+    :goto_b
     return-void
 .end method

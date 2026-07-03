@@ -62,6 +62,11 @@ public final class RequiredPatches {
             setReplayCameraMode(cameraMode);
             setReplayOrbitTuning(ModMenu.orbitRadius(activity),
                     ModMenu.orbitSpeed(activity), ModMenu.orbitHeight(activity));
+            setReplayTracksideTuning(ModMenu.tracksideSideMode(activity),
+                    ModMenu.tracksideSideDist(activity), ModMenu.tracksideHeight(activity),
+                    ModMenu.tracksideMinDist(activity), ModMenu.tracksideMaxDist(activity));
+            setReplayCameraCycle(ModMenu.cameraCycleEnabled(activity),
+                    ModMenu.cameraCycleSeconds(activity));
             ModDebugLog.log("replay free camera hooks installed=" + installed
                     + " enabled=" + replayFreeCameraEnabled + " mode=" + cameraMode
                     + " orbit=" + ModMenu.orbitRadius(activity)
@@ -127,6 +132,9 @@ public final class RequiredPatches {
     static native void resetReplayFreeCamera();
     static native void setReplayCameraMode(int mode);
     static native void setReplayOrbitTuning(int radiusUnits, int degPerSec, int elevationDeg);
+    static native void setReplayTracksideTuning(int sideMode, int sideDist, int height,
+            int minDist, int maxDist);
+    static native void setReplayCameraCycle(boolean enabled, int seconds);
     static native void nudgeReplayFreeCamera(float right, float up, float forward,
                                              float yaw, float pitch);
     static native void gestureReplayFreeCamera(float right, float up, float forward,

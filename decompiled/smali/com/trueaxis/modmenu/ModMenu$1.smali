@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 148
+    .line 164
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$url:Ljava/lang/String;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
@@ -47,7 +47,7 @@
 .method public onClick(Landroid/view/View;)V
     .registers 6
 
-    .line 151
+    .line 167
     const-string p1, "launcher"
 
     :try_start_2
@@ -73,7 +73,7 @@
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 152
+    .line 168
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
 
     new-instance v1, Landroid/content/Intent;
@@ -92,14 +92,14 @@
     :try_end_2c
     .catchall {:try_start_2 .. :try_end_2c} :catchall_2d
 
-    .line 156
+    .line 172
     goto :goto_52
 
-    .line 153
+    .line 169
     :catchall_2d
     move-exception v0
 
-    .line 154
+    .line 170
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -122,7 +122,7 @@
 
     invoke-static {p1, v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 155
+    .line 171
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$a:Landroid/app/Activity;
 
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$1;->val$url:Ljava/lang/String;
@@ -135,7 +135,7 @@
 
     invoke-virtual {p1}, Landroid/widget/Toast;->show()V
 
-    .line 157
+    .line 173
     :goto_52
     return-void
 .end method

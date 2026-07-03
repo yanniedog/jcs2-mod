@@ -229,8 +229,9 @@ final class ReplayFreeCameraOverlay {
                 float yawOut = 0.0f;
                 boolean pinchRotate = false;
                 if (Math.abs(distanceDp) >= MIN_MOTION_DP) {
-                    // Pinch in (fingers closer) zooms out; pinch out zooms in.
-                    forward = clamp(-distanceDp * DOLLY_UNITS_PER_DP, MAX_TRANSLATE);
+                    // Pinch out (fingers apart) zooms in; pinch in zooms out.
+                    // Positive forward moves the camera toward the car.
+                    forward = clamp(distanceDp * DOLLY_UNITS_PER_DP, MAX_TRANSLATE);
                     pinchRotate = true;
                 }
                 if (Math.abs(yaw) >= ROTATE_DEADZONE) {

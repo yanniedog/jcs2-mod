@@ -20,30 +20,22 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$displaySliders:Landroid/widget/LinearLayout;
-
-.field final synthetic val$displayToggle:Landroid/widget/Button;
-
-.field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
+.field final synthetic val$cycleParams:Landroid/widget/LinearLayout;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/LinearLayout;Landroid/widget/Button;)V
-    .registers 5
+.method constructor <init>(Landroid/widget/LinearLayout;Landroid/app/Activity;)V
+    .registers 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 832
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$a:Landroid/app/Activity;
+    .line 907
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$cycleParams:Landroid/widget/LinearLayout;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$splitOptions:Landroid/widget/LinearLayout;
-
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$displaySliders:Landroid/widget/LinearLayout;
-
-    iput-object p4, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$displayToggle:Landroid/widget/Button;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -53,20 +45,59 @@
 
 # virtual methods
 .method public run()V
-    .registers 5
+    .registers 3
 
-    .line 834
+    .line 909
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$cycleParams:Landroid/widget/LinearLayout;
+
+    .line 910
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$a:Landroid/app/Activity;
+
+    invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->cameraCycleEnabled(Landroid/content/Context;)Z
+
+    move-result v1
+
+    if-eqz v1, :cond_c
+
+    const/4 v1, 0x0
+
+    goto :goto_e
+
+    :cond_c
+    const/16 v1, 0x8
+
+    .line 909
+    :goto_e
+    invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setVisibility(I)V
+
+    .line 912
+    :try_start_11
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$a:Landroid/app/Activity;
 
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$splitOptions:Landroid/widget/LinearLayout;
+    .line 913
+    invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->cameraCycleEnabled(Landroid/content/Context;)Z
 
-    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$displaySliders:Landroid/widget/LinearLayout;
+    move-result v0
 
-    iget-object v3, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$displayToggle:Landroid/widget/Button;
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$a:Landroid/app/Activity;
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
-    invoke-static {v0, v1, v2, v3}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
+    invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->cameraCycleSeconds(Landroid/content/Context;)I
 
-    .line 836
+    move-result v1
+
+    .line 912
+    invoke-static {v0, v1}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayCameraCycle(ZI)V
+    :try_end_20
+    .catchall {:try_start_11 .. :try_end_20} :catchall_21
+
+    .line 915
+    goto :goto_22
+
+    .line 914
+    :catchall_21
+    move-exception v0
+
+    .line 916
+    :goto_22
     return-void
 .end method
