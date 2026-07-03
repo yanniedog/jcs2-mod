@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 241
+    .line 251
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$2;->val$a:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$2;->val$copyStatus:Landroid/widget/TextView;
@@ -47,7 +47,7 @@
 .method public onClick(Landroid/view/View;)V
     .registers 5
 
-    .line 244
+    .line 254
     const-string p1, "F6mjNXKBKzjmKTK1Z9cWabFHZYtxMg8rojuNuppX2EG1"
 
     const-string v0, "launcher"
@@ -63,7 +63,7 @@
 
     check-cast v1, Landroid/content/ClipboardManager;
 
-    .line 246
+    .line 256
     const-string v2, "Solana wallet"
 
     invoke-static {v2, p1}, Landroid/content/ClipData;->newPlainText(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Landroid/content/ClipData;
@@ -72,19 +72,19 @@
 
     invoke-virtual {v1, v2}, Landroid/content/ClipboardManager;->setPrimaryClip(Landroid/content/ClipData;)V
 
-    .line 248
+    .line 258
     const-string v1, "donate address copied"
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 249
+    .line 259
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$2;->val$copyStatus:Landroid/widget/TextView;
 
     const-string v2, "Value copied!"
 
     invoke-virtual {v1, v2}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    .line 250
+    .line 260
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$2;->val$copyStatus:Landroid/widget/TextView;
 
     const/4 v2, 0x0
@@ -93,19 +93,19 @@
     :try_end_29
     .catchall {:try_start_4 .. :try_end_29} :catchall_2a
 
-    .line 254
+    .line 264
     goto :goto_3a
 
-    .line 251
+    .line 261
     :catchall_2a
     move-exception v1
 
-    .line 252
+    .line 262
     const-string v2, "donate address copy failed"
 
     invoke-static {v0, v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 253
+    .line 263
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$2;->val$a:Landroid/app/Activity;
 
     const/4 v1, 0x1
@@ -116,7 +116,7 @@
 
     invoke-virtual {p1}, Landroid/widget/Toast;->show()V
 
-    .line 255
+    .line 265
     :goto_3a
     return-void
 .end method

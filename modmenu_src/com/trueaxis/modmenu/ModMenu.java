@@ -63,8 +63,18 @@ public class ModMenu {
     // replay_camera::MODE_ORBIT on the native side.
     private static final int REPLAY_CAMERA_MODE_FIRST = 1;
     private static final String[] REPLAY_CAMERA_MODE_NAMES = {
-            "Orbit", "Helicopter (track-locked)", "GoPro (car-locked)" };
+            "Orbit", "Helicopter (track-locked)", "GoPro (car-locked)",
+            "Trackside (static cameras)" };
+    private static final String K_ORBIT_RADIUS = "orbit_radius";
+    private static final String K_ORBIT_SPEED = "orbit_speed";
+    private static final String K_ORBIT_HEIGHT = "orbit_height";
+    private static final int DEFAULT_ORBIT_RADIUS = 8;
+    private static final int DEFAULT_ORBIT_SPEED = 72;
+    private static final int DEFAULT_ORBIT_HEIGHT = 42;
     private static final String K_REPLAY_SWARM = "replay_swarm";
+    private static final String K_RACE_SWARM = "race_ghost_swarm";
+    private static final String K_SWARM_CATALOG = "swarm_catalog_paths";
+    private static final int SWARM_CATALOG_MAX = 32;
     private static final String K_SPLIT_ALPHA = "split_alpha";
     private static final String K_SPLIT_X = "split_x";
     private static final String K_SPLIT_Y = "split_y";
@@ -462,6 +472,59 @@ public class ModMenu {
         return prefs(c).getBoolean(K_REPLAY_SWARM, false);
     }
 
+    public static boolean raceSwarmEnabled(Context c) {
+        return prefs(c).getBoolean(K_RACE_SWARM, false);
+    }
+
+    /** Orbit camera stand-off radius in world units. */
+    public static int orbitRadius(Context c) {
+        return clamp(prefs(c).getInt(K_ORBIT_RADIUS, DEFAULT_ORBIT_RADIUS), 4, 40);
+    }
+
+    /** Orbit rotation speed in degrees per second. */
+    public static int orbitSpeed(Context c) {
+        return clamp(prefs(c).getInt(K_ORBIT_SPEED, DEFAULT_ORBIT_SPEED), 5, 180);
+    }
+
+    /** Orbit camera height as an elevation angle above the car, degrees. */
+    public static int orbitHeight(Context c) {
+        return clamp(prefs(c).getInt(K_ORBIT_HEIGHT, DEFAULT_ORBIT_HEIGHT), 10, 80);
+    }
+
+    /** Replay paths remembered for the swarm picker (newline-separated pref). */
+    public static String[] swarmCatalogPaths(Context c) {
+        String joined = prefs(c).getString(K_SWARM_CATALOG, "");
+        if (joined == null || joined.length() == 0) {
+            return new String[0];
+        }
+        return joined.split("\n");
+    }
+
+    /** Merge newly seen replay paths into the persisted swarm catalog. */
+    public static void rememberSwarmCatalogPaths(Context c, java.util.List<String> paths) {
+        java.util.LinkedHashSet<String> merged = new java.util.LinkedHashSet<String>();
+        for (String existing : swarmCatalogPaths(c)) {
+            if (existing.length() > 0) merged.add(existing);
+        }
+        boolean changed = false;
+        for (String path : paths) {
+            if (path != null && path.length() > 0 && merged.size() < SWARM_CATALOG_MAX
+                    && merged.add(path)) {
+                changed = true;
+            }
+        }
+        if (!changed) {
+            return;
+        }
+        StringBuilder joined = new StringBuilder();
+        for (String path : merged) {
+            if (joined.length() > 0) joined.append('\n');
+            joined.append(path);
+        }
+        prefs(c).edit().putString(K_SWARM_CATALOG, joined.toString()).apply();
+        ModDebugLog.module("swarm", "catalog persisted count=" + merged.size());
+    }
+
     public static int splitAlphaPercent(Context c) {
         applyMenuDefaults(c);
         return clamp(prefs(c).getInt(K_SPLIT_ALPHA, DEFAULT_SPLIT_ALPHA), 10, 100);
@@ -681,15 +744,43 @@ public class ModMenu {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT));
 
+            final Runnable applyOrbitTuning = new Runnable() {
+                public void run() {
+                    try {
+                        RequiredPatches.setReplayOrbitTuning(
+                                orbitRadius(a), orbitSpeed(a), orbitHeight(a));
+                    } catch (Throwable ignored) {
+                    }
+                }
+            };
+            addSeek(a, card, "Orbit radius", K_ORBIT_RADIUS,
+                    DEFAULT_ORBIT_RADIUS, 4, 40, " units", applyOrbitTuning);
+            addSeek(a, card, "Orbit rotation speed", K_ORBIT_SPEED,
+                    DEFAULT_ORBIT_SPEED, 5, 180, " deg/s", applyOrbitTuning);
+            addSeek(a, card, "Orbit camera height", K_ORBIT_HEIGHT,
+                    DEFAULT_ORBIT_HEIGHT, 10, 80, " deg", applyOrbitTuning);
+
             card.addView(sectionHeader(a, "Replay swarm mode"));
             TextView swarmHelp = label(a,
-                    "Overlay passive replays on the same track. Tap Swarm in-game to pick ghosts.",
+                    "Watch or race several replays on one track. Open View Replay, tap "
+                            + "Swarm to pick ghost replays, then watch them together or hit "
+                            + "Race to race the whole pack.",
                     9, Color.rgb(170, 178, 185));
             swarmHelp.setPadding(0, 0, 0, dp(a, 2));
             card.addView(swarmHelp);
             addCheckBox(a, card,
                     "Enable replay swarm picker during passive replays",
                     K_REPLAY_SWARM, false);
+            addCheckBox(a, card,
+                    "Race against the selected swarm ghosts",
+                    K_RACE_SWARM, false, new Runnable() {
+                        public void run() {
+                            try {
+                                RequiredPatches.setReplayRaceSwarmEnabled(raceSwarmEnabled(a));
+                            } catch (Throwable ignored) {
+                            }
+                        }
+                    });
 
             LinearLayout splitHeaderRow = new LinearLayout(a);
             splitHeaderRow.setOrientation(LinearLayout.HORIZONTAL);
@@ -875,6 +966,13 @@ public class ModMenu {
     private static LinearLayout addSeek(final Context c, LinearLayout card, String label,
                                         final String key, int defaultValue, final int min,
                                         int max, final String suffix) {
+        return addSeek(c, card, label, key, defaultValue, min, max, suffix, null);
+    }
+
+    private static LinearLayout addSeek(final Context c, LinearLayout card, String label,
+                                        final String key, int defaultValue, final int min,
+                                        int max, final String suffix,
+                                        final Runnable afterChange) {
         LinearLayout row = new LinearLayout(c);
         row.setOrientation(LinearLayout.VERTICAL);
         final TextView value = label(c, "", 10, Color.rgb(210, 216, 222));
@@ -887,6 +985,9 @@ public class ModMenu {
                 int newValue = min + progress;
                 prefs(c).edit().putInt(key, newValue).apply();
                 updateSeekLabel(value, label, newValue, suffix);
+                if (afterChange != null) {
+                    afterChange.run();
+                }
                 ModDebugLog.module("launcher", "option changed key=" + key + " value=" + newValue);
             }
 

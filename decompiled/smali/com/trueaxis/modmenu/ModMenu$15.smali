@@ -8,7 +8,7 @@
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+    value = Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Runnable;)Landroid/widget/CheckBox;
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -18,24 +18,32 @@
 
 
 # instance fields
-.field final synthetic val$a:Landroid/app/Activity;
+.field final synthetic val$afterChange:Ljava/lang/Runnable;
 
-.field final synthetic val$cars:Landroid/widget/Spinner;
+.field final synthetic val$c:Landroid/content/Context;
+
+.field final synthetic val$checkBox:Landroid/widget/CheckBox;
+
+.field final synthetic val$key:Ljava/lang/String;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
-    .registers 3
+.method constructor <init>(Landroid/content/Context;Ljava/lang/String;Landroid/widget/CheckBox;Ljava/lang/Runnable;)V
+    .registers 5
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 942
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$a:Landroid/app/Activity;
+    .line 939
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$c:Landroid/content/Context;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$cars:Landroid/widget/Spinner;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$key:Ljava/lang/String;
+
+    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$checkBox:Landroid/widget/CheckBox;
+
+    iput-object p4, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$afterChange:Ljava/lang/Runnable;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -47,58 +55,85 @@
 .method public onClick(Landroid/view/View;)V
     .registers 4
 
-    .line 944
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$a:Landroid/app/Activity;
+    .line 941
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$c:Landroid/content/Context;
 
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$cars:Landroid/widget/Spinner;
+    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$300(Landroid/content/Context;Landroid/widget/Spinner;)V
+    move-result-object p1
 
-    .line 946
-    :try_start_7
-    new-instance p1, Landroid/content/Intent;
+    invoke-interface {p1}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
 
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$a:Landroid/app/Activity;
+    move-result-object p1
 
-    const-class v1, Lcom/trueaxis/modmenu/LiveryDesignerActivity;
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$key:Ljava/lang/String;
 
-    invoke-direct {p1, v0, v1}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$checkBox:Landroid/widget/CheckBox;
 
-    .line 947
-    const-string v0, "car"
-
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$cars:Landroid/widget/Spinner;
-
-    invoke-virtual {v1}, Landroid/widget/Spinner;->getSelectedItemPosition()I
+    invoke-virtual {v1}, Landroid/widget/CheckBox;->isChecked()Z
 
     move-result v1
 
-    invoke-virtual {p1, v0, v1}, Landroid/content/Intent;->putExtra(Ljava/lang/String;I)Landroid/content/Intent;
+    invoke-interface {p1, v0, v1}, Landroid/content/SharedPreferences$Editor;->putBoolean(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;
 
-    .line 948
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$a:Landroid/app/Activity;
+    move-result-object p1
 
-    invoke-virtual {v0, p1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
-    :try_end_20
-    .catchall {:try_start_7 .. :try_end_20} :catchall_21
+    invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 951
-    goto :goto_29
+    .line 942
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$afterChange:Ljava/lang/Runnable;
 
-    .line 949
-    :catchall_21
-    move-exception p1
+    if-eqz p1, :cond_22
 
-    .line 950
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$a:Landroid/app/Activity;
+    .line 943
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$afterChange:Ljava/lang/Runnable;
 
-    const-string v0, "Could not open the designer."
+    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$400(Landroid/content/Context;Ljava/lang/String;)V
+    .line 945
+    :cond_22
+    new-instance p1, Ljava/lang/StringBuilder;
 
-    .line 952
-    :goto_29
+    invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v0, "option toggled key="
+
+    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p1
+
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$key:Ljava/lang/String;
+
+    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p1
+
+    const-string v0, " value="
+
+    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p1
+
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$checkBox:Landroid/widget/CheckBox;
+
+    .line 946
+    invoke-virtual {v0}, Landroid/widget/CheckBox;->isChecked()Z
+
+    move-result v0
+
+    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+
+    move-result-object p1
+
+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object p1
+
+    .line 945
+    const-string v0, "launcher"
+
+    invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+
+    .line 947
     return-void
 .end method

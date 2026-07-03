@@ -74,7 +74,7 @@
 
     const-string v3, "swarm"
 
-    if-eq v1, v2, :cond_26
+    if-eq v1, v2, :cond_2b
 
     .line 103
     iput v1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$1;->lastCatalog:I
@@ -100,16 +100,22 @@
 
     invoke-static {v3, v2}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 106
-    :cond_26
-    iget v2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$1;->lastState:I
+    .line 105
+    iget-object v2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$1;->val$activity:Landroid/app/Activity;
 
-    if-eq v0, v2, :cond_5a
+    # invokes: Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->persistCatalog(Landroid/app/Activity;I)V
+    invoke-static {v2, v1}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->access$000(Landroid/app/Activity;I)V
 
     .line 107
-    iput v0, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$1;->lastState:I
+    :cond_2b
+    iget v2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$1;->lastState:I
+
+    if-eq v0, v2, :cond_5f
 
     .line 108
+    iput v0, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$1;->lastState:I
+
+    .line 109
     new-instance v2, Ljava/lang/StringBuilder;
 
     invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
@@ -140,7 +146,7 @@
 
     move-result-object v1
 
-    .line 110
+    .line 111
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmGhostCount()I
 
     move-result v2
@@ -153,46 +159,46 @@
 
     move-result-object v1
 
-    .line 108
+    .line 109
     invoke-static {v3, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 113
-    :cond_5a
+    .line 114
+    :cond_5f
     const-wide/16 v1, 0x1f4
 
     const/16 v3, 0x8
 
-    if-nez v0, :cond_6c
-
-    .line 114
-    invoke-virtual {p1, v3}, Landroid/widget/Button;->setVisibility(I)V
+    if-nez v0, :cond_71
 
     .line 115
-    invoke-virtual {p2, v3}, Landroid/widget/TextView;->setVisibility(I)V
+    invoke-virtual {p1, v3}, Landroid/widget/Button;->setVisibility(I)V
 
     .line 116
+    invoke-virtual {p2, v3}, Landroid/widget/TextView;->setVisibility(I)V
+
+    .line 117
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$1;->val$handler:Landroid/os/Handler;
 
     invoke-virtual {p1, p0, v1, v2}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
 
-    .line 117
+    .line 118
     return-void
 
-    .line 120
-    :cond_6c
+    .line 121
+    :cond_71
     const/4 v4, 0x0
 
     invoke-virtual {p1, v4}, Landroid/widget/Button;->setVisibility(I)V
 
-    .line 121
+    .line 122
     invoke-virtual {p1}, Landroid/widget/Button;->bringToFront()V
 
-    .line 122
+    .line 123
     const/4 p1, 0x2
 
-    if-ne v0, p1, :cond_9d
+    if-ne v0, p1, :cond_a2
 
-    .line 123
+    .line 124
     new-instance p1, Ljava/lang/StringBuilder;
 
     invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
@@ -203,7 +209,7 @@
 
     move-result-object p1
 
-    .line 124
+    .line 125
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmGhostCount()I
 
     move-result v0
@@ -222,28 +228,28 @@
 
     move-result-object p1
 
-    .line 123
+    .line 124
     invoke-virtual {p2, p1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    .line 126
+    .line 127
     invoke-virtual {p2, v4}, Landroid/widget/TextView;->setVisibility(I)V
 
-    .line 127
+    .line 128
     invoke-virtual {p2}, Landroid/widget/TextView;->bringToFront()V
 
-    goto :goto_a0
+    goto :goto_a5
 
-    .line 129
-    :cond_9d
+    .line 130
+    :cond_a2
     invoke-virtual {p2, v3}, Landroid/widget/TextView;->setVisibility(I)V
 
-    .line 131
-    :goto_a0
+    .line 132
+    :goto_a5
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$1;->val$handler:Landroid/os/Handler;
 
     invoke-virtual {p1, p0, v1, v2}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
 
-    .line 132
+    .line 133
     return-void
 .end method
 

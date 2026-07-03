@@ -692,7 +692,7 @@ pub(crate) unsafe fn choose_replay_camera_anchor(
     cam_up: [f32; 3],
     cam_fwd: [f32; 3],
 ) -> Option<replay_camera::CarFrame> {
-    if replay_camera::current_mode() == replay_camera::MODE_ORBIT {
+    if replay_camera::anchors_on_body() {
         // Highest priority: the DynamicObject the stock Camera::Update follows.
         // The VISIBLE car (Car::Render draws the body MFrame directly, both in
         // post-race replays and via render_viewer_replay_car's opaque draw in
@@ -764,7 +764,7 @@ pub(crate) unsafe fn choose_replay_camera_anchor(
         }
     }
 
-    if replay_camera::current_mode() != replay_camera::MODE_ORBIT {
+    if !replay_camera::anchors_on_body() {
         return best;
     }
 
@@ -908,12 +908,27 @@ pub(crate) unsafe fn replay_follow_frame(
 /// replay/selection menu it sits still, so the gesture overlay can be dropped
 /// there (it otherwise covers screen-centre and blocks the menu lists).
 pub(crate) unsafe fn update_playback_motion(camera: *const f32) {
-    let pos_src = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
-    let pos = [
-        ptr::read_volatile(pos_src),
-        ptr::read_volatile(pos_src.add(1)),
-        ptr::read_volatile(pos_src.add(2)),
-    ];
+    // Prefer the drawn car's pose over the camera position: managed modes
+    // (Trackside especially) park the camera while the car keeps moving, and
+    // camera translation alone would read as "not playing" after 12 still
+    // frames, dropping the gesture layer mid-replay.
+    let car = read_body_mframe(REPLAY_FOLLOW_OBJECT).or_else(|| {
+        if REPLAY_TARGET_MFRAME_VALID {
+            read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
+        } else {
+            None
+        }
+    });
+    let pos = if let Some(car) = car {
+        car.pos
+    } else {
+        let pos_src = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+        [
+            ptr::read_volatile(pos_src),
+            ptr::read_volatile(pos_src.add(1)),
+            ptr::read_volatile(pos_src.add(2)),
+        ]
+    };
     if !(finite_camera_value(pos[0]) && finite_camera_value(pos[1]) && finite_camera_value(pos[2]))
     {
         return;
@@ -1048,6 +1063,12 @@ pub(crate) unsafe fn nudge_free_camera(right: f32, up: f32, forward: f32, yaw: f
 }
 
 pub(crate) unsafe extern "C" fn hooked_game_update_camera(game: *mut c_void, delta_seconds: f32) {
+    // Keep the swarm/viewer code supplied with the live Game* every frame
+    // (Game::ViewReplay only fires when the passive viewer opens, which never
+    // happens on the race path).
+    if !game.is_null() {
+        CURRENT_GAME = game;
+    }
     let original: GameUpdateCameraFn = mem::transmute(GAME_UPDATE_CAMERA_TRAMPOLINE);
     original(game, delta_seconds);
 
@@ -1160,7 +1181,6 @@ pub(crate) unsafe fn install_free_camera_hooks() -> bool {
     let camera_update = resolve(b"_ZN6Camera6UpdateEfPN2TA13DynamicObjectERKNS0_4Vec3Ebb\0");
     let set_vel_to_frame =
         resolve(b"_ZN2TA13DynamicObject26SetVelocitiesToMoveToFrameERKNS_6MFrameEf\0");
-    let world_render = resolve(b"_ZN5World6RenderEv\0");
     let game_render = resolve(b"_ZN4Game6RenderEv\0");
     if update_camera.is_null()
         || start_level_intro.is_null()
@@ -1168,7 +1188,6 @@ pub(crate) unsafe fn install_free_camera_hooks() -> bool {
         || car_render_ghost.is_null()
         || camera_update.is_null()
         || set_vel_to_frame.is_null()
-        || world_render.is_null()
         || game_render.is_null()
         || !ensure_free_camera_symbols()
     {
@@ -1205,11 +1224,6 @@ pub(crate) unsafe fn install_free_camera_hooks() -> bool {
         hooked_set_velocities_to_move_to_frame as *const c_void,
         SET_VEL_TO_FRAME_HOOK_BYTES,
     );
-    GAME_RENDER_TRAMPOLINE = install_inline_hook(
-        world_render,
-        hooked_world_render as *const c_void,
-        GAME_RENDER_HOOK_BYTES,
-    );
     GAME_RENDER_ENTRY_TRAMPOLINE = install_inline_hook(
         game_render,
         hooked_game_render as *const c_void,
@@ -1221,14 +1235,38 @@ pub(crate) unsafe fn install_free_camera_hooks() -> bool {
         && !CAR_RENDER_GHOST_TRAMPOLINE.is_null()
         && !CAMERA_UPDATE_TRAMPOLINE.is_null()
         && !SET_VEL_TO_FRAME_TRAMPOLINE.is_null()
-        && !GAME_RENDER_TRAMPOLINE.is_null()
         && !GAME_RENDER_ENTRY_TRAMPOLINE.is_null()
+        && ensure_world_render_hook()
         && ensure_replay_update_hook()
         && ensure_view_replay_hook();
     if !ok {
         FREE_CAMERA_HOOKS_INSTALLED.store(false, Ordering::Release);
     }
     ok
+}
+
+pub(crate) static WORLD_RENDER_HOOK_INSTALLED: AtomicBool = AtomicBool::new(false);
+
+/// Install the World::Render hook once; shared by the free-camera and swarm
+/// installers (an inline hook must never be applied to the same target twice).
+/// The hook is the one reliable 3D-pass injection point for extra car draws.
+pub(crate) unsafe fn ensure_world_render_hook() -> bool {
+    if WORLD_RENDER_HOOK_INSTALLED.load(Ordering::Acquire) {
+        return !GAME_RENDER_TRAMPOLINE.is_null();
+    }
+    if WORLD_RENDER_HOOK_INSTALLED.swap(true, Ordering::AcqRel) {
+        return !GAME_RENDER_TRAMPOLINE.is_null();
+    }
+    let world_render = resolve(b"_ZN5World6RenderEv\0");
+    if world_render.is_null() {
+        return false;
+    }
+    GAME_RENDER_TRAMPOLINE = install_inline_hook(
+        world_render,
+        hooked_world_render as *const c_void,
+        GAME_RENDER_HOOK_BYTES,
+    );
+    !GAME_RENDER_TRAMPOLINE.is_null()
 }
 
 /// World::Render hook: draw the viewer replay car right after the track
@@ -1262,6 +1300,11 @@ pub(crate) unsafe extern "C" fn hooked_world_render(world: *mut c_void) {
     let original: GameRenderGhostFn = mem::transmute(GAME_RENDER_TRAMPOLINE);
     original(world);
     render_viewer_replay_car(CURRENT_GAME);
+    // Swarm ghost cars draw here too: inside the 3D pass, right after the
+    // track, in both replay playback and (race-swarm) live races. Draw calls
+    // issued from the update phase (e.g. Replay::Update) have no GL state and
+    // render nothing.
+    swarm_render_extra_ghosts(CURRENT_GAME);
 }
 
 /// Game::Render entry hook: the 3D pass reads g_pCamera's MFrame to build the
