@@ -107,6 +107,23 @@ pub(crate) static REPLAY_SWARM_ENABLED: AtomicBool = AtomicBool::new(false);
 
 pub(crate) static REPLAY_SWARM_ACTIVE: AtomicBool = AtomicBool::new(false);
 
+/// Race-swarm option: also render the selected swarm ghosts DURING races,
+/// synced to the stock ghost's playback clock, so the player races the whole
+/// pack at once.
+pub(crate) static RACE_SWARM_ENABLED: AtomicBool = AtomicBool::new(false);
+
+/// Per-slot light tints so each swarm car is identifiable at a glance.
+/// Channel order is irrelevant for distinguishability.
+pub(crate) const SWARM_LIGHT_TINTS: [u32; SWARM_MAX_GHOSTS] = [
+    0xffff_6060,
+    0xff60_ff60,
+    0xff60_60ff,
+    0xffff_ff60,
+    0xffff_60ff,
+    0xff60_ffff,
+    0xffff_a060,
+];
+
 pub(crate) unsafe fn c_strlen(text: *const u8) -> usize {
     if text.is_null() {
         return 0;
@@ -402,14 +419,20 @@ pub(crate) unsafe fn swarm_integrate_transform(
     if nodes.is_null() || transform.is_null() || node_count < 1 || target_index < 0 {
         return false;
     }
-    ptr::write_bytes(transform, 0, GHOST_TRANSFORM_BYTES);
+    // write_bytes counts ELEMENTS of the pointee type: GHOST_TRANSFORM_BYTES
+    // f32 elements would zero 4x past the 16-float transform (stack smash), so
+    // zero through a byte pointer.
+    ptr::write_bytes(transform as *mut u8, 0, GHOST_TRANSFORM_BYTES);
     ptr::write(transform.add(GHOST_TRANSFORM_POS_FLOAT + 2), 1.0f32);
     let limit = target_index.min(node_count - 1);
     let mut velocity = [0.0f32; 3];
     let mut index = 0i32;
     while index <= limit {
         let node = nodes.add((index as usize) * GHOST_NODE_SIZE);
-        swarm_integrate_node_step(transform, velocity.as_mut_ptr(), node, true);
+        // Positions integrate over every node; the orientation is absolute per
+        // node, so only the final pose needs the (comparatively expensive)
+        // engine SetOrientation call.
+        swarm_integrate_node_step(transform, velocity.as_mut_ptr(), node, index == limit);
         index += 1;
     }
     true
@@ -427,29 +450,100 @@ pub(crate) unsafe fn swarm_master_node_index() -> i32 {
     }
 }
 
+/// Frames of an unchanged race ghost clock before swarm cars stop drawing
+/// (menus / pause screens hold a stale g_nGhostPos; without this the pack
+/// would freeze mid-track behind the UI).
+pub(crate) const RACE_MASTER_STALL_LIMIT: i32 = 45;
+
+pub(crate) static mut RACE_MASTER_LAST: i32 = -1;
+
+pub(crate) static mut RACE_MASTER_STALL: i32 = 0;
+
+/// Node index every swarm ghost is synced to this frame, or -1 when swarm
+/// ghosts should not draw. In replay playback that is the replay clock
+/// (g_nReplayPos); during a live race (race-swarm option) it is the stock
+/// ghost's playback clock (g_nGhostPos), which shares the same fixed node
+/// rate, starts with the race, and resets on retry.
+pub(crate) unsafe fn swarm_render_master_index() -> i32 {
+    if SHOW_REPLAY.is_null() {
+        return -1;
+    }
+    if ptr::read_volatile(SHOW_REPLAY) != 0 {
+        return swarm_master_node_index();
+    }
+    if !RACE_SWARM_ENABLED.load(Ordering::Acquire)
+        || GHOST_POS.is_null()
+        || GHOST_POINTER.is_null()
+        || GHOST_SIZE.is_null()
+        || ptr::read_volatile(GHOST_POINTER).is_null()
+        || ptr::read_volatile(GHOST_SIZE) < 2
+    {
+        return -1;
+    }
+    let pos = ptr::read_volatile(GHOST_POS);
+    if pos == RACE_MASTER_LAST {
+        if RACE_MASTER_STALL < RACE_MASTER_STALL_LIMIT {
+            RACE_MASTER_STALL += 1;
+        }
+    } else {
+        RACE_MASTER_LAST = pos;
+        RACE_MASTER_STALL = 0;
+    }
+    if RACE_MASTER_STALL >= RACE_MASTER_STALL_LIMIT {
+        return -1;
+    }
+    pos
+}
+
+/// Draw the swarm ghost cars. MUST be called from inside the 3D render pass
+/// (the World::Render hook): draws issued from the update phase have no valid
+/// GL state and render nothing.
+///
+/// Each ghost is drawn OPAQUE with a per-slot light tint by temporarily
+/// swapping the ghost pose into the current Car's body MFrame and calling
+/// Car::Render(false) (which draws at body+0x1c0); Car::RenderGhost's
+/// translucent black silhouette is nearly invisible. The body MFrame is
+/// restored immediately after the draws, before any game code runs.
 pub(crate) unsafe fn swarm_render_extra_ghosts(game: *mut c_void) {
-    if !REPLAY_SWARM_ACTIVE.load(Ordering::Acquire) || SWARM_GHOST_COUNT == 0 {
+    if !REPLAY_SWARM_ACTIVE.load(Ordering::Acquire) || SWARM_GHOST_COUNT == 0 || game.is_null() {
         return;
     }
-    if SHOW_REPLAY.is_null() || ptr::read_volatile(SHOW_REPLAY) == 0 {
+    if !ensure_swarm_symbols() {
         return;
     }
-    let master = swarm_master_node_index();
+    let master = swarm_render_master_index();
     if master < 1 {
         return;
     }
-    let car =
-        ptr::read_volatile((game as *mut u8).add(GAME_CURRENT_CAR_OFFSET) as *mut *mut c_void);
+    // The passive View Replay viewer keeps game+0xb0 null; the Car* captured
+    // from Replay::Update is the animated viewer car there.
+    let mut car =
+        ptr::read_volatile((game as *mut u8).add(GAME_CURRENT_CAR_OFFSET) as *mut *mut u8);
+    if car.is_null() {
+        car = REPLAY_UPDATE_CAR;
+    }
     if car.is_null() {
         return;
     }
-    let render: CarRenderGhostFn = mem::transmute(CAR_RENDER_GHOST);
-    let mut transform = [0.0f32; GHOST_TRANSFORM_BYTES / 4];
-    if !GHOST_TRANSFORM.is_null() {
-        ptr::copy_nonoverlapping(GHOST_TRANSFORM, transform.as_mut_ptr(), transform.len());
+    let body = ptr::read_volatile(car.add(CAR_BODY_PTR_OFFSET) as *mut *mut f32);
+    if body.is_null() {
+        return;
     }
-    // Swarm ghost renders go through the hooked Car::RenderGhost too; flag them
-    // so the replay-camera capture keeps only the primary car's transform.
+    if CAR_RENDER.is_null() {
+        CAR_RENDER = resolve(b"_ZN3Car6RenderEb\0");
+    }
+    if CAR_SET_LIGHT_COLOUR.is_null() {
+        CAR_SET_LIGHT_COLOUR = resolve(b"_ZN3Car14SetLightColourEjf\0");
+    }
+    if CAR_RENDER.is_null() {
+        return;
+    }
+    let render: CarRenderFn = mem::transmute(CAR_RENDER);
+    let mframe = body.add(CAR_BODY_RIGHT_FLOAT);
+    let mut saved = [0.0f32; GHOST_TRANSFORM_BYTES / 4];
+    ptr::copy_nonoverlapping(mframe as *const f32, saved.as_mut_ptr(), saved.len());
+    let mut transform = [0.0f32; GHOST_TRANSFORM_BYTES / 4];
+    // Any nested Car::RenderGhost must not disturb the replay-camera capture.
     IN_SWARM_RENDER = true;
     let mut index = 0usize;
     while index < SWARM_GHOST_COUNT {
@@ -457,10 +551,20 @@ pub(crate) unsafe fn swarm_render_extra_ghosts(game: *mut c_void) {
         let count = SWARM_GHOST_NODE_COUNT[index];
         if !nodes.is_null() && count > 1 {
             if swarm_integrate_transform(nodes, count, master, transform.as_mut_ptr()) {
-                render(car, transform.as_ptr());
+                ptr::copy_nonoverlapping(transform.as_ptr(), mframe, transform.len());
+                if !CAR_SET_LIGHT_COLOUR.is_null() {
+                    let set_light: CarSetLightColourFn = mem::transmute(CAR_SET_LIGHT_COLOUR);
+                    set_light(car as *mut c_void, SWARM_LIGHT_TINTS[index], 1.0);
+                }
+                render(car as *mut c_void, 0);
             }
         }
         index += 1;
+    }
+    ptr::copy_nonoverlapping(saved.as_ptr(), mframe, saved.len());
+    if !CAR_SET_LIGHT_COLOUR.is_null() {
+        let set_light: CarSetLightColourFn = mem::transmute(CAR_SET_LIGHT_COLOUR);
+        set_light(car as *mut c_void, 0xffff_ffff, 1.0);
     }
     IN_SWARM_RENDER = false;
 }
@@ -471,11 +575,12 @@ pub(crate) unsafe extern "C" fn hooked_replay_update(
     dt: f32,
     flags: c_int,
 ) {
-    // Cinematic slow-motion while the managed orbit camera owns the passive
+    // Cinematic slow-motion while the managed ORBIT camera owns the passive
     // viewer: the car crosses the scenery more slowly, so a full orbit fits
-    // into each open section of the route.
+    // into each open section of the route. Trackside/Helicopter/GoPro play at
+    // real speed.
     let dt = if VIEW_REPLAY_SESSION
-        && replay_camera::is_managed()
+        && replay_camera::wants_slow_motion()
         && FREE_CAMERA_ENABLED.load(Ordering::Acquire)
         && FREE_CAMERA_ACTIVE.load(Ordering::Acquire)
         && dt.is_finite()
@@ -489,9 +594,8 @@ pub(crate) unsafe extern "C" fn hooked_replay_update(
     if !car.is_null() {
         REPLAY_UPDATE_CAR = car as *mut u8;
     }
-    if !CURRENT_GAME.is_null() {
-        swarm_render_extra_ghosts(CURRENT_GAME);
-    }
+    // Swarm ghosts are rendered from the World::Render hook (3D pass); a draw
+    // issued here, in the update phase, has no GL state and shows nothing.
 }
 
 /// Install the Game::ViewReplay hook once; shared by the free-camera and swarm
@@ -583,7 +687,9 @@ pub(crate) unsafe fn install_replay_swarm_hooks() -> bool {
     );
     let ok = !GAME_RENDER_GHOST_TRAMPOLINE.is_null()
         && ensure_view_replay_hook()
-        && ensure_replay_update_hook();
+        && ensure_replay_update_hook()
+        // Swarm cars draw from the shared World::Render hook (3D pass).
+        && ensure_world_render_hook();
     if !ok {
         REPLAY_SWARM_HOOKS_INSTALLED.store(false, Ordering::Release);
     }

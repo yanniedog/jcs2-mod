@@ -60,8 +60,13 @@ public final class RequiredPatches {
             setReplayFreeCameraEnabled(replayFreeCameraEnabled);
             int cameraMode = ModMenu.replayCameraMode(activity);
             setReplayCameraMode(cameraMode);
+            setReplayOrbitTuning(ModMenu.orbitRadius(activity),
+                    ModMenu.orbitSpeed(activity), ModMenu.orbitHeight(activity));
             ModDebugLog.log("replay free camera hooks installed=" + installed
-                    + " enabled=" + replayFreeCameraEnabled + " mode=" + cameraMode);
+                    + " enabled=" + replayFreeCameraEnabled + " mode=" + cameraMode
+                    + " orbit=" + ModMenu.orbitRadius(activity)
+                    + "u/" + ModMenu.orbitSpeed(activity)
+                    + "dps/" + ModMenu.orbitHeight(activity) + "deg");
             if (installed && replayFreeCameraEnabled) {
                 ReplayFreeCameraOverlay.install(activity);
             }
@@ -74,7 +79,18 @@ public final class RequiredPatches {
             try {
                 boolean installed = installReplaySwarmHooks();
                 setReplaySwarmEnabled(true);
-                ModDebugLog.log("replay swarm hooks installed=" + installed);
+                boolean raceSwarm = ModMenu.raceSwarmEnabled(activity);
+                setReplayRaceSwarmEnabled(raceSwarm);
+                String[] rememberedPaths = ModMenu.swarmCatalogPaths(activity);
+                for (String path : rememberedPaths) {
+                    if (path.length() > 0) {
+                        addReplaySwarmCatalogPath(
+                                path.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    }
+                }
+                ModDebugLog.log("replay swarm hooks installed=" + installed
+                        + " raceSwarm=" + raceSwarm
+                        + " seededCatalog=" + rememberedPaths.length);
                 if (installed) {
                     ReplaySwarmOverlay.install(activity);
                 }
@@ -110,6 +126,7 @@ public final class RequiredPatches {
     static native void setReplayFreeCameraLocked(boolean locked);
     static native void resetReplayFreeCamera();
     static native void setReplayCameraMode(int mode);
+    static native void setReplayOrbitTuning(int radiusUnits, int degPerSec, int elevationDeg);
     static native void nudgeReplayFreeCamera(float right, float up, float forward,
                                              float yaw, float pitch);
     static native void gestureReplayFreeCamera(float right, float up, float forward,
@@ -157,4 +174,6 @@ public final class RequiredPatches {
     static native int readReplaySwarmGhostCount();
     static native int readReplaySwarmCatalogPath(int index, byte[] buffer);
     static native void setReplaySwarmSelection(int primaryIndex, int[] secondaryIndices);
+    static native void setReplayRaceSwarmEnabled(boolean enabled);
+    static native void addReplaySwarmCatalogPath(byte[] pathUtf8);
 }

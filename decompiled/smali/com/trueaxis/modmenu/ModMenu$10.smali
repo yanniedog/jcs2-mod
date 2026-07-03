@@ -20,30 +20,18 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$displaySliders:Landroid/widget/LinearLayout;
-
-.field final synthetic val$displayToggle:Landroid/widget/Button;
-
-.field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
-
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/LinearLayout;Landroid/widget/Button;)V
-    .registers 5
+.method constructor <init>(Landroid/app/Activity;)V
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 741
+    .line 776
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
-
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$splitOptions:Landroid/widget/LinearLayout;
-
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$displaySliders:Landroid/widget/LinearLayout;
-
-    iput-object p4, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$displayToggle:Landroid/widget/Button;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -53,20 +41,28 @@
 
 # virtual methods
 .method public run()V
-    .registers 5
+    .registers 2
 
-    .line 743
+    .line 779
+    :try_start_0
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
 
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$splitOptions:Landroid/widget/LinearLayout;
+    invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->raceSwarmEnabled(Landroid/content/Context;)Z
 
-    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$displaySliders:Landroid/widget/LinearLayout;
+    move-result v0
 
-    iget-object v3, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$displayToggle:Landroid/widget/Button;
+    invoke-static {v0}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayRaceSwarmEnabled(Z)V
+    :try_end_9
+    .catchall {:try_start_0 .. :try_end_9} :catchall_a
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
-    invoke-static {v0, v1, v2, v3}, Lcom/trueaxis/modmenu/ModMenu;->access$100(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
+    .line 781
+    goto :goto_b
 
-    .line 745
+    .line 780
+    :catchall_a
+    move-exception v0
+
+    .line 782
+    :goto_b
     return-void
 .end method

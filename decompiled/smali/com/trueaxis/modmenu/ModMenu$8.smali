@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 664
+    .line 727
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -52,10 +52,10 @@
         }
     .end annotation
 
-    .line 667
+    .line 730
     add-int/lit8 p3, p3, 0x1
 
-    .line 668
+    .line 731
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
@@ -74,20 +74,20 @@
 
     invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 672
+    .line 735
     :try_start_15
     invoke-static {p3}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayCameraMode(I)V
     :try_end_18
     .catchall {:try_start_15 .. :try_end_18} :catchall_19
 
-    .line 674
+    .line 737
     goto :goto_1a
 
-    .line 673
+    .line 736
     :catchall_19
     move-exception p1
 
-    .line 675
+    .line 738
     :goto_1a
     return-void
 .end method
@@ -102,6 +102,6 @@
         }
     .end annotation
 
-    .line 678
+    .line 741
     return-void
 .end method

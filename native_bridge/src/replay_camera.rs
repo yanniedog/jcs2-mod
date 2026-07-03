@@ -1,4 +1,4 @@
-﻿//! Replay camera-mode state machine (Orbit / Helicopter / GoPro / Trackside).
+//! Replay camera-mode state machine (Orbit / Helicopter / GoPro / Trackside).
 //!
 //! This module is intentionally self-contained: it owns all camera-mode state
 //! and operates only on plain data passed in from `lib.rs` (the car world frame
@@ -34,7 +34,10 @@ pub const MODE_FREE: i32 = 0;
 pub const MODE_ORBIT: i32 = 1;
 pub const MODE_HELICOPTER: i32 = 2;
 pub const MODE_GOPRO: i32 = 3;
-// Reserved for a later pass (own implementation): Trackside = 4.
+/// F1-style static trackside cameras: the camera sits still on the track and
+/// pans to follow the car; when the car travels out of range a new camera is
+/// placed ahead of it (alternating sides) and the view cuts there.
+pub const MODE_TRACKSIDE: i32 = 4;
 
 // Sizes the per-mode state arrays below. Must be strictly greater than every
 // mode value the Java spinner (`ModMenu.REPLAY_CAMERA_MODE_NAMES`) can emit;
@@ -43,28 +46,41 @@ pub const MODE_GOPRO: i32 = 3;
 // index out of bounds -- it would only mis-map a mode.
 const MODE_COUNT: usize = 5;
 // Compile-time guard: the highest implemented mode must own a state slot.
-const _: () = assert!((MODE_GOPRO as usize) < MODE_COUNT);
+const _: () = assert!((MODE_TRACKSIDE as usize) < MODE_COUNT);
 
-/// One full revolution every ~5 s (72 deg/s). Brisk enough that a whole orbit
-/// fits inside the open opening section of a typical replay.
-const ORBIT_RATE_RAD_PER_S: f32 = 1.25;
+/// Default orbit rate: one full revolution every ~5 s (72 deg/s). Brisk enough
+/// that a whole orbit fits inside the open opening section of a typical replay.
+/// User-tunable via `configure_orbit` (mod menu slider).
+const ORBIT_DEFAULT_RATE_MRAD_PER_S: i32 = 1250;
 const MIN_RADIUS: f32 = 2.0;
-// Orbit stand-off distance. The buggy is ~2 units long, so this frames it
-// clearly while sitting far enough out that the camera clears the immediate
+// Default orbit stand-off distance. The buggy is ~2 units long, so this frames
+// it clearly while sitting far enough out that the camera clears the immediate
 // track tube walls -- at a very short radius the camera orbits INSIDE the
 // half-pipe track and its own surface occludes the car from most angles.
-const ORBIT_MIN_RADIUS: f32 = 8.0;
+// User-tunable via `configure_orbit` (mod menu slider).
+const ORBIT_DEFAULT_RADIUS_1000: i32 = 8000;
+/// Hard zoom floor for Orbit regardless of the configured radius.
+const ORBIT_MIN_RADIUS: f32 = 3.0;
 // The Orbit anchor is already projected from the stock replay camera's visual
 // centre ray; do not add a mesh-origin correction on top of that or the car
 // drifts off the middle of the captured video.
 const ORBIT_TARGET_UP_OFFSET: f32 = 0.0;
 const ORBIT_TARGET_FWD_OFFSET: f32 = 0.0;
-// Initial elevation as an up-component mixed into the horizontal start
-// direction: 0.9 => sin ~= 0.67 (~42 deg above the car). Runtime filmstrips at
-// ~27 deg showed the course's slab walls occluding the car from most azimuths
-// at the close orbit radius; the steeper down-angle looks over the near track
-// lip onto the car without climbing into the platforms overhead.
-const ORBIT_INITIAL_ELEVATION: f32 = 0.9;
+// Default elevation angle above the car, stored as sin(angle) x1000.
+// sin(42 deg) ~= 0.669. Runtime filmstrips at ~27 deg showed the course's slab
+// walls occluding the car from most azimuths at the close orbit radius; the
+// steeper down-angle looks over the near track lip onto the car without
+// climbing into the platforms overhead. User-tunable via `configure_orbit`.
+const ORBIT_DEFAULT_ELEV_SIN_1000: i32 = 669;
+// Trackside placement: the camera cut range (how far the car may travel from a
+// camera before the view cuts to a fresh one) lives in the mode's RADIUS slot
+// so the existing zoom gesture tunes it. The placement offsets below are
+// fractions of that range.
+const TRACKSIDE_DEFAULT_RANGE: f32 = 55.0;
+const TRACKSIDE_MIN_RANGE: f32 = 15.0;
+const TRACKSIDE_AHEAD_FRAC: f32 = 0.6;
+const TRACKSIDE_SIDE_FRAC: f32 = 0.2;
+const TRACKSIDE_UP_FRAC: f32 = 0.12;
 const MAX_RADIUS: f32 = 600.0;
 /// Keep elevation just short of the poles so the look-at basis never degenerates.
 /// sin(83 deg) ~= 0.993.
@@ -94,6 +110,16 @@ static mut UP_REF: [[f32; 3]; MODE_COUNT] = [[0.0, 1.0, 0.0]; MODE_COUNT];
 // Captured defaults, restored by reset().
 static mut DEFAULT_RADIUS: [f32; MODE_COUNT] = [0.0; MODE_COUNT];
 static mut DEFAULT_DIR: [[f32; 3]; MODE_COUNT] = [[0.0, 0.0, 1.0]; MODE_COUNT];
+// User-configurable Orbit tuning (mod menu sliders), stored x1000 so plain
+// atomics carry them across the JNI/UI thread boundary.
+static ORBIT_RADIUS_1000: AtomicI32 = AtomicI32::new(ORBIT_DEFAULT_RADIUS_1000);
+static ORBIT_RATE_MRAD_PER_S: AtomicI32 = AtomicI32::new(ORBIT_DEFAULT_RATE_MRAD_PER_S);
+static ORBIT_ELEV_SIN_1000: AtomicI32 = AtomicI32::new(ORBIT_DEFAULT_ELEV_SIN_1000);
+// Trackside static-camera state: current camera world position, whether it is
+// live, and which side of the car the next camera is placed on.
+static mut TRACKSIDE_CAM: [f32; 3] = [0.0; 3];
+static mut TRACKSIDE_VALID: bool = false;
+static mut TRACKSIDE_SIDE: f32 = 1.0;
 static DIAG_SAMPLES: AtomicI32 = AtomicI32::new(0);
 static DIAG_RADIUS_1000: AtomicI32 = AtomicI32::new(0);
 static DIAG_INWARD_DOT_1000: AtomicI32 = AtomicI32::new(0);
@@ -133,7 +159,55 @@ pub fn current_mode() -> i32 {
 /// True when a car-mounted mode is selected, i.e. the per-frame update owns the
 /// camera. (Free and the not-yet-implemented Trackside fall back to legacy.)
 pub fn is_managed() -> bool {
-    matches!(current_mode(), MODE_ORBIT | MODE_HELICOPTER | MODE_GOPRO)
+    matches!(
+        current_mode(),
+        MODE_ORBIT | MODE_HELICOPTER | MODE_GOPRO | MODE_TRACKSIDE
+    )
+}
+
+/// Modes that must anchor on the exact drawn-car body pose (dead-centre
+/// framing); the anchor chooser in free_camera.rs consults this.
+pub fn anchors_on_body() -> bool {
+    matches!(current_mode(), MODE_ORBIT | MODE_TRACKSIDE)
+}
+
+/// Cinematic slow-motion is an Orbit-only effect: a full revolution then fits
+/// each open section of the route. Trackside wants real-time speed for the
+/// F1 fly-by feel, and Helicopter/GoPro read better at real speed too.
+pub fn wants_slow_motion() -> bool {
+    current_mode() == MODE_ORBIT
+}
+
+/// Apply the mod-menu Orbit tuning: stand-off radius (world units), rotation
+/// speed (degrees/second) and camera height (elevation angle above the car,
+/// degrees). The orbit slot re-seeds on its next frame so new values take
+/// effect immediately.
+pub fn configure_orbit(radius_units: i32, deg_per_s: i32, elev_deg: i32) {
+    let radius = clamp(radius_units as f32, ORBIT_MIN_RADIUS, MAX_RADIUS);
+    let rate_mrad = (clamp(deg_per_s as f32, 0.0, 360.0) * 17.453_293) as i32;
+    let elev_rad = clamp(elev_deg as f32, 5.0, 83.0) * 0.017_453_3;
+    ORBIT_RADIUS_1000.store((radius * 1000.0) as i32, Ordering::Release);
+    ORBIT_RATE_MRAD_PER_S.store(rate_mrad, Ordering::Release);
+    ORBIT_ELEV_SIN_1000.store((sin_approx(elev_rad) * 1000.0) as i32, Ordering::Release);
+    unsafe {
+        INITIALISED[MODE_ORBIT as usize] = false;
+    }
+}
+
+fn orbit_radius() -> f32 {
+    ORBIT_RADIUS_1000.load(Ordering::Acquire) as f32 / 1000.0
+}
+
+fn orbit_rate_rad_per_s() -> f32 {
+    ORBIT_RATE_MRAD_PER_S.load(Ordering::Acquire) as f32 / 1000.0
+}
+
+fn orbit_elevation_sin() -> f32 {
+    clamp(
+        ORBIT_ELEV_SIN_1000.load(Ordering::Acquire) as f32 / 1000.0,
+        0.05,
+        ELEVATION_SIN_LIMIT,
+    )
 }
 
 fn mode_index() -> usize {
@@ -158,6 +232,7 @@ pub fn invalidate() {
         // Direct whole-array store: no reference to the mutable static is taken.
         INITIALISED = [false; MODE_COUNT];
         DIAG_LAST_DIR_VALID = false;
+        TRACKSIDE_VALID = false;
     }
     DIAG_SAMPLES.store(0, Ordering::Release);
     DIAG_RADIUS_1000.store(0, Ordering::Release);
@@ -173,6 +248,7 @@ pub fn reset() {
         if INITIALISED[i] {
             DIR[i] = DEFAULT_DIR[i];
             RADIUS[i] = DEFAULT_RADIUS[i];
+            TRACKSIDE_VALID = false;
         }
     }
 }
@@ -195,6 +271,11 @@ pub fn zoom(delta: f32) {
 pub fn perspective(dx: f32, dy: f32) {
     unsafe {
         let i = mode_index();
+        // Trackside cameras are static by definition; dragging one across the
+        // sphere makes no sense, so perspective gestures are ignored there.
+        if current_mode() == MODE_TRACKSIDE {
+            return;
+        }
         // GoPro rotates the car-local direction about local up; the world-fixed
         // modes rotate about the captured world vertical.
         let up_axis = if current_mode() == MODE_GOPRO {
@@ -238,7 +319,7 @@ pub fn update(dt: f32, car: &CarFrame, frame: &mut [f32; 12]) -> bool {
         let (world_dir, look_up) = match mode {
             MODE_ORBIT => {
                 if dt > 0.0 {
-                    let step = clamp(ORBIT_RATE_RAD_PER_S * dt, -MAX_STEP_RAD, MAX_STEP_RAD);
+                    let step = clamp(orbit_rate_rad_per_s() * dt, -MAX_STEP_RAD, MAX_STEP_RAD);
                     DIR[i] = rotate_azimuth_preserving_elevation(DIR[i], UP_REF[i], step);
                 }
                 (DIR[i], UP_REF[i])
@@ -247,6 +328,31 @@ pub fn update(dt: f32, car: &CarFrame, frame: &mut [f32; 12]) -> bool {
             // GoPro: DIR[i] is in car-local coords; rebuild world direction and
             // use the car's up so the car keeps a constant pose in frame.
             MODE_GOPRO => (local_to_world(DIR[i], car), car.up),
+            // Trackside: keep the camera parked; when the car leaves the cut
+            // range, place a fresh camera ahead of it and cut there. The
+            // direction below is derived from the static position each frame.
+            MODE_TRACKSIDE => {
+                RADIUS[i] = clamp(RADIUS[i], TRACKSIDE_MIN_RANGE, MAX_RADIUS);
+                let range = RADIUS[i];
+                let out_of_range = !TRACKSIDE_VALID || length(sub(TRACKSIDE_CAM, car.pos)) > range;
+                if out_of_range {
+                    let up = UP_REF[i];
+                    let fwd_h = horizontal_dir(car.fwd, up)
+                        .or_else(|| horizontal_dir(car.right, up))
+                        .unwrap_or([1.0, 0.0, 0.0]);
+                    let right_h = normalize(cross(up, fwd_h)).unwrap_or([fwd_h[2], 0.0, -fwd_h[0]]);
+                    TRACKSIDE_SIDE = -TRACKSIDE_SIDE;
+                    TRACKSIDE_CAM = add(
+                        add(
+                            add(car.pos, scale(fwd_h, range * TRACKSIDE_AHEAD_FRAC)),
+                            scale(right_h, range * TRACKSIDE_SIDE_FRAC * TRACKSIDE_SIDE),
+                        ),
+                        scale(up, range * TRACKSIDE_UP_FRAC),
+                    );
+                    TRACKSIDE_VALID = true;
+                }
+                (sub(TRACKSIDE_CAM, car.pos), UP_REF[i])
+            }
             _ => return false,
         };
 
@@ -256,9 +362,16 @@ pub fn update(dt: f32, car: &CarFrame, frame: &mut [f32; 12]) -> bool {
         };
         RADIUS[i] = clamp(RADIUS[i], min_radius_for_mode(mode), MAX_RADIUS);
         let target = camera_target(mode, car);
-        let cam_pos = add(target, scale(world_dir, RADIUS[i]));
+        // Trackside sits at its fixed post, whatever the distance to the car
+        // currently is; the sphere modes hold their configured radius.
+        let cam_radius = if mode == MODE_TRACKSIDE {
+            length(sub(TRACKSIDE_CAM, target)).max(1.0)
+        } else {
+            RADIUS[i]
+        };
+        let cam_pos = add(target, scale(world_dir, cam_radius));
         LAST_WRITE_TARGET = target;
-        LAST_WRITE_RADIUS_1000.store((RADIUS[i] * 1000.0) as i32, Ordering::Release);
+        LAST_WRITE_RADIUS_1000.store((cam_radius * 1000.0) as i32, Ordering::Release);
         // Camera looks straight at the replay car centre on every frame.
         let forward = scale(world_dir, -1.0);
         write_look_at(frame, cam_pos, forward, look_up);
@@ -282,6 +395,12 @@ pub fn recompute_pose(car: &CarFrame, frame: &mut [f32; 12]) -> bool {
         let (world_dir, look_up) = match mode {
             MODE_ORBIT | MODE_HELICOPTER => (DIR[i], UP_REF[i]),
             MODE_GOPRO => (local_to_world(DIR[i], car), car.up),
+            MODE_TRACKSIDE => {
+                if !TRACKSIDE_VALID {
+                    return false;
+                }
+                (sub(TRACKSIDE_CAM, car.pos), UP_REF[i])
+            }
             _ => return false,
         };
         let world_dir = match normalize(world_dir) {
@@ -289,9 +408,14 @@ pub fn recompute_pose(car: &CarFrame, frame: &mut [f32; 12]) -> bool {
             None => return false,
         };
         let target = camera_target(mode, car);
-        let cam_pos = add(target, scale(world_dir, RADIUS[i]));
+        let cam_radius = if mode == MODE_TRACKSIDE {
+            length(sub(TRACKSIDE_CAM, target)).max(1.0)
+        } else {
+            RADIUS[i]
+        };
+        let cam_pos = add(target, scale(world_dir, cam_radius));
         LAST_WRITE_TARGET = target;
-        LAST_WRITE_RADIUS_1000.store((RADIUS[i] * 1000.0) as i32, Ordering::Release);
+        LAST_WRITE_RADIUS_1000.store((cam_radius * 1000.0) as i32, Ordering::Release);
         let forward = scale(world_dir, -1.0);
         write_look_at(frame, cam_pos, forward, look_up);
         true
@@ -327,21 +451,28 @@ unsafe fn init_mode(mode: i32, i: usize, car: &CarFrame, frame: &[f32; 12]) -> b
     };
     // Orbit revolves about WORLD up: the car's own up at capture can be badly
     // tilted (levels start on ramps), which would tilt the whole orbit plane
-    // and turn side views into diagonal ones.
-    let up_ref = if mode == MODE_ORBIT {
+    // and turn side views into diagonal ones. Trackside cameras stand on the
+    // track, so they use world up too.
+    let up_ref = if mode == MODE_ORBIT || mode == MODE_TRACKSIDE {
         [0.0, 1.0, 0.0]
     } else {
         captured_up
     };
+    if mode == MODE_TRACKSIDE {
+        TRACKSIDE_VALID = false;
+    }
     let world_dir = if mode == MODE_ORBIT {
         orbit_initial_dir(car).unwrap_or(captured_world_dir)
     } else {
         captured_world_dir
     };
-    // Orbit always starts at its close car-framing distance; the other modes
-    // keep the captured camera distance so activation is seamless.
+    // Orbit always starts at its configured car-framing distance and Trackside
+    // at its default cut range; the other modes keep the captured camera
+    // distance so activation is seamless.
     let radius = if mode == MODE_ORBIT {
-        ORBIT_MIN_RADIUS
+        orbit_radius()
+    } else if mode == MODE_TRACKSIDE {
+        TRACKSIDE_DEFAULT_RANGE
     } else {
         clamp(length(offset), min_radius_for_mode(mode), MAX_RADIUS)
     };
@@ -378,6 +509,8 @@ fn local_to_world(local: [f32; 3], car: &CarFrame) -> [f32; 3] {
 fn min_radius_for_mode(mode: i32) -> f32 {
     if mode == MODE_ORBIT {
         ORBIT_MIN_RADIUS
+    } else if mode == MODE_TRACKSIDE {
+        TRACKSIDE_MIN_RANGE
     } else {
         MIN_RADIUS
     }
@@ -394,11 +527,29 @@ fn camera_target(mode: i32, car: &CarFrame) -> [f32; 3] {
     }
 }
 
+/// Start direction behind the car, mixed with the configured elevation angle:
+/// up-component sin(theta), horizontal component cos(theta).
 fn orbit_initial_dir(car: &CarFrame) -> Option<[f32; 3]> {
-    normalize(add(
-        scale(car.fwd, -1.0),
-        scale(car.up, ORBIT_INITIAL_ELEVATION),
-    ))
+    let s = orbit_elevation_sin();
+    let h_sq = 1.0 - s * s;
+    let h = if h_sq > 0.0 {
+        h_sq * fast_inv_sqrt(h_sq)
+    } else {
+        0.0
+    };
+    normalize(add(scale(car.fwd, -h), scale(car.up, s)))
+}
+
+/// Project `v` onto the plane perpendicular to `up` and normalise.
+fn horizontal_dir(v: [f32; 3], up: [f32; 3]) -> Option<[f32; 3]> {
+    normalize(sub(v, scale(up, dot(v, up))))
+}
+
+/// Taylor sine, accurate to <0.5% over the 0..1.45 rad range used by the
+/// elevation slider (`#![no_std]`, so no libm).
+fn sin_approx(x: f32) -> f32 {
+    let x2 = x * x;
+    x * (1.0 - x2 / 6.0 * (1.0 - x2 / 20.0))
 }
 
 fn update_diag(frame: &[f32; 12], world_dir: [f32; 3], target: [f32; 3]) {

@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 635
+    .line 698
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$7;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,18 +43,18 @@
 .method public onClick(Landroid/view/View;)V
     .registers 3
 
-    .line 637
+    .line 700
     const-string p1, "launcher"
 
     const-string v0, "manual update check clicked"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 638
+    .line 701
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$7;->val$a:Landroid/app/Activity;
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/UpdateManager;->checkNow(Landroid/app/Activity;)V
 
-    .line 639
+    .line 702
     return-void
 .end method

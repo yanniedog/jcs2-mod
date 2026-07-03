@@ -624,12 +624,14 @@ pub(crate) unsafe fn jni_copy_bytes_to_array(
     if functions.is_null() {
         return 0;
     }
+    // JNIEnv function table: GetArrayLength=171, GetByteArrayElements=184,
+    // ReleaseByteArrayElements=192.
     let get_length: unsafe extern "C" fn(*mut c_void, *mut c_void) -> i32 =
         mem::transmute(*functions.add(171));
     let get_elements: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut u8) -> *mut i8 =
         mem::transmute(*functions.add(184));
     let release_elements: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut i8, i32) =
-        mem::transmute(*functions.add(185));
+        mem::transmute(*functions.add(192));
     let capacity = get_length(env, array);
     if capacity <= 0 {
         return 0;
@@ -662,12 +664,15 @@ pub(crate) unsafe fn jni_read_int_array(
     if functions.is_null() {
         return 0;
     }
+    // JNIEnv function table: GetArrayLength=171, GetIntArrayElements=187,
+    // ReleaseIntArrayElements=195. (The byte-array getters previously used
+    // here type-mismatch an int[] and paired the wrong release slot.)
     let get_length: unsafe extern "C" fn(*mut c_void, *mut c_void) -> i32 =
         mem::transmute(*functions.add(171));
     let get_elements: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut u8) -> *mut i32 =
-        mem::transmute(*functions.add(184));
+        mem::transmute(*functions.add(187));
     let release_elements: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut i32, i32) =
-        mem::transmute(*functions.add(185));
+        mem::transmute(*functions.add(195));
     let length = get_length(env, array).max(0) as usize;
     if length == 0 {
         return 0;
@@ -680,6 +685,82 @@ pub(crate) unsafe fn jni_read_int_array(
     ptr::copy_nonoverlapping(elements, out, read_len);
     release_elements(env, array, elements, 0);
     read_len as i32
+}
+
+/// Read up to `max` bytes from a Java byte[] into `out`; returns bytes read.
+pub(crate) unsafe fn jni_read_byte_array(
+    env: *mut c_void,
+    array: *mut c_void,
+    out: *mut u8,
+    max: usize,
+) -> i32 {
+    if env.is_null() || array.is_null() || out.is_null() || max == 0 {
+        return 0;
+    }
+    let env_table = env as *mut *const *const c_void;
+    let functions = *env_table;
+    if functions.is_null() {
+        return 0;
+    }
+    // GetArrayLength=171, GetByteArrayElements=184, ReleaseByteArrayElements=192.
+    let get_length: unsafe extern "C" fn(*mut c_void, *mut c_void) -> i32 =
+        mem::transmute(*functions.add(171));
+    let get_elements: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut u8) -> *mut u8 =
+        mem::transmute(*functions.add(184));
+    let release_elements: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut u8, i32) =
+        mem::transmute(*functions.add(192));
+    let length = get_length(env, array).max(0) as usize;
+    if length == 0 {
+        return 0;
+    }
+    let read_len = if length > max { max } else { length };
+    let elements = get_elements(env, array, ptr::null_mut());
+    if elements.is_null() {
+        return 0;
+    }
+    ptr::copy_nonoverlapping(elements, out, read_len);
+    release_elements(env, array, elements, 0);
+    read_len as i32
+}
+
+/// Mod-menu Orbit tuning: stand-off radius (world units), rotation speed
+/// (deg/s) and camera height (elevation angle, degrees).
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayOrbitTuning(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    radius_units: c_int,
+    deg_per_s: c_int,
+    elev_deg: c_int,
+) {
+    replay_camera::configure_orbit(radius_units, deg_per_s, elev_deg);
+}
+
+/// Enable rendering the selected swarm ghosts during live races too.
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayRaceSwarmEnabled(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    enabled: u8,
+) {
+    RACE_SWARM_ENABLED.store(enabled != 0, Ordering::Release);
+}
+
+/// Seed a replay path (UTF-8 bytes) into the swarm catalog. The Java side
+/// persists paths seen by the ViewReplay hook and replays them here on the
+/// next launch, so the picker offers every known replay without the user
+/// having to re-open each one first.
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_addReplaySwarmCatalogPath(
+    env: *mut c_void,
+    _class: *mut c_void,
+    path: *mut c_void,
+) {
+    let mut buf = [0u8; SWARM_CATALOG_PATH_BYTES + 1];
+    let len = jni_read_byte_array(env, path, buf.as_mut_ptr(), SWARM_CATALOG_PATH_BYTES);
+    if len > 0 {
+        swarm_catalog_note_path(buf.as_ptr() as *const c_char);
+    }
 }
 
 #[no_mangle]

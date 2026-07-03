@@ -26,10 +26,10 @@
 .method constructor <init>(II)V
     .registers 5
 
-    .line 1236
+    .line 1337
     invoke-direct {p0}, Landroid/graphics/drawable/Drawable;-><init>()V
 
-    .line 1232
+    .line 1333
     new-instance v0, Landroid/graphics/Paint;
 
     const/4 v1, 0x1
@@ -38,45 +38,45 @@
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->paint:Landroid/graphics/Paint;
 
-    .line 1233
+    .line 1334
     new-instance v0, Landroid/graphics/Paint;
 
     invoke-direct {v0, v1}, Landroid/graphics/Paint;-><init>(I)V
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->cutout:Landroid/graphics/Paint;
 
-    .line 1234
+    .line 1335
     new-instance v0, Landroid/graphics/Path;
 
     invoke-direct {v0}, Landroid/graphics/Path;-><init>()V
 
     iput-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->path:Landroid/graphics/Path;
 
-    .line 1237
+    .line 1338
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->paint:Landroid/graphics/Paint;
 
     sget-object v1, Landroid/graphics/Paint$Style;->FILL:Landroid/graphics/Paint$Style;
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 1238
+    .line 1339
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 1239
+    .line 1340
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->cutout:Landroid/graphics/Paint;
 
     sget-object v0, Landroid/graphics/Paint$Style;->FILL:Landroid/graphics/Paint$Style;
 
     invoke-virtual {p1, v0}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
 
-    .line 1240
+    .line 1341
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->cutout:Landroid/graphics/Paint;
 
     invoke-virtual {p1, p2}, Landroid/graphics/Paint;->setColor(I)V
 
-    .line 1241
+    .line 1342
     return-void
 .end method
 
@@ -85,7 +85,7 @@
 .method public getIntrinsicHeight()I
     .registers 2
 
-    .line 1262
+    .line 1363
     const/16 v0, 0x18
 
     return v0
@@ -94,7 +94,7 @@
 .method public getIntrinsicWidth()I
     .registers 2
 
-    .line 1258
+    .line 1359
     const/16 v0, 0x18
 
     return v0
@@ -103,7 +103,7 @@
 .method public getOpacity()I
     .registers 2
 
-    .line 1254
+    .line 1355
     const/4 v0, -0x3
 
     return v0
@@ -112,33 +112,33 @@
 .method public setAlpha(I)V
     .registers 3
 
-    .line 1244
+    .line 1345
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setAlpha(I)V
 
-    .line 1245
+    .line 1346
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->cutout:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setAlpha(I)V
 
-    .line 1246
+    .line 1347
     return-void
 .end method
 
 .method public setColorFilter(Landroid/graphics/ColorFilter;)V
     .registers 3
 
-    .line 1249
+    .line 1350
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setColorFilter(Landroid/graphics/ColorFilter;)Landroid/graphics/ColorFilter;
 
-    .line 1250
+    .line 1351
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;->cutout:Landroid/graphics/Paint;
 
     invoke-virtual {v0, p1}, Landroid/graphics/Paint;->setColorFilter(Landroid/graphics/ColorFilter;)Landroid/graphics/ColorFilter;
 
-    .line 1251
+    .line 1352
     return-void
 .end method

@@ -21,6 +21,12 @@
 
 .field private static final CAR_TEXTURES:[Ljava/lang/String;
 
+.field private static final DEFAULT_ORBIT_HEIGHT:I = 0x2a
+
+.field private static final DEFAULT_ORBIT_RADIUS:I = 0x8
+
+.field private static final DEFAULT_ORBIT_SPEED:I = 0x48
+
 .field private static final DEFAULT_SPLIT_ALPHA:I = 0x5a
 
 .field private static final DEFAULT_SPLIT_X:I = 0x58
@@ -39,6 +45,14 @@
 
 .field private static final K_MENU_DEFAULTS_VERSION:Ljava/lang/String; = "menu_defaults_version"
 
+.field private static final K_ORBIT_HEIGHT:Ljava/lang/String; = "orbit_height"
+
+.field private static final K_ORBIT_RADIUS:Ljava/lang/String; = "orbit_radius"
+
+.field private static final K_ORBIT_SPEED:Ljava/lang/String; = "orbit_speed"
+
+.field private static final K_RACE_SWARM:Ljava/lang/String; = "race_ghost_swarm"
+
 .field private static final K_REPLAY_CAMERA_MODE:Ljava/lang/String; = "replay_camera_mode"
 
 .field private static final K_REPLAY_FREE_CAMERA:Ljava/lang/String; = "replay_free_camera"
@@ -55,6 +69,8 @@
 
 .field private static final K_SPLIT_Y:Ljava/lang/String; = "split_y"
 
+.field private static final K_SWARM_CATALOG:Ljava/lang/String; = "swarm_catalog_paths"
+
 .field private static final MENU_DEFAULTS_VERSION:I = 0x5
 
 .field private static final PREFS:Ljava/lang/String; = "jcs_mod"
@@ -69,6 +85,8 @@
 
 .field private static final REQUEST_IMPORT:I = 0x1c85
 
+.field private static final SWARM_CATALOG_MAX:I = 0x20
+
 .field private static final TEXTURE_SIZE:I = 0x200
 
 
@@ -77,7 +95,7 @@
     .registers 10
 
     .line 65
-    const/4 v0, 0x3
+    const/4 v0, 0x4
 
     new-array v1, v0, [Ljava/lang/String;
 
@@ -99,55 +117,59 @@
 
     aput-object v5, v1, v4
 
+    const/4 v5, 0x3
+
+    const-string v6, "Trackside (static cameras)"
+
+    aput-object v6, v1, v5
+
     sput-object v1, Lcom/trueaxis/modmenu/ModMenu;->REPLAY_CAMERA_MODE_NAMES:[Ljava/lang/String;
 
-    .line 84
+    .line 94
     const/4 v1, 0x7
 
-    new-array v5, v1, [Ljava/lang/String;
+    new-array v6, v1, [Ljava/lang/String;
 
-    const-string v6, "Buggy"
+    const-string v7, "Buggy"
 
-    aput-object v6, v5, v2
+    aput-object v7, v6, v2
 
-    const-string v6, "Original jetcar"
+    const-string v7, "Original jetcar"
 
-    aput-object v6, v5, v3
+    aput-object v7, v6, v3
 
-    const-string v6, "Jet"
+    const-string v7, "Jet"
 
-    aput-object v6, v5, v4
+    aput-object v7, v6, v4
 
-    const-string v6, "Mini"
+    const-string v7, "Mini"
 
-    aput-object v6, v5, v0
-
-    const/4 v6, 0x4
+    aput-object v7, v6, v5
 
     const-string v7, "Sports"
 
-    aput-object v7, v5, v6
+    aput-object v7, v6, v0
 
     const/4 v7, 0x5
 
     const-string v8, "Stock"
 
-    aput-object v8, v5, v7
+    aput-object v8, v6, v7
 
     const/4 v8, 0x6
 
     const-string v9, "Truck"
 
-    aput-object v9, v5, v8
+    aput-object v9, v6, v8
 
-    sput-object v5, Lcom/trueaxis/modmenu/ModMenu;->CAR_NAMES:[Ljava/lang/String;
+    sput-object v6, Lcom/trueaxis/modmenu/ModMenu;->CAR_NAMES:[Ljava/lang/String;
 
-    .line 87
+    .line 97
     new-array v1, v1, [Ljava/lang/String;
 
-    const-string v5, "cars/buggy/buggy1.png"
+    const-string v6, "cars/buggy/buggy1.png"
 
-    aput-object v5, v1, v2
+    aput-object v6, v1, v2
 
     const-string v2, "cars/original/rocketcar1.png"
 
@@ -159,11 +181,11 @@
 
     const-string v2, "cars/mini/mini1.png"
 
+    aput-object v2, v1, v5
+
+    const-string v2, "cars/sports/sportscar1.png"
+
     aput-object v2, v1, v0
-
-    const-string v0, "cars/sports/sportscar1.png"
-
-    aput-object v0, v1, v6
 
     const-string v0, "cars/stock/stock1.png"
 
@@ -266,17 +288,17 @@
 .method private static addButtonRow(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/Button;Landroid/widget/Button;)V
     .registers 9
 
-    .line 193
+    .line 203
     new-instance v0, Landroid/widget/LinearLayout;
 
     invoke-direct {v0, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 194
+    .line 204
     const/4 v1, 0x0
 
     invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 195
+    .line 205
     new-instance v2, Landroid/widget/LinearLayout$LayoutParams;
 
     const/4 v3, -0x2
@@ -285,7 +307,7 @@
 
     invoke-direct {v2, v1, v3, v4}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
-    .line 197
+    .line 207
     const/4 v3, 0x2
 
     invoke-static {p0, v3}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -298,20 +320,20 @@
 
     invoke-virtual {v2, v1, v4, v1, p0}, Landroid/widget/LinearLayout$LayoutParams;->setMargins(IIII)V
 
-    .line 198
+    .line 208
     if-eqz p2, :cond_22
 
-    .line 199
+    .line 209
     invoke-virtual {v0, p2, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 201
+    .line 211
     :cond_22
     if-eqz p3, :cond_27
 
-    .line 202
+    .line 212
     invoke-virtual {v0, p3, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 204
+    .line 214
     :cond_27
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->fill()Landroid/widget/LinearLayout$LayoutParams;
 
@@ -319,14 +341,14 @@
 
     invoke-virtual {p1, v0, p0}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 205
+    .line 215
     return-void
 .end method
 
 .method private static addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;Z)Landroid/widget/CheckBox;
     .registers 11
 
-    .line 836
+    .line 927
     const/4 v5, 0x0
 
     move-object v0, p0
@@ -349,25 +371,25 @@
 .method private static addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Runnable;)Landroid/widget/CheckBox;
     .registers 7
 
-    .line 842
+    .line 933
     new-instance v0, Landroid/widget/CheckBox;
 
     invoke-direct {v0, p0}, Landroid/widget/CheckBox;-><init>(Landroid/content/Context;)V
 
-    .line 843
+    .line 934
     invoke-virtual {v0, p2}, Landroid/widget/CheckBox;->setText(Ljava/lang/CharSequence;)V
 
-    .line 844
+    .line 935
     const/4 p2, -0x1
 
     invoke-virtual {v0, p2}, Landroid/widget/CheckBox;->setTextColor(I)V
 
-    .line 845
+    .line 936
     const/high16 p2, 0x41300000
 
     invoke-virtual {v0, p2}, Landroid/widget/CheckBox;->setTextSize(F)V
 
-    .line 846
+    .line 937
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p2
@@ -378,7 +400,7 @@
 
     invoke-virtual {v0, p2}, Landroid/widget/CheckBox;->setChecked(Z)V
 
-    .line 847
+    .line 938
     const/4 p2, 0x2
 
     invoke-static {p0, p2}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -389,44 +411,73 @@
 
     invoke-virtual {v0, p4, p2, p4, p4}, Landroid/widget/CheckBox;->setPadding(IIII)V
 
-    .line 848
-    new-instance p2, Lcom/trueaxis/modmenu/ModMenu$13;
+    .line 939
+    new-instance p2, Lcom/trueaxis/modmenu/ModMenu$15;
 
-    invoke-direct {p2, p0, p3, v0, p5}, Lcom/trueaxis/modmenu/ModMenu$13;-><init>(Landroid/content/Context;Ljava/lang/String;Landroid/widget/CheckBox;Ljava/lang/Runnable;)V
+    invoke-direct {p2, p0, p3, v0, p5}, Lcom/trueaxis/modmenu/ModMenu$15;-><init>(Landroid/content/Context;Ljava/lang/String;Landroid/widget/CheckBox;Ljava/lang/Runnable;)V
 
     invoke-virtual {v0, p2}, Landroid/widget/CheckBox;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 858
+    .line 949
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->fill()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object p0
 
     invoke-virtual {p1, v0, p0}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 859
+    .line 950
     return-object v0
 .end method
 
 .method private static addSeek(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)Landroid/widget/LinearLayout;
-    .registers 20
+    .registers 17
 
-    .line 878
-    move-object v7, p0
+    .line 969
+    const/4 v8, 0x0
+
+    move-object v0, p0
+
+    move-object v1, p1
+
+    move-object v2, p2
+
+    move-object v3, p3
+
+    move v4, p4
+
+    move v5, p5
+
+    move v6, p6
+
+    move-object/from16 v7, p7
+
+    invoke-static/range {v0 .. v8}, Lcom/trueaxis/modmenu/ModMenu;->addSeek(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;Ljava/lang/Runnable;)Landroid/widget/LinearLayout;
+
+    move-result-object v0
+
+    return-object v0
+.end method
+
+.method private static addSeek(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;Ljava/lang/Runnable;)Landroid/widget/LinearLayout;
+    .registers 22
+
+    .line 976
+    move-object v8, p0
 
     move/from16 v1, p5
 
     move/from16 v0, p6
 
-    new-instance v8, Landroid/widget/LinearLayout;
+    new-instance v9, Landroid/widget/LinearLayout;
 
-    invoke-direct {v8, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
+    invoke-direct {v9, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 879
+    .line 977
     const/4 v2, 0x1
 
-    invoke-virtual {v8, v2}, Landroid/widget/LinearLayout;->setOrientation(I)V
+    invoke-virtual {v9, v2}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 880
+    .line 978
     const/16 v2, 0xd8
 
     const/16 v3, 0xde
@@ -443,28 +494,28 @@
 
     invoke-static {p0, v3, v4, v2}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
 
-    move-result-object v9
+    move-result-object v10
 
-    .line 881
-    new-instance v10, Landroid/widget/SeekBar;
+    .line 979
+    new-instance v11, Landroid/widget/SeekBar;
 
-    invoke-direct {v10, p0}, Landroid/widget/SeekBar;-><init>(Landroid/content/Context;)V
+    invoke-direct {v11, p0}, Landroid/widget/SeekBar;-><init>(Landroid/content/Context;)V
 
-    .line 882
+    .line 980
     sub-int v2, v0, v1
 
-    invoke-virtual {v10, v2}, Landroid/widget/SeekBar;->setMax(I)V
+    invoke-virtual {v11, v2}, Landroid/widget/SeekBar;->setMax(I)V
 
-    .line 883
+    .line 981
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object v2
 
-    move-object v3, p3
+    move-object/from16 v3, p3
 
     move/from16 v4, p4
 
-    invoke-interface {v2, p3, v4}, Landroid/content/SharedPreferences;->getInt(Ljava/lang/String;I)I
+    invoke-interface {v2, v3, v4}, Landroid/content/SharedPreferences;->getInt(Ljava/lang/String;I)I
 
     move-result v2
 
@@ -474,10 +525,10 @@
 
     sub-int/2addr v0, v1
 
-    invoke-virtual {v10, v0}, Landroid/widget/SeekBar;->setProgress(I)V
+    invoke-virtual {v11, v0}, Landroid/widget/SeekBar;->setProgress(I)V
 
-    .line 884
-    invoke-virtual {v10}, Landroid/widget/SeekBar;->getProgress()I
+    .line 982
+    invoke-virtual {v11}, Landroid/widget/SeekBar;->getProgress()I
 
     move-result v0
 
@@ -487,22 +538,24 @@
 
     move-object/from16 v6, p7
 
-    invoke-static {v9, p2, v0, v6}, Lcom/trueaxis/modmenu/ModMenu;->updateSeekLabel(Landroid/widget/TextView;Ljava/lang/String;ILjava/lang/String;)V
+    invoke-static {v10, p2, v0, v6}, Lcom/trueaxis/modmenu/ModMenu;->updateSeekLabel(Landroid/widget/TextView;Ljava/lang/String;ILjava/lang/String;)V
 
-    .line 885
-    new-instance v11, Lcom/trueaxis/modmenu/ModMenu$14;
+    .line 983
+    new-instance v12, Lcom/trueaxis/modmenu/ModMenu$16;
 
-    move-object v0, v11
+    move-object v0, v12
 
     move-object v2, p0
 
-    move-object v4, v9
+    move-object v4, v10
 
-    invoke-direct/range {v0 .. v6}, Lcom/trueaxis/modmenu/ModMenu$14;-><init>(ILandroid/content/Context;Ljava/lang/String;Landroid/widget/TextView;Ljava/lang/String;Ljava/lang/String;)V
+    move-object/from16 v7, p8
 
-    invoke-virtual {v10, v11}, Landroid/widget/SeekBar;->setOnSeekBarChangeListener(Landroid/widget/SeekBar$OnSeekBarChangeListener;)V
+    invoke-direct/range {v0 .. v7}, Lcom/trueaxis/modmenu/ModMenu$16;-><init>(ILandroid/content/Context;Ljava/lang/String;Landroid/widget/TextView;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Runnable;)V
 
-    .line 899
+    invoke-virtual {v11, v12}, Landroid/widget/SeekBar;->setOnSeekBarChangeListener(Landroid/widget/SeekBar$OnSeekBarChangeListener;)V
+
+    .line 1000
     const/4 v0, 0x4
 
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -511,44 +564,44 @@
 
     const/4 v1, 0x0
 
-    invoke-virtual {v9, v1, v0, v1, v1}, Landroid/widget/TextView;->setPadding(IIII)V
+    invoke-virtual {v10, v1, v0, v1, v1}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 900
+    .line 1001
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->fill()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v0
 
-    invoke-virtual {v8, v9, v0}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-virtual {v9, v10, v0}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 901
+    .line 1002
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->fill()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v0
 
-    invoke-virtual {v8, v10, v0}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-virtual {v9, v11, v0}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 902
+    .line 1003
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->fill()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v0
 
     move-object v1, p1
 
-    invoke-virtual {p1, v8, v0}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-virtual {p1, v9, v0}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 903
-    return-object v8
+    .line 1004
+    return-object v9
 .end method
 
 .method private static applyMenuDefaults(Landroid/content/Context;)V
     .registers 7
 
-    .line 402
+    .line 412
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
 
-    .line 403
+    .line 413
     const-string v0, "menu_defaults_version"
 
     const/4 v1, 0x0
@@ -561,16 +614,16 @@
 
     if-lt v2, v3, :cond_f
 
-    .line 404
+    .line 414
     return-void
 
-    .line 406
+    .line 416
     :cond_f
     invoke-interface {p0}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
 
     move-result-object v2
 
-    .line 407
+    .line 417
     const-string v4, "checkpoint_splits"
 
     const/4 v5, 0x1
@@ -579,82 +632,82 @@
 
     move-result-object v2
 
-    .line 408
+    .line 418
     const-string v4, "split_list"
 
     invoke-interface {v2, v4, v5}, Landroid/content/SharedPreferences$Editor;->putBoolean(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v2
 
-    .line 409
+    .line 419
     const-string v4, "split_sector_delta"
 
     invoke-interface {v2, v4, v1}, Landroid/content/SharedPreferences$Editor;->putBoolean(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v1
 
-    .line 410
+    .line 420
     const-string v2, "replay_free_camera"
 
     invoke-interface {v1, v2, v5}, Landroid/content/SharedPreferences$Editor;->putBoolean(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v1
 
-    .line 411
+    .line 421
     const-string v2, "split_realtime"
 
     invoke-interface {v1, v2}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v1
 
-    .line 412
+    .line 422
     const-string v2, "ghost_route"
 
     invoke-interface {v1, v2}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v1
 
-    .line 413
+    .line 423
     const-string v2, "ghost_route_alpha"
 
     invoke-interface {v1, v2}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v1
 
-    .line 414
+    .line 424
     const-string v2, "ghost_route_thickness"
 
     invoke-interface {v1, v2}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v1
 
-    .line 415
+    .line 425
     const-string v2, "ycs2_prefix"
 
     invoke-interface {v1, v2}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v1
 
-    .line 416
+    .line 426
     const-string v2, "experimental_visible"
 
     invoke-interface {v1, v2}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v1
 
-    .line 417
+    .line 427
     const-string v2, "experimental_ack"
 
     invoke-interface {v1, v2}, Landroid/content/SharedPreferences$Editor;->remove(Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v1
 
-    .line 418
+    .line 428
     invoke-interface {v1, v0, v3}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
 
     move-result-object v0
 
-    .line 419
+    .line 429
     const-string v1, "split_alpha"
 
     invoke-interface {p0, v1}, Landroid/content/SharedPreferences;->contains(Ljava/lang/String;)Z
@@ -663,12 +716,12 @@
 
     if-nez v2, :cond_67
 
-    .line 420
+    .line 430
     const/16 v2, 0x5a
 
     invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
 
-    .line 422
+    .line 432
     :cond_67
     const-string v1, "split_x"
 
@@ -678,12 +731,12 @@
 
     if-nez v2, :cond_74
 
-    .line 423
+    .line 433
     const/16 v2, 0x58
 
     invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
 
-    .line 425
+    .line 435
     :cond_74
     const-string v1, "split_y"
 
@@ -693,44 +746,44 @@
 
     if-nez p0, :cond_81
 
-    .line 426
+    .line 436
     const/16 p0, 0x27
 
     invoke-interface {v0, v1, p0}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
 
-    .line 428
+    .line 438
     :cond_81
     invoke-interface {v0}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 429
+    .line 439
     return-void
 .end method
 
 .method private static background(IF)Landroid/graphics/drawable/GradientDrawable;
     .registers 3
 
-    .line 102
+    .line 112
     new-instance v0, Landroid/graphics/drawable/GradientDrawable;
 
     invoke-direct {v0}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
 
-    .line 103
+    .line 113
     invoke-virtual {v0, p0}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
 
-    .line 104
+    .line 114
     invoke-virtual {v0, p1}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
 
-    .line 105
+    .line 115
     return-object v0
 .end method
 
 .method private static buildDateUtc(Landroid/content/Context;)Ljava/lang/String;
     .registers 4
 
-    .line 821
+    .line 912
     const-string v0, ""
 
-    .line 823
+    .line 914
     const/4 v1, 0x0
 
     :try_start_3
@@ -744,15 +797,15 @@
 
     move-result-object v1
 
-    .line 824
+    .line 915
     new-instance p0, Ljava/util/Properties;
 
     invoke-direct {p0}, Ljava/util/Properties;-><init>()V
 
-    .line 825
+    .line 916
     invoke-virtual {p0, v1}, Ljava/util/Properties;->load(Ljava/io/InputStream;)V
 
-    .line 826
+    .line 917
     const-string v2, "build_date_utc"
 
     invoke-virtual {p0, v2, v0}, Ljava/util/Properties;->getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
@@ -765,33 +818,33 @@
     :try_end_1f
     .catchall {:try_start_3 .. :try_end_1f} :catchall_23
 
-    .line 830
+    .line 921
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 826
+    .line 917
     return-object p0
 
-    .line 827
+    .line 918
     :catchall_23
     move-exception p0
 
-    .line 828
+    .line 919
     nop
 
-    .line 830
+    .line 921
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 828
+    .line 919
     return-object v0
 .end method
 
 .method private static buildSummary(Landroid/content/Context;)Ljava/lang/String;
     .registers 4
 
-    .line 807
+    .line 898
     nop
 
-    .line 808
+    .line 899
     :try_start_1
     invoke-virtual {p0}, Landroid/content/Context;->getPackageManager()Landroid/content/pm/PackageManager;
 
@@ -807,7 +860,7 @@
 
     move-result-object v0
 
-    .line 809
+    .line 900
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -840,19 +893,19 @@
 
     move-result-object v0
 
-    .line 810
+    .line 901
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->buildDateUtc(Landroid/content/Context;)Ljava/lang/String;
 
     move-result-object p0
 
-    .line 811
+    .line 902
     invoke-virtual {p0}, Ljava/lang/String;->length()I
 
     move-result v1
 
     if-lez v1, :cond_50
 
-    .line 812
+    .line 903
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -877,15 +930,15 @@
     :try_end_50
     .catchall {:try_start_1 .. :try_end_50} :catchall_51
 
-    .line 814
+    .line 905
     :cond_50
     return-object v0
 
-    .line 815
+    .line 906
     :catchall_51
     move-exception p0
 
-    .line 816
+    .line 907
     const-string p0, "Version unknown"
 
     return-object p0
@@ -894,31 +947,31 @@
 .method private static button(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/Button;
     .registers 6
 
-    .line 117
+    .line 127
     new-instance v0, Landroid/widget/Button;
 
     invoke-direct {v0, p0}, Landroid/widget/Button;-><init>(Landroid/content/Context;)V
 
-    .line 118
+    .line 128
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
 
-    .line 119
+    .line 129
     const/high16 p1, 0x41300000
 
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setTextSize(F)V
 
-    .line 120
+    .line 130
     const/4 p1, 0x0
 
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setAllCaps(Z)V
 
-    .line 121
+    .line 131
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setMinHeight(I)V
 
-    .line 122
+    .line 132
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setMinimumHeight(I)V
 
-    .line 123
+    .line 133
     const/16 p1, 0xa
 
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -941,14 +994,14 @@
 
     invoke-virtual {v0, v1, v3, p1, p0}, Landroid/widget/Button;->setPadding(IIII)V
 
-    .line 124
+    .line 134
     return-object v0
 .end method
 
 .method public static carAssetPath(I)Ljava/lang/String;
     .registers 2
 
-    .line 315
+    .line 325
     sget-object v0, Lcom/trueaxis/modmenu/ModMenu;->CAR_TEXTURES:[Ljava/lang/String;
 
     aget-object p0, v0, p0
@@ -959,7 +1012,7 @@
 .method public static carCount()I
     .registers 1
 
-    .line 307
+    .line 317
     sget-object v0, Lcom/trueaxis/modmenu/ModMenu;->CAR_NAMES:[Ljava/lang/String;
 
     array-length v0, v0
@@ -970,7 +1023,7 @@
 .method public static carCustomFile(Landroid/content/Context;I)Ljava/io/File;
     .registers 2
 
-    .line 319
+    .line 329
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
 
     move-result-object p0
@@ -981,7 +1034,7 @@
 .method public static carName(I)Ljava/lang/String;
     .registers 2
 
-    .line 311
+    .line 321
     if-ltz p0, :cond_c
 
     sget-object v0, Lcom/trueaxis/modmenu/ModMenu;->CAR_NAMES:[Ljava/lang/String;
@@ -1006,10 +1059,10 @@
 .method public static checkpointSplitsEnabled(Landroid/content/Context;)Z
     .registers 3
 
-    .line 432
+    .line 442
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->applyMenuDefaults(Landroid/content/Context;)V
 
-    .line 433
+    .line 443
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -1028,7 +1081,7 @@
 .method private static clamp(III)I
     .registers 3
 
-    .line 485
+    .line 548
     invoke-static {p2, p0}, Ljava/lang/Math;->min(II)I
 
     move-result p0
@@ -1043,26 +1096,26 @@
 .method private static closeQuietly(Ljava/io/Closeable;)V
     .registers 1
 
-    .line 390
+    .line 400
     if-nez p0, :cond_3
 
     return-void
 
-    .line 392
+    .line 402
     :cond_3
     :try_start_3
     invoke-interface {p0}, Ljava/io/Closeable;->close()V
     :try_end_6
     .catchall {:try_start_3 .. :try_end_6} :catchall_7
 
-    .line 394
+    .line 404
     goto :goto_8
 
-    .line 393
+    .line 403
     :catchall_7
     move-exception p0
 
-    .line 395
+    .line 405
     :goto_8
     return-void
 .end method
@@ -1070,7 +1123,7 @@
 .method private static customTexture(Landroid/content/Context;I)Ljava/io/File;
     .registers 4
 
-    .line 296
+    .line 306
     new-instance v0, Ljava/io/File;
 
     invoke-virtual {p0}, Landroid/content/Context;->getFilesDir()Ljava/io/File;
@@ -1094,7 +1147,7 @@
         }
     .end annotation
 
-    .line 1105
+    .line 1206
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -1117,20 +1170,20 @@
 
     invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1106
+    .line 1207
     new-instance v0, Landroid/graphics/BitmapFactory$Options;
 
     invoke-direct {v0}, Landroid/graphics/BitmapFactory$Options;-><init>()V
 
-    .line 1107
+    .line 1208
     const/4 v2, 0x1
 
     iput-boolean v2, v0, Landroid/graphics/BitmapFactory$Options;->inJustDecodeBounds:Z
 
-    .line 1108
+    .line 1209
     nop
 
-    .line 1110
+    .line 1211
     const/4 v3, 0x0
 
     :try_start_22
@@ -1144,22 +1197,22 @@
     :try_end_2a
     .catchall {:try_start_22 .. :try_end_2a} :catchall_98
 
-    .line 1111
+    .line 1212
     :try_start_2a
     invoke-static {v4, v3, v0}, Landroid/graphics/BitmapFactory;->decodeStream(Ljava/io/InputStream;Landroid/graphics/Rect;Landroid/graphics/BitmapFactory$Options;)Landroid/graphics/Bitmap;
     :try_end_2d
     .catchall {:try_start_2a .. :try_end_2d} :catchall_95
 
-    .line 1113
+    .line 1214
     invoke-static {v4}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 1114
+    .line 1215
     nop
 
-    .line 1115
+    .line 1216
     nop
 
-    .line 1116
+    .line 1217
     iget v4, v0, Landroid/graphics/BitmapFactory$Options;->outWidth:I
 
     iget v5, v0, Landroid/graphics/BitmapFactory$Options;->outHeight:I
@@ -1168,7 +1221,7 @@
 
     move-result v4
 
-    .line 1117
+    .line 1218
     :goto_3a
     div-int v5, v4, v2
 
@@ -1180,7 +1233,7 @@
 
     goto :goto_3a
 
-    .line 1118
+    .line 1219
     :cond_43
     new-instance v4, Ljava/lang/StringBuilder;
 
@@ -1226,23 +1279,23 @@
 
     invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1121
+    .line 1222
     new-instance v0, Landroid/graphics/BitmapFactory$Options;
 
     invoke-direct {v0}, Landroid/graphics/BitmapFactory$Options;-><init>()V
 
-    .line 1122
+    .line 1223
     iput v2, v0, Landroid/graphics/BitmapFactory$Options;->inSampleSize:I
 
-    .line 1123
+    .line 1224
     sget-object v1, Landroid/graphics/Bitmap$Config;->ARGB_8888:Landroid/graphics/Bitmap$Config;
 
     iput-object v1, v0, Landroid/graphics/BitmapFactory$Options;->inPreferredConfig:Landroid/graphics/Bitmap$Config;
 
-    .line 1124
+    .line 1225
     nop
 
-    .line 1126
+    .line 1227
     :try_start_7d
     invoke-virtual {p0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
 
@@ -1254,7 +1307,7 @@
     :try_end_85
     .catchall {:try_start_7d .. :try_end_85} :catchall_90
 
-    .line 1127
+    .line 1228
     :try_start_85
     invoke-static {p0, v3, v0}, Landroid/graphics/BitmapFactory;->decodeStream(Ljava/io/InputStream;Landroid/graphics/Rect;Landroid/graphics/BitmapFactory$Options;)Landroid/graphics/Bitmap;
 
@@ -1262,13 +1315,13 @@
     :try_end_89
     .catchall {:try_start_85 .. :try_end_89} :catchall_8d
 
-    .line 1129
+    .line 1230
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 1127
+    .line 1228
     return-object p1
 
-    .line 1129
+    .line 1230
     :catchall_8d
     move-exception p1
 
@@ -1282,10 +1335,10 @@
     :goto_91
     invoke-static {v3}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 1130
+    .line 1231
     throw p1
 
-    .line 1113
+    .line 1214
     :catchall_95
     move-exception p0
 
@@ -1299,7 +1352,7 @@
     :goto_99
     invoke-static {v3}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 1114
+    .line 1215
     goto :goto_9e
 
     :goto_9d
@@ -1312,15 +1365,15 @@
 .method public static deleteCustomLivery(Landroid/content/Context;I)V
     .registers 9
 
-    .line 1208
+    .line 1309
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->install(Landroid/content/Context;)V
 
-    .line 1209
+    .line 1310
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
 
     move-result-object v0
 
-    .line 1210
+    .line 1311
     invoke-virtual {v0}, Ljava/io/File;->exists()Z
 
     move-result v1
@@ -1333,12 +1386,12 @@
 
     if-eqz v1, :cond_45
 
-    .line 1211
+    .line 1312
     invoke-virtual {v0}, Ljava/io/File;->delete()Z
 
     move-result v1
 
-    .line 1212
+    .line 1313
     new-instance v5, Ljava/lang/StringBuilder;
 
     invoke-direct {v5}, Ljava/lang/StringBuilder;-><init>()V
@@ -1361,7 +1414,7 @@
 
     move-result-object v5
 
-    .line 1213
+    .line 1314
     invoke-virtual {v0}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
     move-result-object v0
@@ -1382,16 +1435,16 @@
 
     move-result-object v0
 
-    .line 1212
+    .line 1313
     invoke-static {v4, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1215
+    .line 1316
     :cond_45
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->externalTexture(Landroid/content/Context;I)Ljava/io/File;
 
     move-result-object p0
 
-    .line 1216
+    .line 1317
     if-eqz p0, :cond_83
 
     invoke-virtual {p0}, Ljava/io/File;->exists()Z
@@ -1400,12 +1453,12 @@
 
     if-eqz v0, :cond_83
 
-    .line 1217
+    .line 1318
     invoke-virtual {p0}, Ljava/io/File;->delete()Z
 
     move-result v0
 
-    .line 1218
+    .line 1319
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -1428,7 +1481,7 @@
 
     move-result-object p1
 
-    .line 1219
+    .line 1320
     invoke-virtual {p0}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
     move-result-object p0
@@ -1449,10 +1502,10 @@
 
     move-result-object p0
 
-    .line 1218
+    .line 1319
     invoke-static {v4, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1221
+    .line 1322
     :cond_83
     return-void
 .end method
@@ -1460,7 +1513,7 @@
 .method private static dp(Landroid/content/Context;I)I
     .registers 2
 
-    .line 98
+    .line 108
     int-to-float p1, p1
 
     invoke-virtual {p0}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
@@ -1492,7 +1545,7 @@
         }
     .end annotation
 
-    .line 1180
+    .line 1281
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -1529,16 +1582,16 @@
 
     invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1181
+    .line 1282
     nop
 
-    .line 1182
+    .line 1283
     nop
 
-    .line 1183
+    .line 1284
     nop
 
-    .line 1185
+    .line 1286
     const/4 v0, 0x0
 
     :try_start_2a
@@ -1546,21 +1599,21 @@
 
     move-result-object v2
 
-    .line 1186
+    .line 1287
     invoke-virtual {v2}, Ljava/io/File;->isFile()Z
 
     move-result v3
 
     if-eqz v3, :cond_3a
 
-    .line 1187
+    .line 1288
     new-instance v3, Ljava/io/FileInputStream;
 
     invoke-direct {v3, v2}, Ljava/io/FileInputStream;-><init>(Ljava/io/File;)V
 
     goto :goto_46
 
-    .line 1188
+    .line 1289
     :cond_3a
     invoke-virtual {p0}, Landroid/content/Context;->getAssets()Landroid/content/res/AssetManager;
 
@@ -1576,7 +1629,7 @@
     :try_end_46
     .catchall {:try_start_2a .. :try_end_46} :catchall_ab
 
-    .line 1189
+    .line 1290
     :goto_46
     :try_start_46
     invoke-virtual {p0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
@@ -1587,10 +1640,10 @@
 
     move-result-object v0
 
-    .line 1190
+    .line 1291
     if-eqz v0, :cond_9f
 
-    .line 1191
+    .line 1292
     const/16 p0, 0x4000
 
     new-array p0, p0, [B
@@ -1599,7 +1652,7 @@
 
     const/4 v4, 0x0
 
-    .line 1193
+    .line 1294
     :goto_56
     invoke-virtual {v3, p0}, Ljava/io/InputStream;->read([B)I
 
@@ -1609,19 +1662,19 @@
 
     if-eq v5, v6, :cond_62
 
-    .line 1194
+    .line 1295
     invoke-virtual {v0, p0, p1, v5}, Ljava/io/OutputStream;->write([BII)V
 
-    .line 1195
+    .line 1296
     add-int/2addr v4, v5
 
     goto :goto_56
 
-    .line 1197
+    .line 1298
     :cond_62
     invoke-virtual {v0}, Ljava/io/OutputStream;->flush()V
 
-    .line 1198
+    .line 1299
     new-instance p0, Ljava/lang/StringBuilder;
 
     invoke-direct {p0}, Ljava/lang/StringBuilder;-><init>()V
@@ -1656,7 +1709,7 @@
 
     move-result-object p0
 
-    .line 1199
+    .line 1300
     invoke-virtual {v2}, Ljava/io/File;->isFile()Z
 
     move-result p1
@@ -1669,24 +1722,24 @@
 
     move-result-object p0
 
-    .line 1198
+    .line 1299
     invoke-static {v1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
     :try_end_97
     .catchall {:try_start_46 .. :try_end_97} :catchall_a7
 
-    .line 1201
+    .line 1302
     invoke-static {v3}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 1202
+    .line 1303
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 1203
+    .line 1304
     nop
 
-    .line 1204
+    .line 1305
     return-void
 
-    .line 1190
+    .line 1291
     :cond_9f
     :try_start_9f
     new-instance p0, Ljava/lang/IllegalStateException;
@@ -1699,7 +1752,7 @@
     :try_end_a7
     .catchall {:try_start_9f .. :try_end_a7} :catchall_a7
 
-    .line 1201
+    .line 1302
     :catchall_a7
     move-exception p0
 
@@ -1717,10 +1770,10 @@
     :goto_ad
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 1202
+    .line 1303
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 1203
+    .line 1304
     goto :goto_b5
 
     :goto_b4
@@ -1733,14 +1786,14 @@
 .method private static externalTexture(Landroid/content/Context;I)Ljava/io/File;
     .registers 4
 
-    .line 301
+    .line 311
     const/4 v0, 0x0
 
     invoke-virtual {p0, v0}, Landroid/content/Context;->getExternalFilesDir(Ljava/lang/String;)Ljava/io/File;
 
     move-result-object p0
 
-    .line 302
+    .line 312
     if-nez p0, :cond_8
 
     goto :goto_11
@@ -1761,7 +1814,7 @@
 .method private static fill()Landroid/widget/LinearLayout$LayoutParams;
     .registers 3
 
-    .line 290
+    .line 300
     new-instance v0, Landroid/widget/LinearLayout$LayoutParams;
 
     const/4 v1, -0x1
@@ -1776,7 +1829,7 @@
 .method public static handleActivityResult(Landroid/app/Activity;IILandroid/content/Intent;)Z
     .registers 9
 
-    .line 1057
+    .line 1158
     const/4 v0, 0x0
 
     const/16 v1, 0x1c85
@@ -1789,11 +1842,11 @@
 
     return v0
 
-    .line 1058
+    .line 1159
     :cond_a
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->install(Landroid/content/Context;)V
 
-    .line 1059
+    .line 1160
     new-instance v2, Ljava/lang/StringBuilder;
 
     invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
@@ -1848,7 +1901,7 @@
 
     if-eqz p3, :cond_46
 
-    .line 1062
+    .line 1163
     invoke-virtual {p3}, Landroid/content/Intent;->getData()Landroid/net/Uri;
 
     move-result-object v4
@@ -1871,12 +1924,12 @@
 
     move-result-object v0
 
-    .line 1059
+    .line 1160
     const-string v2, "livery"
 
     invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1063
+    .line 1164
     const/4 v0, -0x1
 
     if-ne p2, v0, :cond_129
@@ -1891,23 +1944,23 @@
 
     goto/16 :goto_129
 
-    .line 1064
+    .line 1165
     :cond_61
     invoke-virtual {p3}, Landroid/content/Intent;->getData()Landroid/net/Uri;
 
     move-result-object p2
 
-    .line 1065
+    .line 1166
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->selectedCar(Landroid/content/Context;)I
 
     move-result p3
 
-    .line 1067
+    .line 1168
     const-string v0, " car="
 
     if-ne p1, v1, :cond_ad
 
-    .line 1068
+    .line 1169
     :try_start_6d
     new-instance v1, Ljava/lang/StringBuilder;
 
@@ -1941,10 +1994,10 @@
 
     invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1069
+    .line 1170
     invoke-static {p0, p2, p3}, Lcom/trueaxis/modmenu/ModMenu;->importLivery(Landroid/content/Context;Landroid/net/Uri;I)V
 
-    .line 1070
+    .line 1171
     new-instance p2, Ljava/lang/StringBuilder;
 
     invoke-direct {p2}, Ljava/lang/StringBuilder;-><init>()V
@@ -1971,7 +2024,7 @@
 
     goto :goto_ec
 
-    .line 1072
+    .line 1173
     :cond_ad
     new-instance v1, Ljava/lang/StringBuilder;
 
@@ -2005,10 +2058,10 @@
 
     invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1073
+    .line 1174
     invoke-static {p0, p2, p3}, Lcom/trueaxis/modmenu/ModMenu;->exportLivery(Landroid/content/Context;Landroid/net/Uri;I)V
 
-    .line 1074
+    .line 1175
     new-instance p2, Ljava/lang/StringBuilder;
 
     invoke-direct {p2}, Ljava/lang/StringBuilder;-><init>()V
@@ -2033,7 +2086,7 @@
 
     invoke-static {p0, p2}, Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
 
-    .line 1076
+    .line 1177
     :goto_ec
     new-instance p2, Ljava/lang/StringBuilder;
 
@@ -2057,24 +2110,24 @@
     :try_end_102
     .catchall {:try_start_6d .. :try_end_102} :catchall_103
 
-    .line 1081
+    .line 1182
     goto :goto_128
 
-    .line 1077
+    .line 1178
     :catchall_103
     move-exception p1
 
-    .line 1078
+    .line 1179
     const-string p2, "YCS2Mod"
 
     const-string p3, "Livery file operation failed"
 
     invoke-static {p2, p3, p1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 1079
+    .line 1180
     invoke-static {v2, p3, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 1080
+    .line 1181
     new-instance p2, Ljava/lang/StringBuilder;
 
     invoke-direct {p2}, Ljava/lang/StringBuilder;-><init>()V
@@ -2099,11 +2152,11 @@
 
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
 
-    .line 1082
+    .line 1183
     :goto_128
     return v3
 
-    .line 1063
+    .line 1164
     :cond_129
     :goto_129
     return v3
@@ -2112,49 +2165,49 @@
 .method private static iconLinkButton(Landroid/app/Activity;ILandroid/graphics/drawable/Drawable;Ljava/lang/String;Landroid/view/View$OnClickListener;)Landroid/widget/Button;
     .registers 7
 
-    .line 154
+    .line 164
     new-instance v0, Landroid/widget/Button;
 
     invoke-direct {v0, p0}, Landroid/widget/Button;-><init>(Landroid/content/Context;)V
 
-    .line 155
+    .line 165
     const-string v1, ""
 
     invoke-virtual {v0, v1}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
 
-    .line 156
+    .line 166
     invoke-virtual {v0, p3}, Landroid/widget/Button;->setContentDescription(Ljava/lang/CharSequence;)V
 
-    .line 157
+    .line 167
     const/16 p3, 0x11
 
     invoke-virtual {v0, p3}, Landroid/widget/Button;->setGravity(I)V
 
-    .line 158
+    .line 168
     const/4 p3, 0x0
 
     invoke-virtual {v0, p3}, Landroid/widget/Button;->setMinHeight(I)V
 
-    .line 159
+    .line 169
     invoke-virtual {v0, p3}, Landroid/widget/Button;->setMinimumHeight(I)V
 
-    .line 160
+    .line 170
     invoke-virtual {v0, p3}, Landroid/widget/Button;->setMinWidth(I)V
 
-    .line 161
+    .line 171
     invoke-virtual {v0, p3}, Landroid/widget/Button;->setMinimumWidth(I)V
 
-    .line 162
+    .line 172
     const/16 v1, 0x9
 
     invoke-static {p0, v1}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v1
 
-    .line 163
+    .line 173
     invoke-virtual {v0, v1, v1, v1, v1}, Landroid/widget/Button;->setPadding(IIII)V
 
-    .line 164
+    .line 174
     const/16 v1, 0xa
 
     invoke-static {p0, v1}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -2169,25 +2222,25 @@
 
     invoke-virtual {v0, p1}, Landroid/widget/Button;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 165
+    .line 175
     const/16 p1, 0x16
 
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result p0
 
-    .line 166
+    .line 176
     invoke-virtual {p2, p3, p3, p0, p0}, Landroid/graphics/drawable/Drawable;->setBounds(IIII)V
 
-    .line 167
+    .line 177
     const/4 p0, 0x0
 
     invoke-virtual {v0, p2, p0, p0, p0}, Landroid/widget/Button;->setCompoundDrawables(Landroid/graphics/drawable/Drawable;Landroid/graphics/drawable/Drawable;Landroid/graphics/drawable/Drawable;Landroid/graphics/drawable/Drawable;)V
 
-    .line 168
+    .line 178
     invoke-virtual {v0, p4}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 169
+    .line 179
     return-object v0
 .end method
 
@@ -2199,7 +2252,7 @@
         }
     .end annotation
 
-    .line 1086
+    .line 1187
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -2236,18 +2289,18 @@
 
     invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1087
+    .line 1188
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->decodeSampled(Landroid/content/Context;Landroid/net/Uri;)Landroid/graphics/Bitmap;
 
     move-result-object p1
 
-    .line 1088
+    .line 1189
     if-eqz p1, :cond_99
 
-    .line 1089
+    .line 1190
     nop
 
-    .line 1091
+    .line 1192
     const/4 v0, 0x0
 
     :try_start_2e
@@ -2261,7 +2314,7 @@
 
     move-result-object v2
 
-    .line 1092
+    .line 1193
     invoke-virtual {p1}, Landroid/graphics/Bitmap;->getWidth()I
 
     move-result v3
@@ -2288,10 +2341,10 @@
 
     move-result-object v2
 
-    .line 1091
+    .line 1192
     invoke-static {v1, v2}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1093
+    .line 1194
     const/4 v2, 0x1
 
     const/16 v3, 0x200
@@ -2300,17 +2353,17 @@
 
     move-result-object v0
 
-    .line 1094
+    .line 1195
     invoke-static {p0, p2}, Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
 
     move-result-object v2
 
     invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModMenu;->writeLivery(Ljava/io/File;Landroid/graphics/Bitmap;)V
 
-    .line 1095
+    .line 1196
     invoke-static {p0, p2, v0}, Lcom/trueaxis/modmenu/ModMenu;->mirrorExternal(Landroid/content/Context;ILandroid/graphics/Bitmap;)V
 
-    .line 1096
+    .line 1197
     new-instance p0, Ljava/lang/StringBuilder;
 
     invoke-direct {p0}, Ljava/lang/StringBuilder;-><init>()V
@@ -2337,24 +2390,24 @@
     :try_end_81
     .catchall {:try_start_2e .. :try_end_81} :catchall_8d
 
-    .line 1098
+    .line 1199
     if-eqz v0, :cond_88
 
     if-eq v0, p1, :cond_88
 
     invoke-virtual {v0}, Landroid/graphics/Bitmap;->recycle()V
 
-    .line 1099
+    .line 1200
     :cond_88
     invoke-virtual {p1}, Landroid/graphics/Bitmap;->recycle()V
 
-    .line 1100
+    .line 1201
     nop
 
-    .line 1101
+    .line 1202
     return-void
 
-    .line 1098
+    .line 1199
     :catchall_8d
     move-exception p0
 
@@ -2364,14 +2417,14 @@
 
     invoke-virtual {v0}, Landroid/graphics/Bitmap;->recycle()V
 
-    .line 1099
+    .line 1200
     :cond_95
     invoke-virtual {p1}, Landroid/graphics/Bitmap;->recycle()V
 
-    .line 1100
+    .line 1201
     throw p0
 
-    .line 1088
+    .line 1189
     :cond_99
     new-instance p0, Ljava/lang/IllegalArgumentException;
 
@@ -2385,50 +2438,50 @@
 .method private static label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
     .registers 5
 
-    .line 109
+    .line 119
     new-instance v0, Landroid/widget/TextView;
 
     invoke-direct {v0, p0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
 
-    .line 110
+    .line 120
     invoke-virtual {v0, p1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    .line 111
+    .line 121
     int-to-float p0, p2
 
     invoke-virtual {v0, p0}, Landroid/widget/TextView;->setTextSize(F)V
 
-    .line 112
+    .line 122
     invoke-virtual {v0, p3}, Landroid/widget/TextView;->setTextColor(I)V
 
-    .line 113
+    .line 123
     return-object v0
 .end method
 
 .method private static linkButton(Landroid/app/Activity;Ljava/lang/String;ILandroid/graphics/drawable/Drawable;Ljava/lang/String;)Landroid/widget/Button;
     .registers 6
 
-    .line 129
+    .line 139
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->button(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object p1
 
-    .line 130
+    .line 140
     const/4 v0, -0x1
 
     invoke-virtual {p1, v0}, Landroid/widget/Button;->setTextColor(I)V
 
-    .line 131
+    .line 141
     const/high16 v0, 0x41400000
 
     invoke-virtual {p1, v0}, Landroid/widget/Button;->setTextSize(F)V
 
-    .line 132
+    .line 142
     const/16 v0, 0x11
 
     invoke-virtual {p1, v0}, Landroid/widget/Button;->setGravity(I)V
 
-    .line 133
+    .line 143
     const/16 v0, 0x8
 
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -2443,24 +2496,24 @@
 
     invoke-virtual {p1, p2}, Landroid/widget/Button;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 134
+    .line 144
     const/16 p2, 0x12
 
     invoke-static {p0, p2}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result p2
 
-    .line 135
+    .line 145
     const/4 v0, 0x0
 
     invoke-virtual {p3, v0, v0, p2, p2}, Landroid/graphics/drawable/Drawable;->setBounds(IIII)V
 
-    .line 136
+    .line 146
     const/4 p2, 0x0
 
     invoke-virtual {p1, p3, p2, p2, p2}, Landroid/widget/Button;->setCompoundDrawables(Landroid/graphics/drawable/Drawable;Landroid/graphics/drawable/Drawable;Landroid/graphics/drawable/Drawable;Landroid/graphics/drawable/Drawable;)V
 
-    .line 137
+    .line 147
     const/4 p2, 0x7
 
     invoke-static {p0, p2}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -2469,34 +2522,34 @@
 
     invoke-virtual {p1, p2}, Landroid/widget/Button;->setCompoundDrawablePadding(I)V
 
-    .line 138
+    .line 148
     new-instance p2, Lcom/trueaxis/modmenu/ModMenu$1;
 
     invoke-direct {p2, p4, p0}, Lcom/trueaxis/modmenu/ModMenu$1;-><init>(Ljava/lang/String;Landroid/app/Activity;)V
 
     invoke-virtual {p1, p2}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 149
+    .line 159
     return-object p1
 .end method
 
 .method public static loadEditableLivery(Landroid/content/Context;I)Landroid/graphics/Bitmap;
     .registers 8
 
-    .line 328
+    .line 338
     const-string v0, "livery"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->install(Landroid/content/Context;)V
 
-    .line 329
+    .line 339
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
 
     move-result-object v1
 
-    .line 330
+    .line 340
     nop
 
-    .line 332
+    .line 342
     const/4 v2, 0x0
 
     :try_start_b
@@ -2524,7 +2577,7 @@
 
     move-result-object v3
 
-    .line 333
+    .line 343
     invoke-virtual {v1}, Ljava/io/File;->isFile()Z
 
     move-result v4
@@ -2551,24 +2604,24 @@
 
     move-result-object v3
 
-    .line 332
+    .line 342
     invoke-static {v0, v3}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 335
+    .line 345
     invoke-virtual {v1}, Ljava/io/File;->isFile()Z
 
     move-result v3
 
     if-eqz v3, :cond_4d
 
-    .line 336
+    .line 346
     new-instance p0, Ljava/io/FileInputStream;
 
     invoke-direct {p0, v1}, Ljava/io/FileInputStream;-><init>(Ljava/io/File;)V
 
     goto :goto_59
 
-    .line 337
+    .line 347
     :cond_4d
     invoke-virtual {p0}, Landroid/content/Context;->getAssets()Landroid/content/res/AssetManager;
 
@@ -2584,27 +2637,27 @@
     :try_end_59
     .catchall {:try_start_b .. :try_end_59} :catchall_d3
 
-    .line 338
+    .line 348
     :goto_59
     :try_start_59
     new-instance v1, Landroid/graphics/BitmapFactory$Options;
 
     invoke-direct {v1}, Landroid/graphics/BitmapFactory$Options;-><init>()V
 
-    .line 339
+    .line 349
     sget-object v3, Landroid/graphics/Bitmap$Config;->ARGB_8888:Landroid/graphics/Bitmap$Config;
 
     iput-object v3, v1, Landroid/graphics/BitmapFactory$Options;->inPreferredConfig:Landroid/graphics/Bitmap$Config;
 
-    .line 340
+    .line 350
     invoke-static {p0, v2, v1}, Landroid/graphics/BitmapFactory;->decodeStream(Ljava/io/InputStream;Landroid/graphics/Rect;Landroid/graphics/BitmapFactory$Options;)Landroid/graphics/Bitmap;
 
     move-result-object v1
 
-    .line 341
+    .line 351
     if-nez v1, :cond_87
 
-    .line 342
+    .line 352
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -2631,16 +2684,16 @@
     :try_end_82
     .catchall {:try_start_59 .. :try_end_82} :catchall_ce
 
-    .line 343
+    .line 353
     nop
 
-    .line 355
+    .line 365
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 343
+    .line 353
     return-object v2
 
-    .line 345
+    .line 355
     :cond_87
     :try_start_87
     sget-object v3, Landroid/graphics/Bitmap$Config;->ARGB_8888:Landroid/graphics/Bitmap$Config;
@@ -2651,12 +2704,12 @@
 
     move-result-object v3
 
-    .line 346
+    .line 356
     if-eq v3, v1, :cond_93
 
     invoke-virtual {v1}, Landroid/graphics/Bitmap;->recycle()V
 
-    .line 347
+    .line 357
     :cond_93
     new-instance v1, Ljava/lang/StringBuilder;
 
@@ -2682,7 +2735,7 @@
 
     move-result-object v1
 
-    .line 348
+    .line 358
     invoke-virtual {v3}, Landroid/graphics/Bitmap;->getWidth()I
 
     move-result v4
@@ -2709,21 +2762,21 @@
 
     move-result-object v1
 
-    .line 347
+    .line 357
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
     :try_end_c9
     .catchall {:try_start_87 .. :try_end_c9} :catchall_ce
 
-    .line 349
+    .line 359
     nop
 
-    .line 355
+    .line 365
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 349
+    .line 359
     return-object v3
 
-    .line 350
+    .line 360
     :catchall_ce
     move-exception v1
 
@@ -2740,7 +2793,7 @@
 
     move-object v1, v2
 
-    .line 351
+    .line 361
     :goto_d5
     :try_start_d5
     const-string v3, "YCS2Mod"
@@ -2749,7 +2802,7 @@
 
     invoke-static {v3, v4, p0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 352
+    .line 362
     new-instance v3, Ljava/lang/StringBuilder;
 
     invoke-direct {v3}, Ljava/lang/StringBuilder;-><init>()V
@@ -2776,71 +2829,71 @@
     :try_end_f6
     .catchall {:try_start_d5 .. :try_end_f6} :catchall_fb
 
-    .line 353
+    .line 363
     nop
 
-    .line 355
+    .line 365
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 353
+    .line 363
     return-object v2
 
-    .line 355
+    .line 365
     :catchall_fb
     move-exception p0
 
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 356
+    .line 366
     throw p0
 .end method
 
 .method private static miniIconButton(Landroid/app/Activity;Landroid/graphics/drawable/Drawable;Ljava/lang/String;Landroid/view/View$OnClickListener;)Landroid/widget/Button;
     .registers 8
 
-    .line 174
+    .line 184
     new-instance v0, Landroid/widget/Button;
 
     invoke-direct {v0, p0}, Landroid/widget/Button;-><init>(Landroid/content/Context;)V
 
-    .line 175
+    .line 185
     const-string v1, ""
 
     invoke-virtual {v0, v1}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
 
-    .line 176
+    .line 186
     invoke-virtual {v0, p2}, Landroid/widget/Button;->setContentDescription(Ljava/lang/CharSequence;)V
 
-    .line 177
+    .line 187
     const/16 p2, 0x11
 
     invoke-virtual {v0, p2}, Landroid/widget/Button;->setGravity(I)V
 
-    .line 178
+    .line 188
     const/4 p2, 0x0
 
     invoke-virtual {v0, p2}, Landroid/widget/Button;->setMinHeight(I)V
 
-    .line 179
+    .line 189
     invoke-virtual {v0, p2}, Landroid/widget/Button;->setMinimumHeight(I)V
 
-    .line 180
+    .line 190
     invoke-virtual {v0, p2}, Landroid/widget/Button;->setMinWidth(I)V
 
-    .line 181
+    .line 191
     invoke-virtual {v0, p2}, Landroid/widget/Button;->setMinimumWidth(I)V
 
-    .line 182
+    .line 192
     const/4 v1, 0x4
 
     invoke-static {p0, v1}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v1
 
-    .line 183
+    .line 193
     invoke-virtual {v0, v1, v1, v1, v1}, Landroid/widget/Button;->setPadding(IIII)V
 
-    .line 184
+    .line 194
     const/16 v1, 0x2e
 
     const/16 v2, 0x36
@@ -2865,32 +2918,32 @@
 
     invoke-virtual {v0, v1}, Landroid/widget/Button;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 185
+    .line 195
     const/16 v1, 0x10
 
     invoke-static {p0, v1}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result p0
 
-    .line 186
+    .line 196
     invoke-virtual {p1, p2, p2, p0, p0}, Landroid/graphics/drawable/Drawable;->setBounds(IIII)V
 
-    .line 187
+    .line 197
     const/4 p0, 0x0
 
     invoke-virtual {v0, p1, p0, p0, p0}, Landroid/widget/Button;->setCompoundDrawables(Landroid/graphics/drawable/Drawable;Landroid/graphics/drawable/Drawable;Landroid/graphics/drawable/Drawable;Landroid/graphics/drawable/Drawable;)V
 
-    .line 188
+    .line 198
     invoke-virtual {v0, p3}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 189
+    .line 199
     return-object v0
 .end method
 
 .method private static mirrorExternal(Landroid/content/Context;ILandroid/graphics/Bitmap;)V
     .registers 6
 
-    .line 1166
+    .line 1267
     const-string v0, "livery"
 
     :try_start_2
@@ -2898,10 +2951,10 @@
 
     move-result-object p0
 
-    .line 1167
+    .line 1268
     if-eqz p0, :cond_34
 
-    .line 1168
+    .line 1269
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -2926,7 +2979,7 @@
 
     move-result-object v1
 
-    .line 1169
+    .line 1270
     invoke-virtual {p0}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
     move-result-object v2
@@ -2939,15 +2992,15 @@
 
     move-result-object v1
 
-    .line 1168
+    .line 1269
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1170
+    .line 1271
     invoke-static {p0, p2}, Lcom/trueaxis/modmenu/ModMenu;->writeLivery(Ljava/io/File;Landroid/graphics/Bitmap;)V
 
     goto :goto_39
 
-    .line 1172
+    .line 1273
     :cond_34
     const-string p0, "mirror external skipped; no external files dir"
 
@@ -2955,15 +3008,15 @@
     :try_end_39
     .catchall {:try_start_2 .. :try_end_39} :catchall_3a
 
-    .line 1176
+    .line 1277
     :goto_39
     goto :goto_55
 
-    .line 1174
+    .line 1275
     :catchall_3a
     move-exception p0
 
-    .line 1175
+    .line 1276
     new-instance p2, Ljava/lang/StringBuilder;
 
     invoke-direct {p2}, Ljava/lang/StringBuilder;-><init>()V
@@ -2988,15 +3041,96 @@
 
     invoke-static {v0, p1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 1177
+    .line 1278
     :goto_55
     return-void
+.end method
+
+.method public static orbitHeight(Landroid/content/Context;)I
+    .registers 3
+
+    .line 491
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object p0
+
+    const-string v0, "orbit_height"
+
+    const/16 v1, 0x2a
+
+    invoke-interface {p0, v0, v1}, Landroid/content/SharedPreferences;->getInt(Ljava/lang/String;I)I
+
+    move-result p0
+
+    const/16 v0, 0xa
+
+    const/16 v1, 0x50
+
+    invoke-static {p0, v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->clamp(III)I
+
+    move-result p0
+
+    return p0
+.end method
+
+.method public static orbitRadius(Landroid/content/Context;)I
+    .registers 3
+
+    .line 481
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object p0
+
+    const-string v0, "orbit_radius"
+
+    const/16 v1, 0x8
+
+    invoke-interface {p0, v0, v1}, Landroid/content/SharedPreferences;->getInt(Ljava/lang/String;I)I
+
+    move-result p0
+
+    const/4 v0, 0x4
+
+    const/16 v1, 0x28
+
+    invoke-static {p0, v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->clamp(III)I
+
+    move-result p0
+
+    return p0
+.end method
+
+.method public static orbitSpeed(Landroid/content/Context;)I
+    .registers 3
+
+    .line 486
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object p0
+
+    const-string v0, "orbit_speed"
+
+    const/16 v1, 0x48
+
+    invoke-interface {p0, v0, v1}, Landroid/content/SharedPreferences;->getInt(Ljava/lang/String;I)I
+
+    move-result p0
+
+    const/4 v0, 0x5
+
+    const/16 v1, 0xb4
+
+    invoke-static {p0, v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->clamp(III)I
+
+    move-result p0
+
+    return p0
 .end method
 
 .method public static prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
     .registers 3
 
-    .line 398
+    .line 408
     const-string v0, "jcs_mod"
 
     const/4 v1, 0x0
@@ -3011,7 +3145,7 @@
 .method private static quarantineLivery(Ljava/io/File;ILjava/lang/String;Ljava/lang/String;)V
     .registers 13
 
-    .line 519
+    .line 582
     const-string v0, " path="
 
     const-string v1, " reason="
@@ -3030,7 +3164,7 @@
 
     invoke-direct {v6}, Ljava/lang/StringBuilder;-><init>()V
 
-    .line 520
+    .line 583
     invoke-virtual {p0}, Ljava/io/File;->getName()Ljava/lang/String;
 
     move-result-object v7
@@ -3059,16 +3193,16 @@
 
     invoke-direct {v4, v5, v6}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
 
-    .line 521
+    .line 584
     nop
 
-    .line 523
+    .line 586
     :try_start_31
     invoke-virtual {p0, v4}, Ljava/io/File;->renameTo(Ljava/io/File;)Z
 
     move-result v5
 
-    .line 524
+    .line 587
     if-nez v5, :cond_3b
 
     invoke-virtual {p0}, Ljava/io/File;->delete()Z
@@ -3077,11 +3211,11 @@
     :try_end_3b
     .catchall {:try_start_31 .. :try_end_3b} :catchall_8b
 
-    .line 531
+    .line 594
     :cond_3b
     nop
 
-    .line 532
+    .line 595
     new-instance v6, Ljava/lang/StringBuilder;
 
     invoke-direct {v6}, Ljava/lang/StringBuilder;-><init>()V
@@ -3100,7 +3234,7 @@
 
     move-result-object p2
 
-    .line 533
+    .line 596
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->carName(I)Ljava/lang/String;
 
     move-result-object p1
@@ -3121,7 +3255,7 @@
 
     move-result-object p1
 
-    .line 535
+    .line 598
     invoke-virtual {p0}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
     move-result-object p0
@@ -3136,7 +3270,7 @@
 
     move-result-object p0
 
-    .line 536
+    .line 599
     invoke-virtual {v4}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
     move-result-object p1
@@ -3159,17 +3293,17 @@
 
     move-result-object p0
 
-    .line 532
+    .line 595
     invoke-static {v3, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 538
+    .line 601
     return-void
 
-    .line 525
+    .line 588
     :catchall_8b
     move-exception v4
 
-    .line 526
+    .line 589
     new-instance v5, Ljava/lang/StringBuilder;
 
     invoke-direct {v5}, Ljava/lang/StringBuilder;-><init>()V
@@ -3188,7 +3322,7 @@
 
     move-result-object p2
 
-    .line 527
+    .line 590
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->carName(I)Ljava/lang/String;
 
     move-result-object p1
@@ -3209,7 +3343,7 @@
 
     move-result-object p1
 
-    .line 529
+    .line 592
     invoke-virtual {p0}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
     move-result-object p0
@@ -3222,17 +3356,36 @@
 
     move-result-object p0
 
-    .line 526
+    .line 589
     invoke-static {v3, p0, v4}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 530
+    .line 593
     return-void
+.end method
+
+.method public static raceSwarmEnabled(Landroid/content/Context;)Z
+    .registers 3
+
+    .line 476
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object p0
+
+    const-string v0, "race_ghost_swarm"
+
+    const/4 v1, 0x0
+
+    invoke-interface {p0, v0, v1}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
+
+    move-result p0
+
+    return p0
 .end method
 
 .method private static rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
     .registers 3
 
-    .line 382
+    .line 392
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -3253,14 +3406,219 @@
 
     invoke-interface {p0}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 383
+    .line 393
+    return-void
+.end method
+
+.method public static rememberSwarmCatalogPaths(Landroid/content/Context;Ljava/util/List;)V
+    .registers 9
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "(",
+            "Landroid/content/Context;",
+            "Ljava/util/List<",
+            "Ljava/lang/String;",
+            ">;)V"
+        }
+    .end annotation
+
+    .line 505
+    new-instance v0, Ljava/util/LinkedHashSet;
+
+    invoke-direct {v0}, Ljava/util/LinkedHashSet;-><init>()V
+
+    .line 506
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->swarmCatalogPaths(Landroid/content/Context;)[Ljava/lang/String;
+
+    move-result-object v1
+
+    array-length v2, v1
+
+    const/4 v3, 0x0
+
+    const/4 v4, 0x0
+
+    :goto_c
+    if-ge v4, v2, :cond_1c
+
+    aget-object v5, v1, v4
+
+    .line 507
+    invoke-virtual {v5}, Ljava/lang/String;->length()I
+
+    move-result v6
+
+    if-lez v6, :cond_19
+
+    invoke-virtual {v0, v5}, Ljava/util/LinkedHashSet;->add(Ljava/lang/Object;)Z
+
+    .line 506
+    :cond_19
+    add-int/lit8 v4, v4, 0x1
+
+    goto :goto_c
+
+    .line 509
+    :cond_1c
+    nop
+
+    .line 510
+    invoke-interface {p1}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+
+    move-result-object p1
+
+    :goto_21
+    invoke-interface {p1}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v1
+
+    if-eqz v1, :cond_46
+
+    invoke-interface {p1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v1
+
+    check-cast v1, Ljava/lang/String;
+
+    .line 511
+    if-eqz v1, :cond_45
+
+    invoke-virtual {v1}, Ljava/lang/String;->length()I
+
+    move-result v2
+
+    if-lez v2, :cond_45
+
+    invoke-virtual {v0}, Ljava/util/LinkedHashSet;->size()I
+
+    move-result v2
+
+    const/16 v4, 0x20
+
+    if-ge v2, v4, :cond_45
+
+    .line 512
+    invoke-virtual {v0, v1}, Ljava/util/LinkedHashSet;->add(Ljava/lang/Object;)Z
+
+    move-result v1
+
+    if-eqz v1, :cond_45
+
+    .line 513
+    const/4 v1, 0x1
+
+    const/4 v3, 0x1
+
+    .line 515
+    :cond_45
+    goto :goto_21
+
+    .line 516
+    :cond_46
+    if-nez v3, :cond_49
+
+    .line 517
+    return-void
+
+    .line 519
+    :cond_49
+    new-instance p1, Ljava/lang/StringBuilder;
+
+    invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
+
+    .line 520
+    invoke-virtual {v0}, Ljava/util/LinkedHashSet;->iterator()Ljava/util/Iterator;
+
+    move-result-object v1
+
+    :goto_52
+    invoke-interface {v1}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v2
+
+    if-eqz v2, :cond_6d
+
+    invoke-interface {v1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v2
+
+    check-cast v2, Ljava/lang/String;
+
+    .line 521
+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->length()I
+
+    move-result v3
+
+    if-lez v3, :cond_69
+
+    const/16 v3, 0xa
+
+    invoke-virtual {p1, v3}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+
+    .line 522
+    :cond_69
+    invoke-virtual {p1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    .line 523
+    goto :goto_52
+
+    .line 524
+    :cond_6d
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object p0
+
+    invoke-interface {p0}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
+
+    move-result-object p0
+
+    const-string v1, "swarm_catalog_paths"
+
+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object p1
+
+    invoke-interface {p0, v1, p1}, Landroid/content/SharedPreferences$Editor;->putString(Ljava/lang/String;Ljava/lang/String;)Landroid/content/SharedPreferences$Editor;
+
+    move-result-object p0
+
+    invoke-interface {p0}, Landroid/content/SharedPreferences$Editor;->apply()V
+
+    .line 525
+    new-instance p0, Ljava/lang/StringBuilder;
+
+    invoke-direct {p0}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string p1, "catalog persisted count="
+
+    invoke-virtual {p0, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p0
+
+    invoke-virtual {v0}, Ljava/util/LinkedHashSet;->size()I
+
+    move-result p1
+
+    invoke-virtual {p0, p1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object p0
+
+    invoke-virtual {p0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object p0
+
+    const-string p1, "swarm"
+
+    invoke-static {p1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+
+    .line 526
     return-void
 .end method
 
 .method public static replayCameraMode(Landroid/content/Context;)I
     .registers 3
 
-    .line 453
+    .line 463
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -3273,7 +3631,7 @@
 
     move-result p0
 
-    .line 454
+    .line 464
     sget-object v0, Lcom/trueaxis/modmenu/ModMenu;->REPLAY_CAMERA_MODE_NAMES:[Ljava/lang/String;
 
     array-length v0, v0
@@ -3282,21 +3640,21 @@
 
     sub-int/2addr v0, v1
 
-    .line 455
+    .line 465
     if-lt p0, v1, :cond_16
 
     if-gt p0, v0, :cond_16
 
-    .line 456
+    .line 466
     move v1, p0
 
     goto :goto_17
 
-    .line 457
+    .line 467
     :cond_16
     nop
 
-    .line 455
+    .line 465
     :goto_17
     return v1
 .end method
@@ -3304,10 +3662,10 @@
 .method public static replayFreeCameraEnabled(Landroid/content/Context;)Z
     .registers 3
 
-    .line 447
+    .line 457
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->applyMenuDefaults(Landroid/content/Context;)V
 
-    .line 448
+    .line 458
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -3326,10 +3684,10 @@
 .method public static replaySwarmEnabled(Landroid/content/Context;)Z
     .registers 3
 
-    .line 461
+    .line 471
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->applyMenuDefaults(Landroid/content/Context;)V
 
-    .line 462
+    .line 472
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -3348,17 +3706,17 @@
 .method public static resetAllCustomLiveries(Landroid/content/Context;)V
     .registers 3
 
-    .line 1224
+    .line 1325
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->install(Landroid/content/Context;)V
 
-    .line 1225
+    .line 1326
     const-string v0, "livery"
 
     const-string v1, "reset all custom liveries"
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1226
+    .line 1327
     const/4 v0, 0x0
 
     :goto_b
@@ -3368,15 +3726,15 @@
 
     if-ge v0, v1, :cond_16
 
-    .line 1227
+    .line 1328
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ModMenu;->deleteCustomLivery(Landroid/content/Context;I)V
 
-    .line 1226
+    .line 1327
     add-int/lit8 v0, v0, 0x1
 
     goto :goto_b
 
-    .line 1229
+    .line 1330
     :cond_16
     return-void
 .end method
@@ -3389,10 +3747,10 @@
         }
     .end annotation
 
-    .line 361
+    .line 371
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->install(Landroid/content/Context;)V
 
-    .line 362
+    .line 372
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -3417,7 +3775,7 @@
 
     move-result-object v0
 
-    .line 363
+    .line 373
     invoke-virtual {p2}, Landroid/graphics/Bitmap;->getWidth()I
 
     move-result v1
@@ -3444,12 +3802,12 @@
 
     move-result-object v0
 
-    .line 362
+    .line 372
     const-string v1, "livery"
 
     invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 364
+    .line 374
     invoke-virtual {p2}, Landroid/graphics/Bitmap;->getWidth()I
 
     move-result v0
@@ -3464,12 +3822,12 @@
 
     if-ne v0, v2, :cond_4b
 
-    .line 365
+    .line 375
     move-object v0, p2
 
     goto :goto_50
 
-    .line 366
+    .line 376
     :cond_4b
     const/4 v0, 0x1
 
@@ -3480,7 +3838,7 @@
     :goto_50
     nop
 
-    .line 368
+    .line 378
     :try_start_51
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
 
@@ -3488,10 +3846,10 @@
 
     invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModMenu;->writeLivery(Ljava/io/File;Landroid/graphics/Bitmap;)V
 
-    .line 369
+    .line 379
     invoke-static {p0, p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->mirrorExternal(Landroid/content/Context;ILandroid/graphics/Bitmap;)V
 
-    .line 370
+    .line 380
     new-instance p0, Ljava/lang/StringBuilder;
 
     invoke-direct {p0}, Ljava/lang/StringBuilder;-><init>()V
@@ -3518,16 +3876,16 @@
     :try_end_75
     .catchall {:try_start_51 .. :try_end_75} :catchall_7b
 
-    .line 372
+    .line 382
     if-eq v0, p2, :cond_7a
 
     invoke-virtual {v0}, Landroid/graphics/Bitmap;->recycle()V
 
-    .line 374
+    .line 384
     :cond_7a
     return-void
 
-    .line 372
+    .line 382
     :catchall_7b
     move-exception p0
 
@@ -3535,7 +3893,7 @@
 
     invoke-virtual {v0}, Landroid/graphics/Bitmap;->recycle()V
 
-    .line 373
+    .line 383
     :cond_81
     throw p0
 .end method
@@ -3543,7 +3901,7 @@
 .method private static sectionHeader(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/TextView;
     .registers 5
 
-    .line 284
+    .line 294
     const/16 v0, 0xff
 
     const/16 v1, 0x80
@@ -3560,7 +3918,7 @@
 
     move-result-object p1
 
-    .line 285
+    .line 295
     const/4 v0, 0x6
 
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -3575,17 +3933,17 @@
 
     invoke-virtual {p1, v2, v0, v2, p0}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 286
+    .line 296
     return-object p1
 .end method
 
 .method public static sectorSplitsEnabled(Landroid/content/Context;)Z
     .registers 3
 
-    .line 442
+    .line 452
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->applyMenuDefaults(Landroid/content/Context;)V
 
-    .line 443
+    .line 453
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->checkpointSplitsEnabled(Landroid/content/Context;)Z
 
     move-result v0
@@ -3615,7 +3973,7 @@
 .method private static selectedCar(Landroid/content/Context;)I
     .registers 3
 
-    .line 377
+    .line 387
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -3628,7 +3986,7 @@
 
     move-result p0
 
-    .line 378
+    .line 388
     if-ltz p0, :cond_13
 
     sget-object v0, Lcom/trueaxis/modmenu/ModMenu;->CAR_TEXTURES:[Ljava/lang/String;
@@ -3646,24 +4004,24 @@
 .method private static showDonateDialog(Landroid/app/Activity;)V
     .registers 13
 
-    .line 208
+    .line 218
     const-string v0, "launcher"
 
     const-string v1, "donate modal opened address=F6mjNXKBKzjmKTK1Z9cWabFHZYtxMg8rojuNuppX2EG1"
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 209
+    .line 219
     new-instance v0, Landroid/widget/LinearLayout;
 
     invoke-direct {v0, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 210
+    .line 220
     const/4 v1, 0x1
 
     invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 211
+    .line 221
     const/16 v2, 0x10
 
     invoke-static {p0, v2}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -3688,7 +4046,7 @@
 
     invoke-virtual {v0, v3, v5, v6, v8}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 213
+    .line 223
     const/16 v3, 0xff
 
     const/16 v5, 0x80
@@ -3705,20 +4063,20 @@
 
     move-result-object v3
 
-    .line 214
+    .line 224
     invoke-static {p0, v7}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v5
 
     invoke-virtual {v3, v6, v6, v6, v5}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 215
+    .line 225
     invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 217
+    .line 227
     nop
 
-    .line 219
+    .line 229
     const/16 v3, 0xaa
 
     const/16 v5, 0xb2
@@ -3729,7 +4087,7 @@
 
     move-result v3
 
-    .line 217
+    .line 227
     const-string v5, "Scan the QR or copy the wallet to support the mod."
 
     const/16 v8, 0xb
@@ -3738,7 +4096,7 @@
 
     move-result-object v3
 
-    .line 220
+    .line 230
     const/16 v5, 0x8
 
     invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -3747,10 +4105,10 @@
 
     invoke-virtual {v3, v6, v6, v6, v8}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 221
+    .line 231
     invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 223
+    .line 233
     const-string v3, "Solana (SOL) wallet"
 
     const/4 v8, -0x1
@@ -3759,7 +4117,7 @@
 
     move-result-object v3
 
-    .line 224
+    .line 234
     const/4 v9, 0x2
 
     invoke-static {p0, v9}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -3768,10 +4126,10 @@
 
     invoke-virtual {v3, v6, v6, v6, v9}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 225
+    .line 235
     invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 227
+    .line 237
     const/16 v3, 0xd8
 
     const/16 v9, 0xde
@@ -3790,20 +4148,20 @@
 
     move-result-object v3
 
-    .line 228
+    .line 238
     sget-object v10, Landroid/graphics/Typeface;->MONOSPACE:Landroid/graphics/Typeface;
 
     invoke-virtual {v3, v10}, Landroid/widget/TextView;->setTypeface(Landroid/graphics/Typeface;)V
 
-    .line 229
+    .line 239
     sget v10, Landroid/os/Build$VERSION;->SDK_INT:I
 
     if-lt v10, v2, :cond_90
 
-    .line 230
+    .line 240
     invoke-virtual {v3, v1}, Landroid/widget/TextView;->setTextIsSelectable(Z)V
 
-    .line 232
+    .line 242
     :cond_90
     const/4 v2, 0x6
 
@@ -3813,10 +4171,10 @@
 
     invoke-virtual {v3, v6, v6, v6, v2}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 233
+    .line 243
     invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 235
+    .line 245
     const/16 v2, 0x78
 
     const/16 v3, 0x8c
@@ -3835,46 +4193,46 @@
 
     move-result-object v2
 
-    .line 236
+    .line 246
     invoke-static {p0, v7}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v3
 
     invoke-virtual {v2, v6, v6, v6, v3}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 237
+    .line 247
     invoke-virtual {v2, v5}, Landroid/widget/TextView;->setVisibility(I)V
 
-    .line 238
+    .line 248
     invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 240
+    .line 250
     const-string v3, "Copy address"
 
     invoke-static {p0, v3}, Lcom/trueaxis/modmenu/ModMenu;->button(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v3
 
-    .line 241
+    .line 251
     new-instance v6, Lcom/trueaxis/modmenu/ModMenu$2;
 
     invoke-direct {v6, p0, v2}, Lcom/trueaxis/modmenu/ModMenu$2;-><init>(Landroid/app/Activity;Landroid/widget/TextView;)V
 
     invoke-virtual {v3, v6}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 257
+    .line 267
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->fill()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v2
 
     invoke-virtual {v0, v3, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 259
+    .line 269
     new-instance v2, Landroid/widget/FrameLayout;
 
     invoke-direct {v2, p0}, Landroid/widget/FrameLayout;-><init>(Landroid/content/Context;)V
 
-    .line 260
+    .line 270
     invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v3
@@ -3887,7 +4245,7 @@
 
     invoke-virtual {v2, v3}, Landroid/widget/FrameLayout;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 261
+    .line 271
     invoke-static {p0, v4}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v3
@@ -3906,27 +4264,27 @@
 
     invoke-virtual {v2, v3, v6, v7, v4}, Landroid/widget/FrameLayout;->setPadding(IIII)V
 
-    .line 262
+    .line 272
     new-instance v3, Landroid/widget/ImageView;
 
     invoke-direct {v3, p0}, Landroid/widget/ImageView;-><init>(Landroid/content/Context;)V
 
-    .line 263
+    .line 273
     invoke-static {p0, v10}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v4
 
-    .line 264
+    .line 274
     invoke-static {v9, v4}, Lcom/trueaxis/modmenu/QrCodeEncoder;->encode(Ljava/lang/String;I)Landroid/graphics/Bitmap;
 
     move-result-object v4
 
     invoke-virtual {v3, v4}, Landroid/widget/ImageView;->setImageBitmap(Landroid/graphics/Bitmap;)V
 
-    .line 265
+    .line 275
     invoke-virtual {v3, v1}, Landroid/widget/ImageView;->setAdjustViewBounds(Z)V
 
-    .line 266
+    .line 276
     new-instance v4, Landroid/widget/FrameLayout$LayoutParams;
 
     const/16 v6, 0x11
@@ -3937,35 +4295,35 @@
 
     invoke-virtual {v2, v3, v4}, Landroid/widget/FrameLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 270
+    .line 280
     new-instance v3, Landroid/widget/LinearLayout$LayoutParams;
 
     invoke-direct {v3, v7, v7}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
 
-    .line 273
+    .line 283
     iput v1, v3, Landroid/widget/LinearLayout$LayoutParams;->gravity:I
 
-    .line 274
+    .line 284
     invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v1
 
     iput v1, v3, Landroid/widget/LinearLayout$LayoutParams;->topMargin:I
 
-    .line 275
+    .line 285
     invoke-virtual {v0, v2, v3}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 277
+    .line 287
     new-instance v1, Landroid/app/AlertDialog$Builder;
 
     invoke-direct {v1, p0}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
 
-    .line 278
+    .line 288
     invoke-virtual {v1, v0}, Landroid/app/AlertDialog$Builder;->setView(Landroid/view/View;)Landroid/app/AlertDialog$Builder;
 
     move-result-object p0
 
-    .line 279
+    .line 289
     const-string v0, "Done"
 
     const/4 v1, 0x0
@@ -3974,20 +4332,20 @@
 
     move-result-object p0
 
-    .line 280
+    .line 290
     invoke-virtual {p0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
 
-    .line 281
+    .line 291
     return-void
 .end method
 
 .method public static showLiveryManager(Landroid/app/Activity;)V
     .registers 13
 
-    .line 911
+    .line 1012
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->install(Landroid/content/Context;)V
 
-    .line 912
+    .line 1013
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -4018,18 +4376,18 @@
 
     invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 914
+    .line 1015
     :try_start_23
     new-instance v0, Landroid/widget/LinearLayout;
 
     invoke-direct {v0, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 915
+    .line 1016
     const/4 v2, 0x1
 
     invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 916
+    .line 1017
     const/16 v2, 0x12
 
     invoke-static {p0, v2}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -4052,7 +4410,7 @@
 
     invoke-virtual {v0, v3, v5, v2, v4}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 918
+    .line 1019
     const-string v2, "Design a livery in the app, upload any PNG/JPG, or export the exact UV texture to edit elsewhere. Liveries are 512x512 PNG and apply after a restart."
 
     const v3, -0xbbbbbc
@@ -4063,7 +4421,7 @@
 
     move-result-object v2
 
-    .line 922
+    .line 1023
     const/16 v5, 0x8
 
     invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -4074,15 +4432,15 @@
 
     invoke-virtual {v2, v7, v7, v7, v6}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 923
+    .line 1024
     invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 925
+    .line 1026
     new-instance v2, Landroid/widget/Spinner;
 
     invoke-direct {v2, p0}, Landroid/widget/Spinner;-><init>(Landroid/content/Context;)V
 
-    .line 926
+    .line 1027
     new-instance v6, Landroid/widget/ArrayAdapter;
 
     sget-object v8, Lcom/trueaxis/modmenu/ModMenu;->CAR_NAMES:[Ljava/lang/String;
@@ -4091,22 +4449,22 @@
 
     invoke-direct {v6, p0, v9, v8}, Landroid/widget/ArrayAdapter;-><init>(Landroid/content/Context;I[Ljava/lang/Object;)V
 
-    .line 928
+    .line 1029
     const v8, 0x1090009
 
     invoke-virtual {v6, v8}, Landroid/widget/ArrayAdapter;->setDropDownViewResource(I)V
 
-    .line 929
+    .line 1030
     invoke-virtual {v2, v6}, Landroid/widget/Spinner;->setAdapter(Landroid/widget/SpinnerAdapter;)V
 
-    .line 930
+    .line 1031
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->selectedCar(Landroid/content/Context;)I
 
     move-result v6
 
     invoke-virtual {v2, v6}, Landroid/widget/Spinner;->setSelection(I)V
 
-    .line 931
+    .line 1032
     new-instance v6, Landroid/widget/LinearLayout$LayoutParams;
 
     const/4 v8, -0x1
@@ -4117,14 +4475,14 @@
 
     invoke-virtual {v0, v2, v6}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 934
+    .line 1035
     const-string v6, ""
 
     invoke-static {p0, v6, v4, v3}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
 
     move-result-object v3
 
-    .line 935
+    .line 1036
     const/4 v4, 0x5
 
     invoke-static {p0, v4}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -4137,25 +4495,25 @@
 
     invoke-virtual {v3, v7, v6, v7, v4}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 936
+    .line 1037
     invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 938
+    .line 1039
     const-string v4, "\u00c3\u00b0\u00c5\u00b8\u00c5\u00bd\u00c2\u00a8  Open livery designer"
 
     invoke-static {p0, v4}, Lcom/trueaxis/modmenu/ModMenu;->button(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v4
 
-    .line 939
+    .line 1040
     const/high16 v6, 0x41500000
 
     invoke-virtual {v4, v6}, Landroid/widget/Button;->setTextSize(F)V
 
-    .line 940
+    .line 1041
     invoke-virtual {v4, v8}, Landroid/widget/Button;->setTextColor(I)V
 
-    .line 941
+    .line 1042
     const/16 v6, 0xff
 
     const/16 v10, 0x80
@@ -4176,58 +4534,58 @@
 
     invoke-virtual {v4, v6}, Landroid/widget/Button;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 942
-    new-instance v6, Lcom/trueaxis/modmenu/ModMenu$15;
+    .line 1043
+    new-instance v6, Lcom/trueaxis/modmenu/ModMenu$17;
 
-    invoke-direct {v6, p0, v2}, Lcom/trueaxis/modmenu/ModMenu$15;-><init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
+    invoke-direct {v6, p0, v2}, Lcom/trueaxis/modmenu/ModMenu$17;-><init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
 
     invoke-virtual {v4, v6}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 954
+    .line 1055
     new-instance v6, Landroid/widget/LinearLayout$LayoutParams;
 
     invoke-direct {v6, v8, v9}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
 
-    .line 956
+    .line 1057
     invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v5
 
     iput v5, v6, Landroid/widget/LinearLayout$LayoutParams;->bottomMargin:I
 
-    .line 957
+    .line 1058
     invoke-virtual {v0, v4, v6}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 959
+    .line 1060
     new-instance v4, Landroid/widget/LinearLayout;
 
     invoke-direct {v4, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 960
+    .line 1061
     invoke-virtual {v4, v7}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 961
+    .line 1062
     const-string v5, "Upload"
 
     invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ModMenu;->button(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v5
 
-    .line 962
+    .line 1063
     const-string v6, "Export / edit"
 
     invoke-static {p0, v6}, Lcom/trueaxis/modmenu/ModMenu;->button(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v6
 
-    .line 963
+    .line 1064
     const-string v8, "Restore default"
 
     invoke-static {p0, v8}, Lcom/trueaxis/modmenu/ModMenu;->button(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v8
 
-    .line 964
+    .line 1065
     new-instance v10, Landroid/widget/LinearLayout$LayoutParams;
 
     const/high16 v11, 0x3f800000
@@ -4236,129 +4594,129 @@
 
     invoke-virtual {v4, v5, v10}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 966
+    .line 1067
     new-instance v10, Landroid/widget/LinearLayout$LayoutParams;
 
     invoke-direct {v10, v7, v9, v11}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
     invoke-virtual {v4, v6, v10}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 968
+    .line 1069
     new-instance v10, Landroid/widget/LinearLayout$LayoutParams;
 
     invoke-direct {v10, v7, v9, v11}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
     invoke-virtual {v4, v8, v10}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 970
+    .line 1071
     invoke-virtual {v0, v4}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 972
-    new-instance v4, Lcom/trueaxis/modmenu/ModMenu$16;
+    .line 1073
+    new-instance v4, Lcom/trueaxis/modmenu/ModMenu$18;
 
-    invoke-direct {v4, v2, v3, p0}, Lcom/trueaxis/modmenu/ModMenu$16;-><init>(Landroid/widget/Spinner;Landroid/widget/TextView;Landroid/app/Activity;)V
+    invoke-direct {v4, v2, v3, p0}, Lcom/trueaxis/modmenu/ModMenu$18;-><init>(Landroid/widget/Spinner;Landroid/widget/TextView;Landroid/app/Activity;)V
 
-    .line 980
-    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$17;
+    .line 1081
+    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$19;
 
-    invoke-direct {v3, p0, v2, v4}, Lcom/trueaxis/modmenu/ModMenu$17;-><init>(Landroid/app/Activity;Landroid/widget/Spinner;Ljava/lang/Runnable;)V
+    invoke-direct {v3, p0, v2, v4}, Lcom/trueaxis/modmenu/ModMenu$19;-><init>(Landroid/app/Activity;Landroid/widget/Spinner;Ljava/lang/Runnable;)V
 
     invoke-virtual {v2, v3}, Landroid/widget/Spinner;->setOnItemSelectedListener(Landroid/widget/AdapterView$OnItemSelectedListener;)V
 
-    .line 992
+    .line 1093
     invoke-interface {v4}, Ljava/lang/Runnable;->run()V
 
-    .line 994
-    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$18;
+    .line 1095
+    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$20;
 
-    invoke-direct {v3, p0, v2}, Lcom/trueaxis/modmenu/ModMenu$18;-><init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
+    invoke-direct {v3, p0, v2}, Lcom/trueaxis/modmenu/ModMenu$20;-><init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
 
     invoke-virtual {v5, v3}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 1011
-    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$19;
+    .line 1112
+    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$21;
 
-    invoke-direct {v3, p0, v2}, Lcom/trueaxis/modmenu/ModMenu$19;-><init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
+    invoke-direct {v3, p0, v2}, Lcom/trueaxis/modmenu/ModMenu$21;-><init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
 
     invoke-virtual {v6, v3}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 1033
-    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$20;
+    .line 1134
+    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$22;
 
-    invoke-direct {v3, v2, p0, v4}, Lcom/trueaxis/modmenu/ModMenu$20;-><init>(Landroid/widget/Spinner;Landroid/app/Activity;Ljava/lang/Runnable;)V
+    invoke-direct {v3, v2, p0, v4}, Lcom/trueaxis/modmenu/ModMenu$22;-><init>(Landroid/widget/Spinner;Landroid/app/Activity;Ljava/lang/Runnable;)V
 
     invoke-virtual {v8, v3}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 1043
+    .line 1144
     new-instance v2, Landroid/app/AlertDialog$Builder;
 
     invoke-direct {v2, p0}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
 
     const-string v3, "Custom liveries - all cars"
 
-    .line 1044
+    .line 1145
     invoke-virtual {v2, v3}, Landroid/app/AlertDialog$Builder;->setTitle(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v2
 
-    .line 1045
+    .line 1146
     invoke-virtual {v2, v0}, Landroid/app/AlertDialog$Builder;->setView(Landroid/view/View;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v0
 
     const-string v2, "Close"
 
-    .line 1046
+    .line 1147
     const/4 v3, 0x0
 
     invoke-virtual {v0, v2, v3}, Landroid/app/AlertDialog$Builder;->setNegativeButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v0
 
-    .line 1047
+    .line 1148
     invoke-virtual {v0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
     :try_end_148
     .catchall {:try_start_23 .. :try_end_148} :catchall_149
 
-    .line 1052
+    .line 1153
     goto :goto_159
 
-    .line 1048
+    .line 1149
     :catchall_149
     move-exception v0
 
-    .line 1049
+    .line 1150
     const-string v2, "YCS2Mod"
 
     const-string v3, "Could not open livery manager"
 
     invoke-static {v2, v3, v0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 1050
+    .line 1151
     invoke-static {v1, v3, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 1051
+    .line 1152
     const-string v0, "Could not open livery manager."
 
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
 
-    .line 1053
+    .line 1154
     :goto_159
     return-void
 .end method
 
 .method public static showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
-    .registers 28
+    .registers 31
 
-    .line 545
+    .line 608
     move-object/from16 v0, p0
 
     invoke-static/range {p0 .. p0}, Lcom/trueaxis/modmenu/ModDebugLog;->install(Landroid/content/Context;)V
 
-    .line 546
+    .line 609
     invoke-static/range {p0 .. p0}, Lcom/trueaxis/modmenu/ModMenu;->applyMenuDefaults(Landroid/content/Context;)V
 
-    .line 547
+    .line 610
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -4369,7 +4727,7 @@
 
     move-result-object v1
 
-    .line 548
+    .line 611
     invoke-static/range {p0 .. p0}, Lcom/trueaxis/modmenu/ModMenu;->checkpointSplitsEnabled(Landroid/content/Context;)Z
 
     move-result v2
@@ -4382,71 +4740,71 @@
 
     move-result-object v1
 
-    .line 547
-    const-string v9, "launcher"
+    .line 610
+    const-string v10, "launcher"
 
-    invoke-static {v9, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {v10, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 549
+    .line 612
     invoke-static/range {p0 .. p0}, Lcom/trueaxis/modmenu/ModIdentity;->configure(Landroid/content/Context;)V
 
-    .line 551
+    .line 614
     :try_start_27
-    new-instance v10, Landroid/widget/LinearLayout;
+    new-instance v11, Landroid/widget/LinearLayout;
 
-    invoke-direct {v10, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
+    invoke-direct {v11, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 552
-    const/4 v11, 0x1
+    .line 615
+    const/4 v12, 0x1
 
-    invoke-virtual {v10, v11}, Landroid/widget/LinearLayout;->setOrientation(I)V
+    invoke-virtual {v11, v12}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 553
+    .line 616
     const/16 v1, 0xd
 
     const/16 v2, 0x17
 
-    const/16 v12, 0x11
+    const/16 v13, 0x11
 
-    invoke-static {v1, v12, v2}, Landroid/graphics/Color;->rgb(III)I
-
-    move-result v1
-
-    invoke-virtual {v10, v1}, Landroid/widget/LinearLayout;->setBackgroundColor(I)V
-
-    .line 554
-    const/16 v13, 0xc
-
-    invoke-static {v0, v13}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    invoke-static {v1, v13, v2}, Landroid/graphics/Color;->rgb(III)I
 
     move-result v1
 
-    const/16 v14, 0xa
+    invoke-virtual {v11, v1}, Landroid/widget/LinearLayout;->setBackgroundColor(I)V
+
+    .line 617
+    const/16 v14, 0xc
 
     invoke-static {v0, v14}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+
+    move-result v1
+
+    const/16 v15, 0xa
+
+    invoke-static {v0, v15}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
-    invoke-static {v0, v13}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    invoke-static {v0, v14}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v3
 
-    invoke-static {v0, v14}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    invoke-static {v0, v15}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v4
 
-    invoke-virtual {v10, v1, v2, v3, v4}, Landroid/widget/LinearLayout;->setPadding(IIII)V
+    invoke-virtual {v11, v1, v2, v3, v4}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 556
+    .line 619
     const-string v1, "JCS2 Community Mod"
 
-    const/16 v15, 0x80
+    const/16 v9, 0x80
 
     const/16 v8, 0xff
 
     const/4 v7, 0x0
 
-    invoke-static {v8, v15, v7}, Landroid/graphics/Color;->rgb(III)I
+    invoke-static {v8, v9, v7}, Landroid/graphics/Color;->rgb(III)I
 
     move-result v2
 
@@ -4456,10 +4814,10 @@
 
     move-result-object v1
 
-    .line 557
-    invoke-virtual {v1, v12}, Landroid/widget/TextView;->setGravity(I)V
+    .line 620
+    invoke-virtual {v1, v13}, Landroid/widget/TextView;->setGravity(I)V
 
-    .line 558
+    .line 621
     const/4 v6, 0x2
 
     invoke-static {v0, v6}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -4468,10 +4826,10 @@
 
     invoke-virtual {v1, v7, v7, v7, v2}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 559
-    invoke-virtual {v10, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    .line 622
+    invoke-virtual {v11, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 561
+    .line 624
     invoke-static/range {p0 .. p0}, Lcom/trueaxis/modmenu/ModMenu;->buildSummary(Landroid/content/Context;)Ljava/lang/String;
 
     move-result-object v1
@@ -4486,147 +4844,147 @@
 
     move-result v2
 
-    invoke-static {v0, v1, v14, v2}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
+    invoke-static {v0, v1, v15, v2}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
 
     move-result-object v1
 
-    .line 562
-    invoke-virtual {v1, v12}, Landroid/widget/TextView;->setGravity(I)V
+    .line 625
+    invoke-virtual {v1, v13}, Landroid/widget/TextView;->setGravity(I)V
 
-    .line 563
+    .line 626
     invoke-static {v0, v6}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
     invoke-virtual {v1, v7, v7, v7, v2}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 564
-    invoke-virtual {v10, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    .line 627
+    invoke-virtual {v11, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 566
+    .line 629
     const-string v1, "Updates, custom liveries, and replay tools before launch."
 
-    .line 568
+    .line 631
     const/16 v2, 0xb9
 
-    const/16 v13, 0xb2
+    const/16 v14, 0xb2
 
-    const/16 v8, 0xaa
+    const/16 v3, 0xaa
 
-    invoke-static {v8, v13, v2}, Landroid/graphics/Color;->rgb(III)I
+    invoke-static {v3, v14, v2}, Landroid/graphics/Color;->rgb(III)I
 
-    move-result v15
+    move-result v8
 
-    .line 566
-    invoke-static {v0, v1, v14, v15}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
+    .line 629
+    invoke-static {v0, v1, v15, v8}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
 
     move-result-object v1
 
-    .line 569
-    invoke-virtual {v1, v12}, Landroid/widget/TextView;->setGravity(I)V
+    .line 632
+    invoke-virtual {v1, v13}, Landroid/widget/TextView;->setGravity(I)V
 
-    .line 570
-    const/4 v15, 0x6
+    .line 633
+    const/4 v8, 0x6
 
-    invoke-static {v0, v15}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    invoke-static {v0, v8}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
     invoke-virtual {v1, v7, v7, v7, v2}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 571
-    invoke-virtual {v10, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    .line 634
+    invoke-virtual {v11, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 573
+    .line 636
     new-instance v1, Landroid/widget/LinearLayout;
 
     invoke-direct {v1, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 574
+    .line 637
     invoke-virtual {v1, v7}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 575
-    invoke-virtual {v1, v12}, Landroid/widget/LinearLayout;->setGravity(I)V
+    .line 638
+    invoke-virtual {v1, v13}, Landroid/widget/LinearLayout;->setGravity(I)V
 
-    .line 576
-    invoke-static {v0, v15}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    .line 639
+    invoke-static {v0, v8}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
     invoke-virtual {v1, v7, v7, v7, v2}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 577
+    .line 640
     new-instance v2, Landroid/widget/LinearLayout$LayoutParams;
 
-    .line 578
-    const/16 v12, 0x2a
+    .line 641
+    const/16 v3, 0x2a
 
-    invoke-static {v0, v12}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
-
-    move-result v12
-
-    const/16 v8, 0x2a
-
-    invoke-static {v0, v8}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
-
-    move-result v8
-
-    invoke-direct {v2, v12, v8}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
-
-    .line 579
-    const/4 v8, 0x5
-
-    invoke-static {v0, v8}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
-
-    move-result v8
-
-    const/4 v12, 0x5
-
-    invoke-static {v0, v12}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
-
-    move-result v12
-
-    invoke-virtual {v2, v8, v7, v12, v7}, Landroid/widget/LinearLayout$LayoutParams;->setMargins(IIII)V
-
-    .line 580
-    const/16 v8, 0x29
-
-    const/16 v12, 0x2e
-
-    const/16 v13, 0x24
-
-    invoke-static {v13, v8, v12}, Landroid/graphics/Color;->rgb(III)I
-
-    move-result v8
-
-    .line 581
-    const/16 v12, 0x65
-
-    const/16 v13, 0xf2
-
-    const/16 v3, 0x58
-
-    invoke-static {v3, v12, v13}, Landroid/graphics/Color;->rgb(III)I
+    invoke-static {v0, v3}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v3
 
-    .line 582
-    const/16 v12, 0x19
+    const/16 v9, 0x2a
 
-    const/16 v13, 0x23
+    invoke-static {v0, v9}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+
+    move-result v9
+
+    invoke-direct {v2, v3, v9}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
+
+    .line 642
+    const/4 v3, 0x5
+
+    invoke-static {v0, v3}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+
+    move-result v3
+
+    const/4 v9, 0x5
+
+    invoke-static {v0, v9}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+
+    move-result v9
+
+    invoke-virtual {v2, v3, v7, v9, v7}, Landroid/widget/LinearLayout$LayoutParams;->setMargins(IIII)V
+
+    .line 643
+    const/16 v3, 0x29
+
+    const/16 v9, 0x2e
+
+    const/16 v13, 0x24
+
+    invoke-static {v13, v3, v9}, Landroid/graphics/Color;->rgb(III)I
+
+    move-result v3
+
+    .line 644
+    const/16 v9, 0x65
+
+    const/16 v13, 0xf2
+
+    const/16 v14, 0x58
+
+    invoke-static {v14, v9, v13}, Landroid/graphics/Color;->rgb(III)I
+
+    move-result v9
+
+    .line 645
+    const/16 v13, 0x19
+
+    const/16 v14, 0x23
 
     const/16 v4, 0x14
 
-    invoke-static {v4, v12, v13}, Landroid/graphics/Color;->rgb(III)I
+    invoke-static {v4, v13, v14}, Landroid/graphics/Color;->rgb(III)I
 
     move-result v4
 
-    .line 583
-    new-instance v12, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;
+    .line 646
+    new-instance v13, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;
 
-    const/4 v13, -0x1
+    const/4 v14, -0x1
 
-    invoke-direct {v12, v13, v8}, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;-><init>(II)V
+    invoke-direct {v13, v14, v3}, Lcom/trueaxis/modmenu/ModMenu$GitHubIconDrawable;-><init>(II)V
 
     const-string v5, "GitHub"
 
@@ -4634,75 +4992,75 @@
 
     invoke-direct {v7, v0}, Lcom/trueaxis/modmenu/ModMenu$3;-><init>(Landroid/app/Activity;)V
 
-    invoke-static {v0, v8, v12, v5, v7}, Lcom/trueaxis/modmenu/ModMenu;->iconLinkButton(Landroid/app/Activity;ILandroid/graphics/drawable/Drawable;Ljava/lang/String;Landroid/view/View$OnClickListener;)Landroid/widget/Button;
-
-    move-result-object v5
-
-    invoke-virtual {v1, v5, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
-
-    .line 596
-    new-instance v5, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;
-
-    invoke-direct {v5}, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;-><init>()V
-
-    const-string v7, "Donate"
-
-    new-instance v8, Lcom/trueaxis/modmenu/ModMenu$4;
-
-    invoke-direct {v8, v0}, Lcom/trueaxis/modmenu/ModMenu$4;-><init>(Landroid/app/Activity;)V
-
-    invoke-static {v0, v4, v5, v7, v8}, Lcom/trueaxis/modmenu/ModMenu;->iconLinkButton(Landroid/app/Activity;ILandroid/graphics/drawable/Drawable;Ljava/lang/String;Landroid/view/View$OnClickListener;)Landroid/widget/Button;
-
-    move-result-object v4
-
-    invoke-virtual {v1, v4, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
-
-    .line 603
-    new-instance v4, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;
-
-    invoke-direct {v4, v13, v3}, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;-><init>(II)V
-
-    const-string v5, "Discord"
-
-    new-instance v7, Lcom/trueaxis/modmenu/ModMenu$5;
-
-    invoke-direct {v7, v0}, Lcom/trueaxis/modmenu/ModMenu$5;-><init>(Landroid/app/Activity;)V
-
-    invoke-static {v0, v3, v4, v5, v7}, Lcom/trueaxis/modmenu/ModMenu;->iconLinkButton(Landroid/app/Activity;ILandroid/graphics/drawable/Drawable;Ljava/lang/String;Landroid/view/View$OnClickListener;)Landroid/widget/Button;
+    invoke-static {v0, v3, v13, v5, v7}, Lcom/trueaxis/modmenu/ModMenu;->iconLinkButton(Landroid/app/Activity;ILandroid/graphics/drawable/Drawable;Ljava/lang/String;Landroid/view/View$OnClickListener;)Landroid/widget/Button;
 
     move-result-object v3
 
     invoke-virtual {v1, v3, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 616
-    invoke-virtual {v10, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    .line 659
+    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;
 
-    .line 618
-    new-instance v12, Landroid/widget/ScrollView;
+    invoke-direct {v3}, Lcom/trueaxis/modmenu/ModMenu$SolanaDonateIconDrawable;-><init>()V
 
-    invoke-direct {v12, v0}, Landroid/widget/ScrollView;-><init>(Landroid/content/Context;)V
+    const-string v5, "Donate"
 
-    .line 619
-    invoke-virtual {v12, v11}, Landroid/widget/ScrollView;->setFillViewport(Z)V
+    new-instance v7, Lcom/trueaxis/modmenu/ModMenu$4;
 
-    .line 620
-    new-instance v8, Landroid/widget/LinearLayout;
+    invoke-direct {v7, v0}, Lcom/trueaxis/modmenu/ModMenu$4;-><init>(Landroid/app/Activity;)V
 
-    invoke-direct {v8, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
+    invoke-static {v0, v4, v3, v5, v7}, Lcom/trueaxis/modmenu/ModMenu;->iconLinkButton(Landroid/app/Activity;ILandroid/graphics/drawable/Drawable;Ljava/lang/String;Landroid/view/View$OnClickListener;)Landroid/widget/Button;
 
-    .line 621
-    invoke-virtual {v8, v11}, Landroid/widget/LinearLayout;->setOrientation(I)V
+    move-result-object v3
 
-    .line 622
-    invoke-static {v0, v14}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    invoke-virtual {v1, v3, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+
+    .line 666
+    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;
+
+    invoke-direct {v3, v14, v9}, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;-><init>(II)V
+
+    const-string v4, "Discord"
+
+    new-instance v5, Lcom/trueaxis/modmenu/ModMenu$5;
+
+    invoke-direct {v5, v0}, Lcom/trueaxis/modmenu/ModMenu$5;-><init>(Landroid/app/Activity;)V
+
+    invoke-static {v0, v9, v3, v4, v5}, Lcom/trueaxis/modmenu/ModMenu;->iconLinkButton(Landroid/app/Activity;ILandroid/graphics/drawable/Drawable;Ljava/lang/String;Landroid/view/View$OnClickListener;)Landroid/widget/Button;
+
+    move-result-object v3
+
+    invoke-virtual {v1, v3, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+
+    .line 679
+    invoke-virtual {v11, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+
+    .line 681
+    new-instance v13, Landroid/widget/ScrollView;
+
+    invoke-direct {v13, v0}, Landroid/widget/ScrollView;-><init>(Landroid/content/Context;)V
+
+    .line 682
+    invoke-virtual {v13, v12}, Landroid/widget/ScrollView;->setFillViewport(Z)V
+
+    .line 683
+    new-instance v9, Landroid/widget/LinearLayout;
+
+    invoke-direct {v9, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
+
+    .line 684
+    invoke-virtual {v9, v12}, Landroid/widget/LinearLayout;->setOrientation(I)V
+
+    .line 685
+    invoke-static {v0, v15}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v1
 
-    invoke-static {v0, v15}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    invoke-static {v0, v8}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
-    invoke-static {v0, v14}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    invoke-static {v0, v15}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v3
 
@@ -4712,9 +5070,9 @@
 
     move-result v4
 
-    invoke-virtual {v8, v1, v2, v3, v4}, Landroid/widget/LinearLayout;->setPadding(IIII)V
+    invoke-virtual {v9, v1, v2, v3, v4}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 623
+    .line 686
     const/16 v1, 0x20
 
     const/16 v2, 0x26
@@ -4725,7 +5083,7 @@
 
     move-result v1
 
-    invoke-static {v0, v14}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    invoke-static {v0, v15}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
@@ -4735,52 +5093,52 @@
 
     move-result-object v1
 
-    invoke-virtual {v8, v1}, Landroid/widget/LinearLayout;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
+    invoke-virtual {v9, v1}, Landroid/widget/LinearLayout;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 625
+    .line 688
     const-string v1, "Mod tools"
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->sectionHeader(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/TextView;
 
     move-result-object v1
 
-    invoke-virtual {v8, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    invoke-virtual {v9, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 627
+    .line 690
     const-string v1, "Custom liveries"
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->button(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v1
 
-    .line 628
+    .line 691
     new-instance v2, Lcom/trueaxis/modmenu/ModMenu$6;
 
     invoke-direct {v2, v0}, Lcom/trueaxis/modmenu/ModMenu$6;-><init>(Landroid/app/Activity;)V
 
     invoke-virtual {v1, v2}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 634
+    .line 697
     const-string v2, "Check updates"
 
     invoke-static {v0, v2}, Lcom/trueaxis/modmenu/ModMenu;->button(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v2
 
-    .line 635
+    .line 698
     new-instance v3, Lcom/trueaxis/modmenu/ModMenu$7;
 
     invoke-direct {v3, v0}, Lcom/trueaxis/modmenu/ModMenu$7;-><init>(Landroid/app/Activity;)V
 
     invoke-virtual {v2, v3}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 641
-    invoke-static {v0, v8, v1, v2}, Lcom/trueaxis/modmenu/ModMenu;->addButtonRow(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/Button;Landroid/widget/Button;)V
+    .line 704
+    invoke-static {v0, v9, v1, v2}, Lcom/trueaxis/modmenu/ModMenu;->addButtonRow(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/Button;Landroid/widget/Button;)V
 
-    .line 643
+    .line 706
     const-string v1, "Always on: purchase compatibility, expanded checkpoints, blue flame ID."
 
-    .line 645
+    .line 708
     const/16 v2, 0x96
 
     const/16 v3, 0x9e
@@ -4791,14 +5149,14 @@
 
     move-result v2
 
-    .line 643
+    .line 706
     const/16 v5, 0x9
 
     invoke-static {v0, v1, v5, v2}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
 
     move-result-object v1
 
-    .line 646
+    .line 709
     const/4 v4, 0x4
 
     invoke-static {v0, v4}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -4809,288 +5167,387 @@
 
     move-result v3
 
-    const/4 v14, 0x0
+    const/4 v5, 0x0
 
-    invoke-virtual {v1, v14, v2, v14, v3}, Landroid/widget/TextView;->setPadding(IIII)V
+    invoke-virtual {v1, v5, v2, v5, v3}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 647
-    invoke-virtual {v8, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    .line 710
+    invoke-virtual {v9, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 649
+    .line 712
     const-string v1, "Replay free camera"
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->sectionHeader(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/TextView;
 
     move-result-object v1
 
-    invoke-virtual {v8, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    invoke-virtual {v9, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 650
+    .line 713
     const-string v1, "Enable gesture free camera during replays"
 
     const-string v2, "replay_free_camera"
 
-    invoke-static {v0, v8, v1, v2, v11}, Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;Z)Landroid/widget/CheckBox;
+    invoke-static {v0, v9, v1, v2, v12}, Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;Z)Landroid/widget/CheckBox;
 
-    .line 654
+    .line 717
     const-string v1, "Camera mode"
 
     const/16 v2, 0xd2
 
     const/16 v3, 0xd8
 
-    const/16 v14, 0xde
+    const/16 v5, 0xde
 
-    invoke-static {v2, v3, v14}, Landroid/graphics/Color;->rgb(III)I
+    invoke-static {v2, v3, v5}, Landroid/graphics/Color;->rgb(III)I
 
-    move-result v7
+    move-result v6
 
     const/16 v2, 0xb
 
-    invoke-static {v0, v1, v2, v7}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
+    invoke-static {v0, v1, v2, v6}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
 
     move-result-object v1
 
-    .line 655
+    .line 718
     invoke-static {v0, v4}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
-    const/4 v7, 0x0
+    const/4 v6, 0x0
 
-    invoke-virtual {v1, v7, v2, v7, v7}, Landroid/widget/TextView;->setPadding(IIII)V
+    invoke-virtual {v1, v6, v2, v6, v6}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 656
+    .line 719
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->fill()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v2
 
-    invoke-virtual {v8, v1, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-virtual {v9, v1, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 657
+    .line 720
     new-instance v1, Landroid/widget/Spinner;
 
     invoke-direct {v1, v0}, Landroid/widget/Spinner;-><init>(Landroid/content/Context;)V
 
-    .line 658
+    .line 721
     new-instance v2, Landroid/widget/ArrayAdapter;
 
-    sget-object v7, Lcom/trueaxis/modmenu/ModMenu;->REPLAY_CAMERA_MODE_NAMES:[Ljava/lang/String;
+    sget-object v3, Lcom/trueaxis/modmenu/ModMenu;->REPLAY_CAMERA_MODE_NAMES:[Ljava/lang/String;
 
-    const v3, 0x1090008
+    const v4, 0x1090008
 
-    invoke-direct {v2, v0, v3, v7}, Landroid/widget/ArrayAdapter;-><init>(Landroid/content/Context;I[Ljava/lang/Object;)V
+    invoke-direct {v2, v0, v4, v3}, Landroid/widget/ArrayAdapter;-><init>(Landroid/content/Context;I[Ljava/lang/Object;)V
 
-    .line 660
+    .line 723
     const v3, 0x1090009
 
     invoke-virtual {v2, v3}, Landroid/widget/ArrayAdapter;->setDropDownViewResource(I)V
 
-    .line 662
+    .line 725
     invoke-virtual {v1, v2}, Landroid/widget/Spinner;->setAdapter(Landroid/widget/SpinnerAdapter;)V
 
-    .line 663
+    .line 726
     invoke-static/range {p0 .. p0}, Lcom/trueaxis/modmenu/ModMenu;->replayCameraMode(Landroid/content/Context;)I
 
     move-result v2
 
-    sub-int/2addr v2, v11
+    sub-int/2addr v2, v12
 
     invoke-virtual {v1, v2}, Landroid/widget/Spinner;->setSelection(I)V
 
-    .line 664
+    .line 727
     new-instance v2, Lcom/trueaxis/modmenu/ModMenu$8;
 
     invoke-direct {v2, v0}, Lcom/trueaxis/modmenu/ModMenu$8;-><init>(Landroid/app/Activity;)V
 
     invoke-virtual {v1, v2}, Landroid/widget/Spinner;->setOnItemSelectedListener(Landroid/widget/AdapterView$OnItemSelectedListener;)V
 
-    .line 680
+    .line 743
     new-instance v2, Landroid/widget/LinearLayout$LayoutParams;
 
-    const/4 v7, -0x2
+    const/4 v4, -0x2
 
-    invoke-direct {v2, v13, v7}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
+    invoke-direct {v2, v14, v4}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
 
-    invoke-virtual {v8, v1, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-virtual {v9, v1, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 684
+    .line 747
+    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$9;
+
+    invoke-direct {v3, v0}, Lcom/trueaxis/modmenu/ModMenu$9;-><init>(Landroid/app/Activity;)V
+
+    .line 756
+    const-string v23, "Orbit radius"
+
+    const-string v24, "orbit_radius"
+
+    const-string v25, " units"
+
+    const/16 v26, 0x8
+
+    const/16 v27, 0x4
+
+    const/16 v28, 0x28
+
+    move-object/from16 v1, p0
+
+    const/16 v15, 0xb9
+
+    const/16 v18, 0xd2
+
+    move-object v2, v9
+
+    move-object/from16 v18, v3
+
+    const/16 v14, 0xaa
+
+    const/16 v20, 0xd8
+
+    move-object/from16 v3, v23
+
+    const/4 v12, -0x2
+
+    move-object/from16 v4, v24
+
+    const/16 v12, 0x9
+
+    move/from16 v5, v26
+
+    const/16 v16, 0x0
+
+    move/from16 v6, v27
+
+    move/from16 v7, v28
+
+    move-object/from16 v8, v25
+
+    move-object/from16 v16, v9
+
+    move-object/from16 v9, v18
+
+    invoke-static/range {v1 .. v9}, Lcom/trueaxis/modmenu/ModMenu;->addSeek(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;Ljava/lang/Runnable;)Landroid/widget/LinearLayout;
+
+    .line 758
+    const-string v3, "Orbit rotation speed"
+
+    const-string v4, "orbit_speed"
+
+    const-string v8, " deg/s"
+
+    const/16 v5, 0x48
+
+    const/4 v6, 0x5
+
+    const/16 v7, 0xb4
+
+    move-object/from16 v1, p0
+
+    move-object/from16 v2, v16
+
+    move-object/from16 v9, v18
+
+    invoke-static/range {v1 .. v9}, Lcom/trueaxis/modmenu/ModMenu;->addSeek(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;Ljava/lang/Runnable;)Landroid/widget/LinearLayout;
+
+    .line 760
+    const-string v3, "Orbit camera height"
+
+    const-string v4, "orbit_height"
+
+    const-string v8, " deg"
+
+    const/16 v5, 0x2a
+
+    const/16 v6, 0xa
+
+    const/16 v7, 0x50
+
+    move-object/from16 v1, p0
+
+    move-object/from16 v2, v16
+
+    move-object/from16 v9, v18
+
+    invoke-static/range {v1 .. v9}, Lcom/trueaxis/modmenu/ModMenu;->addSeek(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;Ljava/lang/Runnable;)Landroid/widget/LinearLayout;
+
+    .line 763
     const-string v1, "Replay swarm mode"
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->sectionHeader(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/TextView;
 
     move-result-object v1
 
-    invoke-virtual {v8, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    move-object/from16 v9, v16
 
-    .line 685
-    const-string v1, "Overlay passive replays on the same track. Tap Swarm in-game to pick ghosts."
+    invoke-virtual {v9, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 687
-    const/16 v2, 0xb9
+    .line 764
+    const-string v1, "Watch or race several replays on one track. Open View Replay, tap Swarm to pick ghost replays, then watch them together or hit Race to race the whole pack."
 
-    const/16 v3, 0xb2
+    .line 768
+    const/16 v2, 0xb2
 
-    const/16 v14, 0xaa
-
-    invoke-static {v14, v3, v2}, Landroid/graphics/Color;->rgb(III)I
-
-    move-result v4
-
-    .line 685
-    invoke-static {v0, v1, v5, v4}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
-
-    move-result-object v1
-
-    .line 688
-    invoke-static {v0, v6}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    invoke-static {v14, v2, v15}, Landroid/graphics/Color;->rgb(III)I
 
     move-result v3
 
-    const/4 v4, 0x0
-
-    invoke-virtual {v1, v4, v4, v4, v3}, Landroid/widget/TextView;->setPadding(IIII)V
-
-    .line 689
-    invoke-virtual {v8, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
-
-    .line 690
-    const-string v1, "Enable replay swarm picker during passive replays"
-
-    const-string v3, "replay_swarm"
-
-    const/4 v4, 0x0
-
-    invoke-static {v0, v8, v1, v3, v4}, Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;Z)Landroid/widget/CheckBox;
-
-    .line 694
-    new-instance v3, Landroid/widget/LinearLayout;
-
-    invoke-direct {v3, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
-
-    .line 695
-    invoke-virtual {v3, v4}, Landroid/widget/LinearLayout;->setOrientation(I)V
-
-    .line 696
-    const/16 v1, 0x10
-
-    invoke-virtual {v3, v1}, Landroid/widget/LinearLayout;->setGravity(I)V
-
-    .line 697
-    const-string v1, "Replay split HUD"
-
-    const/16 v2, 0x80
-
-    const/16 v14, 0xff
-
-    invoke-static {v14, v2, v4}, Landroid/graphics/Color;->rgb(III)I
-
-    move-result v5
-
-    const/16 v2, 0xc
-
-    invoke-static {v0, v1, v2, v5}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
+    .line 764
+    invoke-static {v0, v1, v12, v3}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
 
     move-result-object v1
 
-    .line 698
-    invoke-static {v0, v15}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    .line 769
+    const/4 v8, 0x2
+
+    invoke-static {v0, v8}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
-    invoke-static {v0, v6}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+    const/4 v7, 0x0
 
-    move-result v4
+    invoke-virtual {v1, v7, v7, v7, v2}, Landroid/widget/TextView;->setPadding(IIII)V
+
+    .line 770
+    invoke-virtual {v9, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+
+    .line 771
+    const-string v1, "Enable replay swarm picker during passive replays"
+
+    const-string v2, "replay_swarm"
+
+    invoke-static {v0, v9, v1, v2, v7}, Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;Z)Landroid/widget/CheckBox;
+
+    .line 774
+    const-string v3, "Race against the selected swarm ghosts"
+
+    const-string v4, "race_ghost_swarm"
+
+    new-instance v6, Lcom/trueaxis/modmenu/ModMenu$10;
+
+    invoke-direct {v6, v0}, Lcom/trueaxis/modmenu/ModMenu$10;-><init>(Landroid/app/Activity;)V
 
     const/4 v5, 0x0
 
-    invoke-virtual {v1, v5, v2, v5, v4}, Landroid/widget/TextView;->setPadding(IIII)V
+    move-object/from16 v1, p0
 
-    .line 699
+    move-object v2, v9
+
+    invoke-static/range {v1 .. v6}, Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Runnable;)Landroid/widget/CheckBox;
+
+    .line 785
+    new-instance v6, Landroid/widget/LinearLayout;
+
+    invoke-direct {v6, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
+
+    .line 786
+    invoke-virtual {v6, v7}, Landroid/widget/LinearLayout;->setOrientation(I)V
+
+    .line 787
+    const/16 v5, 0x10
+
+    invoke-virtual {v6, v5}, Landroid/widget/LinearLayout;->setGravity(I)V
+
+    .line 788
+    const-string v1, "Replay split HUD"
+
+    const/16 v3, 0xff
+
+    const/16 v4, 0x80
+
+    invoke-static {v3, v4, v7}, Landroid/graphics/Color;->rgb(III)I
+
+    move-result v2
+
+    const/16 v3, 0xc
+
+    invoke-static {v0, v1, v3, v2}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
+
+    move-result-object v1
+
+    .line 789
+    const/4 v2, 0x6
+
+    invoke-static {v0, v2}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+
+    move-result v2
+
+    invoke-static {v0, v8}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
+
+    move-result v3
+
+    invoke-virtual {v1, v7, v2, v7, v3}, Landroid/widget/TextView;->setPadding(IIII)V
+
+    .line 790
     new-instance v2, Landroid/widget/LinearLayout$LayoutParams;
 
-    const/high16 v4, 0x3f800000
+    const/high16 v3, 0x3f800000
 
-    invoke-direct {v2, v5, v7, v4}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
+    const/4 v4, -0x2
 
-    invoke-virtual {v3, v1, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-direct {v2, v7, v4, v3}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
-    .line 702
-    new-instance v15, Landroid/widget/LinearLayout;
+    invoke-virtual {v6, v1, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    invoke-direct {v15, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
+    .line 793
+    new-instance v4, Landroid/widget/LinearLayout;
 
-    .line 703
-    invoke-virtual {v15, v11}, Landroid/widget/LinearLayout;->setOrientation(I)V
+    invoke-direct {v4, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 704
+    .line 794
+    const/4 v1, 0x1
+
+    invoke-virtual {v4, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
+
+    .line 795
     const/16 v1, 0xc
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
-    const/4 v5, 0x0
+    invoke-virtual {v4, v2, v7, v7, v7}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    invoke-virtual {v15, v2, v5, v5, v5}, Landroid/widget/LinearLayout;->setPadding(IIII)V
+    .line 796
+    const/16 v3, 0x8
 
-    .line 705
-    const/16 v4, 0x8
+    invoke-virtual {v4, v3}, Landroid/widget/LinearLayout;->setVisibility(I)V
 
-    invoke-virtual {v15, v4}, Landroid/widget/LinearLayout;->setVisibility(I)V
+    .line 797
+    const-string v16, "Text transparency"
 
-    .line 706
-    const-string v17, "Text transparency"
+    const-string v17, "split_alpha"
 
-    const-string v19, "split_alpha"
+    const-string v18, "%"
 
-    const-string v21, "%"
+    const/16 v19, 0x5a
 
-    const/16 v22, 0x5a
+    const/16 v21, 0xa
 
-    const/16 v23, 0xa
-
-    const/16 v24, 0x64
-
-    const/16 v2, 0x10
+    const/16 v22, 0x64
 
     move-object/from16 v1, p0
 
-    const/16 v14, 0xb9
+    move-object v2, v4
 
-    const/16 v20, 0xd2
+    move-object/from16 v3, v16
 
-    move-object v2, v15
+    move-object/from16 v16, v4
 
-    move-object v13, v3
+    move-object/from16 v4, v17
 
-    const/16 v11, 0xd2
+    move/from16 v5, v19
 
-    const/16 v18, 0xd8
+    move-object v12, v6
 
-    move-object/from16 v3, v17
+    move/from16 v6, v21
 
-    const/16 v14, 0xd8
+    move/from16 v7, v22
 
-    const/16 v17, 0x8
-
-    move-object/from16 v4, v19
-
-    const/16 v16, 0x0
-
-    move/from16 v5, v22
-
-    move/from16 v6, v23
-
-    move/from16 v7, v24
-
-    move-object/from16 v25, v8
-
-    move-object/from16 v8, v21
+    move-object/from16 v8, v18
 
     invoke-static/range {v1 .. v8}, Lcom/trueaxis/modmenu/ModMenu;->addSeek(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)Landroid/widget/LinearLayout;
 
-    .line 708
+    .line 799
     const-string v3, "Horizontal position"
 
     const-string v4, "split_x"
@@ -5105,11 +5562,11 @@
 
     move-object/from16 v1, p0
 
-    move-object v2, v15
+    move-object/from16 v2, v16
 
     invoke-static/range {v1 .. v8}, Lcom/trueaxis/modmenu/ModMenu;->addSeek(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)Landroid/widget/LinearLayout;
 
-    .line 710
+    .line 801
     const-string v3, "Vertical position"
 
     const-string v4, "split_y"
@@ -5124,17 +5581,21 @@
 
     move-object/from16 v1, p0
 
-    move-object v2, v15
+    move-object/from16 v2, v16
 
     invoke-static/range {v1 .. v8}, Lcom/trueaxis/modmenu/ModMenu;->addSeek(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;)Landroid/widget/LinearLayout;
 
-    .line 713
+    .line 804
     new-instance v1, Lcom/trueaxis/modmenu/ModMenu$DisplayIconDrawable;
 
-    .line 714
+    .line 805
     const/16 v2, 0xde
 
-    invoke-static {v11, v14, v2}, Landroid/graphics/Color;->rgb(III)I
+    const/16 v3, 0xd8
+
+    const/16 v4, 0xd2
+
+    invoke-static {v4, v3, v2}, Landroid/graphics/Color;->rgb(III)I
 
     move-result v2
 
@@ -5142,105 +5603,101 @@
 
     const-string v2, "Show display position sliders"
 
-    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$9;
+    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$11;
 
-    invoke-direct {v3, v15}, Lcom/trueaxis/modmenu/ModMenu$9;-><init>(Landroid/widget/LinearLayout;)V
+    move-object/from16 v7, v16
 
-    .line 713
+    invoke-direct {v3, v7}, Lcom/trueaxis/modmenu/ModMenu$11;-><init>(Landroid/widget/LinearLayout;)V
+
+    .line 804
     invoke-static {v0, v1, v2, v3}, Lcom/trueaxis/modmenu/ModMenu;->miniIconButton(Landroid/app/Activity;Landroid/graphics/drawable/Drawable;Ljava/lang/String;Landroid/view/View$OnClickListener;)Landroid/widget/Button;
 
-    move-result-object v7
+    move-result-object v8
 
-    .line 724
+    .line 815
     new-instance v1, Landroid/widget/LinearLayout$LayoutParams;
 
-    const/4 v8, -0x2
+    const/4 v2, -0x2
 
-    invoke-direct {v1, v8, v8}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
+    invoke-direct {v1, v2, v2}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
 
-    invoke-virtual {v13, v7, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-virtual {v12, v8, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 727
+    .line 818
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->fill()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v1
 
-    move-object/from16 v11, v25
+    invoke-virtual {v9, v12, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    invoke-virtual {v11, v13, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
-
-    .line 729
+    .line 820
     const-string v1, "Compares your run with the saved replay ghost when timing is available."
 
-    .line 731
-    const/16 v2, 0xb9
+    .line 822
+    const/16 v2, 0xb2
 
-    const/16 v3, 0xb2
-
-    const/16 v4, 0xaa
-
-    invoke-static {v4, v3, v2}, Landroid/graphics/Color;->rgb(III)I
+    invoke-static {v14, v2, v15}, Landroid/graphics/Color;->rgb(III)I
 
     move-result v2
 
-    .line 729
+    .line 820
     const/16 v3, 0x9
 
     invoke-static {v0, v1, v3, v2}, Lcom/trueaxis/modmenu/ModMenu;->label(Landroid/content/Context;Ljava/lang/String;II)Landroid/widget/TextView;
 
     move-result-object v1
 
-    .line 732
+    .line 823
     const/4 v2, 0x2
 
     invoke-static {v0, v2}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
-    const/4 v13, 0x0
+    const/4 v12, 0x0
 
-    invoke-virtual {v1, v13, v13, v13, v2}, Landroid/widget/TextView;->setPadding(IIII)V
+    invoke-virtual {v1, v12, v12, v12, v2}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    .line 733
-    invoke-virtual {v11, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    .line 824
+    invoke-virtual {v9, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 735
+    .line 826
     new-instance v14, Landroid/widget/LinearLayout;
 
     invoke-direct {v14, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 736
+    .line 827
     const/4 v1, 0x1
 
     invoke-virtual {v14, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 737
+    .line 828
     const/16 v1, 0xc
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v1
 
-    invoke-virtual {v14, v1, v13, v13, v13}, Landroid/widget/LinearLayout;->setPadding(IIII)V
+    invoke-virtual {v14, v1, v12, v12, v12}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 739
+    .line 830
     const-string v3, "Enable checkpoint/sector deltas vs saved replay ghost"
 
     const-string v4, "checkpoint_splits"
 
-    new-instance v6, Lcom/trueaxis/modmenu/ModMenu$10;
+    new-instance v6, Lcom/trueaxis/modmenu/ModMenu$12;
 
-    invoke-direct {v6, v0, v14, v15, v7}, Lcom/trueaxis/modmenu/ModMenu$10;-><init>(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/LinearLayout;Landroid/widget/Button;)V
+    invoke-direct {v6, v0, v14, v7, v8}, Lcom/trueaxis/modmenu/ModMenu$12;-><init>(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/LinearLayout;Landroid/widget/Button;)V
 
     const/4 v5, 0x1
 
     move-object/from16 v1, p0
 
-    move-object v2, v11
+    move-object v2, v9
 
     invoke-static/range {v1 .. v6}, Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/Runnable;)Landroid/widget/CheckBox;
 
-    .line 748
+    .line 839
     const-string v1, "Show consecutive splits as an on-screen list"
 
     const-string v2, "split_list"
@@ -5249,71 +5706,73 @@
 
     invoke-static {v0, v14, v1, v2, v3}, Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;Z)Landroid/widget/CheckBox;
 
-    .line 751
+    .line 842
     const-string v1, "Use sector deltas instead of checkpoint deltas"
 
     const-string v2, "split_sector_delta"
 
-    invoke-static {v0, v14, v1, v2, v13}, Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;Z)Landroid/widget/CheckBox;
+    invoke-static {v0, v14, v1, v2, v12}, Lcom/trueaxis/modmenu/ModMenu;->addCheckBox(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;Z)Landroid/widget/CheckBox;
 
-    .line 755
-    invoke-static {v0, v14, v15, v7}, Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
+    .line 846
+    invoke-static {v0, v14, v7, v8}, Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
 
-    .line 756
+    .line 847
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->fill()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v1
 
-    invoke-virtual {v11, v14, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-virtual {v9, v14, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 757
+    .line 848
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->fill()Landroid/widget/LinearLayout$LayoutParams;
 
     move-result-object v1
 
-    invoke-virtual {v11, v15, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-virtual {v9, v7, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 759
+    .line 850
     new-instance v1, Landroid/widget/FrameLayout$LayoutParams;
 
     const/4 v2, -0x1
 
-    invoke-direct {v1, v2, v8}, Landroid/widget/FrameLayout$LayoutParams;-><init>(II)V
+    const/4 v3, -0x2
 
-    invoke-virtual {v12, v11, v1}, Landroid/widget/ScrollView;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-direct {v1, v2, v3}, Landroid/widget/FrameLayout$LayoutParams;-><init>(II)V
 
-    .line 762
+    invoke-virtual {v13, v9, v1}, Landroid/widget/ScrollView;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+
+    .line 853
     new-instance v1, Landroid/widget/LinearLayout$LayoutParams;
 
     const/high16 v3, 0x3f800000
 
-    invoke-direct {v1, v2, v13, v3}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
+    invoke-direct {v1, v2, v12, v3}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
-    invoke-virtual {v10, v12, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-virtual {v11, v13, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 765
+    .line 856
     const-string v1, "Start game"
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModMenu;->button(Landroid/content/Context;Ljava/lang/String;)Landroid/widget/Button;
 
     move-result-object v1
 
-    .line 766
+    .line 857
     const/high16 v2, 0x41600000
 
     invoke-virtual {v1, v2}, Landroid/widget/Button;->setTextSize(F)V
 
-    .line 767
+    .line 858
     const/high16 v2, -0x1000000
 
     invoke-virtual {v1, v2}, Landroid/widget/Button;->setTextColor(I)V
 
-    .line 768
+    .line 859
     const/16 v2, 0x80
 
     const/16 v3, 0xff
 
-    invoke-static {v3, v2, v13}, Landroid/graphics/Color;->rgb(III)I
+    invoke-static {v3, v2, v12}, Landroid/graphics/Color;->rgb(III)I
 
     move-result v2
 
@@ -5331,7 +5790,7 @@
 
     invoke-virtual {v1, v2}, Landroid/widget/Button;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
 
-    .line 769
+    .line 860
     const/16 v2, 0x10
 
     invoke-static {v0, v2}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
@@ -5354,58 +5813,60 @@
 
     invoke-virtual {v1, v4, v6, v2, v5}, Landroid/widget/Button;->setPadding(IIII)V
 
-    .line 770
+    .line 861
     new-instance v2, Landroid/widget/LinearLayout$LayoutParams;
 
     const/4 v4, -0x1
 
-    invoke-direct {v2, v4, v8}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
+    const/4 v5, -0x2
 
-    .line 772
+    invoke-direct {v2, v4, v5}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
+
+    .line 863
     invoke-static {v0, v3}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v3
 
     iput v3, v2, Landroid/widget/LinearLayout$LayoutParams;->topMargin:I
 
-    .line 773
-    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$11;
-    :try_end_3d1
-    .catchall {:try_start_27 .. :try_end_3d1} :catchall_419
+    .line 864
+    new-instance v3, Lcom/trueaxis/modmenu/ModMenu$13;
+    :try_end_433
+    .catchall {:try_start_27 .. :try_end_433} :catchall_47c
 
     move-object/from16 v4, p1
 
-    :try_start_3d3
-    invoke-direct {v3, v4}, Lcom/trueaxis/modmenu/ModMenu$11;-><init>(Ljava/lang/Runnable;)V
+    :try_start_435
+    invoke-direct {v3, v4}, Lcom/trueaxis/modmenu/ModMenu$13;-><init>(Ljava/lang/Runnable;)V
 
     invoke-virtual {v1, v3}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 779
-    invoke-virtual {v10, v1, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    .line 870
+    invoke-virtual {v11, v1, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 781
+    .line 872
     new-instance v1, Landroid/widget/LinearLayout;
 
     invoke-direct {v1, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 782
+    .line 873
     const/16 v2, 0x11
 
     invoke-virtual {v1, v2}, Landroid/widget/LinearLayout;->setGravity(I)V
 
-    .line 783
+    .line 874
     const/4 v2, 0x4
 
     invoke-static {v0, v2}, Lcom/trueaxis/modmenu/ModMenu;->dp(Landroid/content/Context;I)I
 
     move-result v2
 
-    invoke-virtual {v1, v13, v2, v13, v13}, Landroid/widget/LinearLayout;->setPadding(IIII)V
+    invoke-virtual {v1, v12, v2, v12, v12}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 784
+    .line 875
     new-instance v2, Lcom/trueaxis/modmenu/ModMenu$BugIconDrawable;
 
-    .line 785
+    .line 876
     const/16 v3, 0xb4
 
     const/16 v5, 0xbc
@@ -5420,71 +5881,73 @@
 
     const-string v3, "Upload debug logs"
 
-    new-instance v5, Lcom/trueaxis/modmenu/ModMenu$12;
+    new-instance v5, Lcom/trueaxis/modmenu/ModMenu$14;
 
-    invoke-direct {v5, v0}, Lcom/trueaxis/modmenu/ModMenu$12;-><init>(Landroid/app/Activity;)V
+    invoke-direct {v5, v0}, Lcom/trueaxis/modmenu/ModMenu$14;-><init>(Landroid/app/Activity;)V
 
-    .line 784
+    .line 875
     invoke-static {v0, v2, v3, v5}, Lcom/trueaxis/modmenu/ModMenu;->miniIconButton(Landroid/app/Activity;Landroid/graphics/drawable/Drawable;Ljava/lang/String;Landroid/view/View$OnClickListener;)Landroid/widget/Button;
 
     move-result-object v2
 
     new-instance v3, Landroid/widget/LinearLayout$LayoutParams;
 
-    invoke-direct {v3, v8, v8}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
+    const/4 v5, -0x2
+
+    invoke-direct {v3, v5, v5}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
 
     invoke-virtual {v1, v2, v3}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 795
-    invoke-virtual {v10, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    .line 886
+    invoke-virtual {v11, v1}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 797
-    invoke-virtual {v0, v10}, Landroid/app/Activity;->setContentView(Landroid/view/View;)V
-    :try_end_416
-    .catchall {:try_start_3d3 .. :try_end_416} :catchall_417
+    .line 888
+    invoke-virtual {v0, v11}, Landroid/app/Activity;->setContentView(Landroid/view/View;)V
+    :try_end_479
+    .catchall {:try_start_435 .. :try_end_479} :catchall_47a
 
-    .line 802
-    goto :goto_42b
+    .line 893
+    goto :goto_48e
 
-    .line 798
-    :catchall_417
+    .line 889
+    :catchall_47a
     move-exception v0
 
-    goto :goto_41c
+    goto :goto_47f
 
-    :catchall_419
+    :catchall_47c
     move-exception v0
 
     move-object/from16 v4, p1
 
-    .line 799
-    :goto_41c
+    .line 890
+    :goto_47f
     const-string v1, "YCS2Mod"
 
     const-string v2, "Could not show pre-launch mod menu"
 
     invoke-static {v1, v2, v0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 800
+    .line 891
     const-string v1, "Could not show pre-launch mod menu; falling back to game"
 
-    invoke-static {v9, v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+    invoke-static {v10, v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 801
+    .line 892
     invoke-interface/range {p1 .. p1}, Ljava/lang/Runnable;->run()V
 
-    .line 803
-    :goto_42b
+    .line 894
+    :goto_48e
     return-void
 .end method
 
 .method public static splitAlphaPercent(Landroid/content/Context;)I
     .registers 3
 
-    .line 466
+    .line 529
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->applyMenuDefaults(Landroid/content/Context;)V
 
-    .line 467
+    .line 530
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -5511,10 +5974,10 @@
 .method public static splitListEnabled(Landroid/content/Context;)Z
     .registers 3
 
-    .line 437
+    .line 447
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->applyMenuDefaults(Landroid/content/Context;)V
 
-    .line 438
+    .line 448
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -5533,10 +5996,10 @@
 .method public static splitXdp(Landroid/content/Context;)I
     .registers 3
 
-    .line 471
+    .line 534
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->applyMenuDefaults(Landroid/content/Context;)V
 
-    .line 472
+    .line 535
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -5563,10 +6026,10 @@
 .method public static splitYdp(Landroid/content/Context;)I
     .registers 3
 
-    .line 476
+    .line 539
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->applyMenuDefaults(Landroid/content/Context;)V
 
-    .line 477
+    .line 540
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -5590,10 +6053,57 @@
     return p0
 .end method
 
+.method public static swarmCatalogPaths(Landroid/content/Context;)[Ljava/lang/String;
+    .registers 3
+
+    .line 496
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object p0
+
+    const-string v0, "swarm_catalog_paths"
+
+    const-string v1, ""
+
+    invoke-interface {p0, v0, v1}, Landroid/content/SharedPreferences;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object p0
+
+    .line 497
+    if-eqz p0, :cond_1c
+
+    invoke-virtual {p0}, Ljava/lang/String;->length()I
+
+    move-result v0
+
+    if-nez v0, :cond_15
+
+    goto :goto_1c
+
+    .line 500
+    :cond_15
+    const-string v0, "\n"
+
+    invoke-virtual {p0, v0}, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+
+    move-result-object p0
+
+    return-object p0
+
+    .line 498
+    :cond_1c
+    :goto_1c
+    const/4 p0, 0x0
+
+    new-array p0, p0, [Ljava/lang/String;
+
+    return-object p0
+.end method
+
 .method public static textureSize()I
     .registers 1
 
-    .line 323
+    .line 333
     const/16 v0, 0x200
 
     return v0
@@ -5602,7 +6112,7 @@
 .method private static toast(Landroid/content/Context;Ljava/lang/String;)V
     .registers 3
 
-    .line 386
+    .line 396
     const/4 v0, 0x1
 
     invoke-static {p0, p1, v0}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
@@ -5611,14 +6121,14 @@
 
     invoke-virtual {p0}, Landroid/widget/Toast;->show()V
 
-    .line 387
+    .line 397
     return-void
 .end method
 
 .method private static updateSeekLabel(Landroid/widget/TextView;Ljava/lang/String;ILjava/lang/String;)V
     .registers 5
 
-    .line 907
+    .line 1008
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -5647,17 +6157,17 @@
 
     invoke-virtual {p0, p1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    .line 908
+    .line 1009
     return-void
 .end method
 
 .method private static updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
     .registers 7
 
-    .line 864
+    .line 955
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->applyMenuDefaults(Landroid/content/Context;)V
 
-    .line 865
+    .line 956
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
 
     move-result-object p0
@@ -5670,7 +6180,7 @@
 
     move-result p0
 
-    .line 866
+    .line 957
     const/4 v0, 0x0
 
     const/16 v1, 0x8
@@ -5687,10 +6197,10 @@
     :goto_17
     invoke-virtual {p1, v2}, Landroid/view/View;->setVisibility(I)V
 
-    .line 867
+    .line 958
     if-eqz p3, :cond_24
 
-    .line 868
+    .line 959
     if-eqz p0, :cond_1f
 
     goto :goto_21
@@ -5701,16 +6211,16 @@
     :goto_21
     invoke-virtual {p3, v0}, Landroid/view/View;->setVisibility(I)V
 
-    .line 870
+    .line 961
     :cond_24
     if-nez p0, :cond_2b
 
     if-eqz p2, :cond_2b
 
-    .line 871
+    .line 962
     invoke-virtual {p2, v1}, Landroid/view/View;->setVisibility(I)V
 
-    .line 873
+    .line 964
     :cond_2b
     return-void
 .end method
@@ -5718,10 +6228,10 @@
 .method public static validateCustomLiveriesForGame(Landroid/content/Context;)V
     .registers 4
 
-    .line 489
+    .line 552
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->install(Landroid/content/Context;)V
 
-    .line 490
+    .line 553
     const/4 v0, 0x0
 
     :goto_4
@@ -5731,7 +6241,7 @@
 
     if-ge v0, v1, :cond_20
 
-    .line 491
+    .line 554
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
 
     move-result-object v1
@@ -5740,25 +6250,25 @@
 
     invoke-static {v1, v0, v2}, Lcom/trueaxis/modmenu/ModMenu;->validateCustomLiveryFile(Ljava/io/File;ILjava/lang/String;)V
 
-    .line 492
+    .line 555
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ModMenu;->externalTexture(Landroid/content/Context;I)Ljava/io/File;
 
     move-result-object v1
 
-    .line 493
+    .line 556
     if-eqz v1, :cond_1d
 
     const-string v2, "external"
 
     invoke-static {v1, v0, v2}, Lcom/trueaxis/modmenu/ModMenu;->validateCustomLiveryFile(Ljava/io/File;ILjava/lang/String;)V
 
-    .line 490
+    .line 553
     :cond_1d
     add-int/lit8 v0, v0, 0x1
 
     goto :goto_4
 
-    .line 495
+    .line 558
     :cond_20
     return-void
 .end method
@@ -5766,7 +6276,7 @@
 .method private static validateCustomLiveryFile(Ljava/io/File;ILjava/lang/String;)V
     .registers 10
 
-    .line 498
+    .line 561
     const-string v0, " path="
 
     const-string v1, " car="
@@ -5783,26 +6293,26 @@
 
     goto/16 :goto_c6
 
-    .line 500
+    .line 563
     :cond_10
     :try_start_10
     new-instance v3, Landroid/graphics/BitmapFactory$Options;
 
     invoke-direct {v3}, Landroid/graphics/BitmapFactory$Options;-><init>()V
 
-    .line 501
+    .line 564
     const/4 v4, 0x1
 
     iput-boolean v4, v3, Landroid/graphics/BitmapFactory$Options;->inJustDecodeBounds:Z
 
-    .line 502
+    .line 565
     invoke-virtual {p0}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
     move-result-object v5
 
     invoke-static {v5, v3}, Landroid/graphics/BitmapFactory;->decodeFile(Ljava/lang/String;Landroid/graphics/BitmapFactory$Options;)Landroid/graphics/Bitmap;
 
-    .line 503
+    .line 566
     iget v5, v3, Landroid/graphics/BitmapFactory$Options;->outWidth:I
 
     const/16 v6, 0x200
@@ -5818,7 +6328,7 @@
     :cond_2a
     const/4 v4, 0x0
 
-    .line 504
+    .line 567
     :goto_2b
     new-instance v5, Ljava/lang/StringBuilder;
 
@@ -5838,7 +6348,7 @@
 
     move-result-object v5
 
-    .line 505
+    .line 568
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->carName(I)Ljava/lang/String;
 
     move-result-object v6
@@ -5851,7 +6361,7 @@
 
     move-result-object v5
 
-    .line 506
+    .line 569
     invoke-virtual {p0}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
     move-result-object v6
@@ -5890,7 +6400,7 @@
 
     move-result-object v3
 
-    .line 508
+    .line 571
     invoke-virtual {p0}, Ljava/io/File;->length()J
 
     move-result-wide v5
@@ -5913,10 +6423,10 @@
 
     move-result-object v3
 
-    .line 504
+    .line 567
     invoke-static {v2, v3}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 510
+    .line 573
     if-nez v4, :cond_90
 
     const-string v3, "invalid-size-or-decode"
@@ -5925,15 +6435,15 @@
     :try_end_90
     .catchall {:try_start_10 .. :try_end_90} :catchall_91
 
-    .line 515
+    .line 578
     :cond_90
     goto :goto_c5
 
-    .line 511
+    .line 574
     :catchall_91
     move-exception v3
 
-    .line 512
+    .line 575
     new-instance v4, Ljava/lang/StringBuilder;
 
     invoke-direct {v4}, Ljava/lang/StringBuilder;-><init>()V
@@ -5952,7 +6462,7 @@
 
     move-result-object v1
 
-    .line 513
+    .line 576
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->carName(I)Ljava/lang/String;
 
     move-result-object v4
@@ -5977,19 +6487,19 @@
 
     move-result-object v0
 
-    .line 512
+    .line 575
     invoke-static {v2, v0, v3}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 514
+    .line 577
     const-string v0, "exception"
 
     invoke-static {p0, p1, p2, v0}, Lcom/trueaxis/modmenu/ModMenu;->quarantineLivery(Ljava/io/File;ILjava/lang/String;Ljava/lang/String;)V
 
-    .line 516
+    .line 579
     :goto_c5
     return-void
 
-    .line 498
+    .line 561
     :cond_c6
     :goto_c6
     return-void
@@ -6003,7 +6513,7 @@
         }
     .end annotation
 
-    .line 1135
+    .line 1236
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -6028,7 +6538,7 @@
 
     move-result-object v0
 
-    .line 1136
+    .line 1237
     invoke-virtual {p1}, Landroid/graphics/Bitmap;->getWidth()I
 
     move-result v1
@@ -6055,17 +6565,17 @@
 
     move-result-object v0
 
-    .line 1135
+    .line 1236
     const-string v1, "livery"
 
     invoke-static {v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1137
+    .line 1238
     invoke-virtual {p0}, Ljava/io/File;->getParentFile()Ljava/io/File;
 
     move-result-object v0
 
-    .line 1138
+    .line 1239
     if-eqz v0, :cond_ef
 
     invoke-virtual {v0}, Ljava/io/File;->isDirectory()Z
@@ -6080,7 +6590,7 @@
 
     if-eqz v0, :cond_ef
 
-    .line 1141
+    .line 1242
     :cond_4a
     new-instance v0, Ljava/io/File;
 
@@ -6108,10 +6618,10 @@
 
     invoke-direct {v0, v2}, Ljava/io/File;-><init>(Ljava/lang/String;)V
 
-    .line 1142
+    .line 1243
     nop
 
-    .line 1144
+    .line 1245
     const/4 v2, 0x0
 
     :try_start_68
@@ -6121,7 +6631,7 @@
     :try_end_6d
     .catchall {:try_start_68 .. :try_end_6d} :catchall_e1
 
-    .line 1145
+    .line 1246
     :try_start_6d
     sget-object v4, Landroid/graphics/Bitmap$CompressFormat;->PNG:Landroid/graphics/Bitmap$CompressFormat;
 
@@ -6133,18 +6643,18 @@
 
     if-eqz p1, :cond_d6
 
-    .line 1148
+    .line 1249
     invoke-virtual {v3}, Ljava/io/FileOutputStream;->flush()V
 
-    .line 1149
+    .line 1250
     invoke-static {v3}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
     :try_end_7d
     .catchall {:try_start_6d .. :try_end_7d} :catchall_de
 
-    .line 1150
+    .line 1251
     nop
 
-    .line 1151
+    .line 1252
     :try_start_7e
     invoke-virtual {p0}, Ljava/io/File;->exists()Z
 
@@ -6160,7 +6670,7 @@
 
     goto :goto_93
 
-    .line 1152
+    .line 1253
     :cond_8b
     new-instance p0, Ljava/lang/IllegalStateException;
 
@@ -6170,7 +6680,7 @@
 
     throw p0
 
-    .line 1154
+    .line 1255
     :cond_93
     :goto_93
     invoke-virtual {v0, p0}, Ljava/io/File;->renameTo(Ljava/io/File;)Z
@@ -6179,7 +6689,7 @@
 
     if-eqz p1, :cond_ce
 
-    .line 1155
+    .line 1256
     new-instance p1, Ljava/lang/StringBuilder;
 
     invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
@@ -6204,7 +6714,7 @@
 
     move-result-object p1
 
-    .line 1156
+    .line 1257
     invoke-virtual {p0}, Ljava/io/File;->length()J
 
     move-result-wide v3
@@ -6217,15 +6727,15 @@
 
     move-result-object p0
 
-    .line 1155
+    .line 1256
     invoke-static {v1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
     :try_end_c1
     .catchall {:try_start_7e .. :try_end_c1} :catchall_e1
 
-    .line 1158
+    .line 1259
     invoke-static {v2}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 1159
+    .line 1260
     invoke-virtual {v0}, Ljava/io/File;->exists()Z
 
     move-result p0
@@ -6234,11 +6744,11 @@
 
     invoke-virtual {v0}, Ljava/io/File;->delete()Z
 
-    .line 1161
+    .line 1262
     :cond_cd
     return-void
 
-    .line 1154
+    .line 1255
     :cond_ce
     :try_start_ce
     new-instance p0, Ljava/lang/IllegalStateException;
@@ -6251,7 +6761,7 @@
     :try_end_d6
     .catchall {:try_start_ce .. :try_end_d6} :catchall_e1
 
-    .line 1146
+    .line 1247
     :cond_d6
     :try_start_d6
     new-instance p0, Ljava/lang/IllegalStateException;
@@ -6264,7 +6774,7 @@
     :try_end_de
     .catchall {:try_start_d6 .. :try_end_de} :catchall_de
 
-    .line 1158
+    .line 1259
     :catchall_de
     move-exception p0
 
@@ -6278,7 +6788,7 @@
     :goto_e2
     invoke-static {v2}, Lcom/trueaxis/modmenu/ModMenu;->closeQuietly(Ljava/io/Closeable;)V
 
-    .line 1159
+    .line 1260
     invoke-virtual {v0}, Ljava/io/File;->exists()Z
 
     move-result p1
@@ -6287,11 +6797,11 @@
 
     invoke-virtual {v0}, Ljava/io/File;->delete()Z
 
-    .line 1160
+    .line 1261
     :cond_ee
     throw p0
 
-    .line 1139
+    .line 1240
     :cond_ef
     new-instance p0, Ljava/lang/IllegalStateException;
 
@@ -6305,7 +6815,7 @@
 .method public static ycs2PrefixEnabled(Landroid/content/Context;)Z
     .registers 1
 
-    .line 481
+    .line 544
     const/4 p0, 0x0
 
     return p0

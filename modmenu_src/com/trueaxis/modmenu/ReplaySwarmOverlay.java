@@ -102,6 +102,7 @@ final class ReplaySwarmOverlay {
                 if (catalog != lastCatalog) {
                     lastCatalog = catalog;
                     ModDebugLog.module("swarm", "catalog updated count=" + catalog);
+                    persistCatalog(activity, catalog);
                 }
                 if (state != lastState) {
                     lastState = state;
@@ -153,7 +154,8 @@ final class ReplaySwarmOverlay {
         TextView help = new TextView(activity);
         help.setText(
                 "Pick one primary replay for the camera, then select additional replays "
-                        + "to render as synced ghost cars. Stay in passive replay mode.");
+                        + "to render as synced ghost cars. Watch them together here, or hit "
+                        + "Race to race against the pack (enable race swarm in the mod menu).");
         help.setTextSize(11.0f);
         help.setTextColor(Color.DKGRAY);
         help.setPadding(0, 0, 0, dp(activity, 8));
@@ -236,6 +238,22 @@ final class ReplaySwarmOverlay {
                     }
                 })
                 .show();
+    }
+
+    /** Remember every catalog path so future sessions can re-seed the picker. */
+    private static void persistCatalog(Activity activity, int count) {
+        if (count <= 0) {
+            return;
+        }
+        java.util.ArrayList<String> paths = new java.util.ArrayList<String>(count);
+        byte[] buffer = new byte[PATH_BUFFER];
+        for (int index = 0; index < count; index++) {
+            int length = RequiredPatches.readReplaySwarmCatalogPath(index, buffer);
+            if (length > 0) {
+                paths.add(new String(buffer, 0, length, StandardCharsets.UTF_8));
+            }
+        }
+        ModMenu.rememberSwarmCatalogPaths(activity, paths);
     }
 
     private static String replayLabel(int index, byte[] buffer) {
