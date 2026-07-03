@@ -511,6 +511,44 @@ function Get-ScreenText {
     return ($text -join "`n")
 }
 
+# Fullscreen OCR routinely misses the stylized italic "VIEW REPLAY" banner
+# text. Second chance: crop the button region from the framebuffer, upscale
+# and binarize it (white-on-dark banner), and OCR just that strip. The crop
+# only spans the VIEW REPLAY button, so matching "REPLAY" alone is safe.
+function Test-ViewReplayButtonVisible {
+    $exe = Get-TesseractExe
+    if (-not $exe) { return $false }
+    $raw = Join-Path $RunDir "_ocr-view-replay-probe.png"
+    if (-not (Test-Path -LiteralPath $raw)) { return $false }
+    try {
+        Add-Type -AssemblyName System.Drawing
+        $src = [System.Drawing.Bitmap]::FromFile((Resolve-Path -LiteralPath $raw))
+        if ($src.Width -lt 360 -or $src.Height -lt 318) { $src.Dispose(); return $false }
+        $rect = New-Object System.Drawing.Rectangle(120, 288, 240, 30)
+        $crop = $src.Clone($rect, $src.PixelFormat)
+        $big = New-Object System.Drawing.Bitmap(($crop.Width * 4), ($crop.Height * 4))
+        $g = [System.Drawing.Graphics]::FromImage($big)
+        $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+        $g.DrawImage($crop, 0, 0, $big.Width, $big.Height)
+        $g.Dispose()
+        for ($y = 0; $y -lt $big.Height; $y++) {
+            for ($x = 0; $x -lt $big.Width; $x++) {
+                $p = $big.GetPixel($x, $y)
+                $lum = (0.3 * $p.R + 0.59 * $p.G + 0.11 * $p.B)
+                if ($lum -gt 150) { $big.SetPixel($x, $y, [System.Drawing.Color]::Black) }
+                else { $big.SetPixel($x, $y, [System.Drawing.Color]::White) }
+            }
+        }
+        $out = Join-Path $RunDir "_ocr-view-replay-crop.png"
+        $big.Save($out, [System.Drawing.Imaging.ImageFormat]::Png)
+        $src.Dispose(); $crop.Dispose(); $big.Dispose()
+        $text = (& $exe $out stdout --psm 7 2>$null) -join "`n"
+        return ($text -imatch "REPLAY")
+    } catch {
+        return $false
+    }
+}
+
 function Test-GlLoginPrompt {
     param([string]$Text)
     if (-not $Text) { return $false }
@@ -755,7 +793,7 @@ function Open-RegularStraightOnPassiveReplay {
         Submit-PlayerNamePromptIfPresent | Out-Null
         Dismiss-LoginOverlayIfPresent | Out-Null
         $ocr = Get-ScreenText "view-replay-probe"
-        if ($ocr -notmatch "VIEW\s*REPLAY") {
+        if ($ocr -notmatch "VIEW\s*REPLAY" -and -not (Test-ViewReplayButtonVisible)) {
             # Button not up yet (leaderboard still connecting); keep waiting.
             Start-Sleep -Seconds 3
             continue

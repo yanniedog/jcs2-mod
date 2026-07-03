@@ -38,6 +38,8 @@ pub(crate) const CAMERA_UPDATE_HOOK_BYTES: usize = 16;
 
 pub(crate) const GAME_RENDER_HOOK_BYTES: usize = 16;
 
+pub(crate) const GAME_RENDER_ENTRY_HOOK_BYTES: usize = 16;
+
 pub(crate) const SET_VEL_TO_FRAME_HOOK_BYTES: usize = 16;
 
 pub(crate) const GAME_LEVEL_INTRO_CAMERA_FLAG_OFFSET: usize = 0x1c5;
@@ -149,6 +151,33 @@ pub(crate) static mut CAMERA_UPDATE_THIS: *mut f32 = ptr::null_mut();
 // once-per-second probe line appended to the public log directory.
 pub(crate) static mut GAME_RENDER_TRAMPOLINE: *mut c_void = ptr::null_mut();
 
+/// Game::Render builds the 3D pass view matrix by reading g_pCamera's MFrame
+/// directly (Game::Render+0x1d8: load [[g_pCamera]]+0x00..0x38, invert, then
+/// glMultMatrixf right before World::Render). Hooking its ENTRY and writing the
+/// managed pose there makes us provably the last writer the render samples.
+pub(crate) static mut GAME_RENDER_ENTRY_TRAMPOLINE: *mut c_void = ptr::null_mut();
+
+/// Camera position found in g_pCamera at Game::Render entry BEFORE the managed
+/// pose is re-asserted (diagnostic: shows whether the update-phase writes
+/// survived to the render, or something stock overwrote them in between).
+pub(crate) static mut ORBIT_RENDER_ENTRY_CAM: [f32; 3] = [0.0; 3];
+
+pub(crate) static mut ORBIT_RENDER_ENTRY_CAM_VALID: bool = false;
+
+pub(crate) static ORBIT_PROBE_RENDER_ENTRY_WRITES: AtomicI32 = AtomicI32::new(0);
+
+/// Distance (x1000) between the camera position read back from g_pCamera right
+/// after the render-entry write and the current REPLAY_TARGET_MFRAME position.
+/// This is measured at Game::Render time, i.e. the pose the view matrix is
+/// built from; -1 when not yet measured.
+pub(crate) static ORBIT_RENDER_WRITE_DIST_1000: AtomicI32 = AtomicI32::new(-1);
+
+/// Same distance measured at World::Render time (inside the 3D pass, after the
+/// view matrix was already built from the camera). If this differs from
+/// ORBIT_RENDER_WRITE_DIST_1000 something rewrote the camera between
+/// Game::Render entry and the matrix build; -1 when not yet measured.
+pub(crate) static ORBIT_WORLD_RENDER_DIST_1000: AtomicI32 = AtomicI32::new(-1);
+
 pub(crate) static ORBIT_PROBE_RENDER_GHOST_CALLS: AtomicI32 = AtomicI32::new(0);
 
 pub(crate) static ORBIT_PROBE_CAMERA_UPDATE_CALLS: AtomicI32 = AtomicI32::new(0);
@@ -164,6 +193,15 @@ pub(crate) static ORBIT_PROBE_VIEWER_CAR_DRAWS: AtomicI32 = AtomicI32::new(0);
 pub(crate) type CarSetLightColourFn = unsafe extern "C" fn(*mut c_void, u32, f32);
 
 pub(crate) static mut CAR_SET_LIGHT_COLOUR: *mut c_void = ptr::null_mut();
+
+// Car::Render(bool ghost). With ghost=false it draws the OPAQUE car mesh at
+// the car body's own current MFrame (it multiplies body+0x1c0 onto the GL
+// stack itself). RenderGhost draws only a translucent black silhouette
+// (Car::Render(true) after glColor4f(0,0,0,a)), which is nearly invisible at
+// 480x320; the opaque draw is the visible viewer car.
+pub(crate) type CarRenderFn = unsafe extern "C" fn(*mut c_void, u8);
+
+pub(crate) static mut CAR_RENDER: *mut c_void = ptr::null_mut();
 
 pub(crate) static mut ORBIT_PROBE_FRAME_COUNT: i32 = 0;
 
@@ -281,6 +319,7 @@ pub(crate) unsafe fn reset_free_camera_car_follow() {
     REPLAY_FOLLOW_OBJECT = ptr::null_mut();
     REPLAY_TARGET_MFRAME_VALID = false;
     CAMERA_UPDATE_THIS = ptr::null_mut();
+    ORBIT_RENDER_ENTRY_CAM_VALID = false;
 }
 
 pub(crate) unsafe fn update_free_camera_car_offset() {
@@ -654,9 +693,19 @@ pub(crate) unsafe fn choose_replay_camera_anchor(
     cam_fwd: [f32; 3],
 ) -> Option<replay_camera::CarFrame> {
     if replay_camera::current_mode() == replay_camera::MODE_ORBIT {
-        // Passive View Replay: anchor on the SetVelocitiesToMoveToFrame target
-        // (the pose we also pass to Car::RenderGhost). The follow-object body
-        // trails slightly and Car::Render(false) is a no-op there anyway.
+        // Highest priority: the DynamicObject the stock Camera::Update follows.
+        // The VISIBLE car (Car::Render draws the body MFrame directly, both in
+        // post-race replays and via render_viewer_replay_car's opaque draw in
+        // the passive viewer) sits exactly at these body values, so anchoring
+        // here keeps the drawn car dead-centre. The SetVelocitiesToMoveToFrame
+        // target (t9) leads the body by a couple of units and is the fallback.
+        if let Some(car) = read_body_mframe(REPLAY_FOLLOW_OBJECT) {
+            ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
+            ORBIT_ANCHOR_SOURCE.store(7, Ordering::Release);
+            ORBIT_LAST_ANCHOR = car.pos;
+            ORBIT_LAST_ANCHOR_VALID = true;
+            return Some(car);
+        }
         if VIEW_REPLAY_SESSION && REPLAY_TARGET_MFRAME_VALID {
             if let Some(car) =
                 read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
@@ -667,18 +716,6 @@ pub(crate) unsafe fn choose_replay_camera_anchor(
                 ORBIT_LAST_ANCHOR_VALID = true;
                 return Some(car);
             }
-        }
-        // Highest priority (post-race / active ghost playback): the DynamicObject
-        // the stock Camera::Update follows.
-        if let Some(car) = read_body_mframe(REPLAY_FOLLOW_OBJECT) {
-            // No extrapolation: the render pass draws the car from these same
-            // body values later in the same frame (Car::Render reads the body
-            // MFrame directly), so camera target and drawn car match exactly.
-            ORBIT_ANCHOR_ERROR_1000.store(0, Ordering::Release);
-            ORBIT_ANCHOR_SOURCE.store(7, Ordering::Release);
-            ORBIT_LAST_ANCHOR = car.pos;
-            ORBIT_LAST_ANCHOR_VALID = true;
-            return Some(car);
         }
         // Next: the exact MFrame the renderer drew a replay/ghost car with
         // (captured in Car::RenderGhost).
@@ -1124,6 +1161,7 @@ pub(crate) unsafe fn install_free_camera_hooks() -> bool {
     let set_vel_to_frame =
         resolve(b"_ZN2TA13DynamicObject26SetVelocitiesToMoveToFrameERKNS_6MFrameEf\0");
     let world_render = resolve(b"_ZN5World6RenderEv\0");
+    let game_render = resolve(b"_ZN4Game6RenderEv\0");
     if update_camera.is_null()
         || start_level_intro.is_null()
         || camera_path_update.is_null()
@@ -1131,6 +1169,7 @@ pub(crate) unsafe fn install_free_camera_hooks() -> bool {
         || camera_update.is_null()
         || set_vel_to_frame.is_null()
         || world_render.is_null()
+        || game_render.is_null()
         || !ensure_free_camera_symbols()
     {
         FREE_CAMERA_HOOKS_INSTALLED.store(false, Ordering::Release);
@@ -1171,6 +1210,11 @@ pub(crate) unsafe fn install_free_camera_hooks() -> bool {
         hooked_world_render as *const c_void,
         GAME_RENDER_HOOK_BYTES,
     );
+    GAME_RENDER_ENTRY_TRAMPOLINE = install_inline_hook(
+        game_render,
+        hooked_game_render as *const c_void,
+        GAME_RENDER_ENTRY_HOOK_BYTES,
+    );
     let ok = !GAME_UPDATE_CAMERA_TRAMPOLINE.is_null()
         && !GAME_START_LEVEL_INTRO_TRAMPOLINE.is_null()
         && !CAMERA_PATH_UPDATE_TRAMPOLINE.is_null()
@@ -1178,6 +1222,7 @@ pub(crate) unsafe fn install_free_camera_hooks() -> bool {
         && !CAMERA_UPDATE_TRAMPOLINE.is_null()
         && !SET_VEL_TO_FRAME_TRAMPOLINE.is_null()
         && !GAME_RENDER_TRAMPOLINE.is_null()
+        && !GAME_RENDER_ENTRY_TRAMPOLINE.is_null()
         && ensure_replay_update_hook()
         && ensure_view_replay_hook();
     if !ok {
@@ -1193,9 +1238,89 @@ pub(crate) unsafe fn install_free_camera_hooks() -> bool {
 /// both draw nothing. World::Render is the one 3D-pass call the viewer always
 /// makes (the track is always visible), so it is the reliable injection point.
 pub(crate) unsafe extern "C" fn hooked_world_render(world: *mut c_void) {
+    // Measure where the camera actually sits relative to the drawn-car pose
+    // now that the 3D pass is running (the view matrix was just built).
+    if replay_camera::is_managed()
+        && FREE_CAMERA_ACTIVE.load(Ordering::Acquire)
+        && REPLAY_TARGET_MFRAME_VALID
+    {
+        let camera = current_camera();
+        if !camera.is_null() {
+            if let Some(car) =
+                read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
+            {
+                let pos = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+                let dx = ptr::read_volatile(pos) - car.pos[0];
+                let dy = ptr::read_volatile(pos.add(1)) - car.pos[1];
+                let dz = ptr::read_volatile(pos.add(2)) - car.pos[2];
+                let dist_sq = dx * dx + dy * dy + dz * dz;
+                let dist = dist_sq * fast_inverse_sqrt(dist_sq);
+                ORBIT_WORLD_RENDER_DIST_1000.store((dist * 1000.0) as i32, Ordering::Release);
+            }
+        }
+    }
     let original: GameRenderGhostFn = mem::transmute(GAME_RENDER_TRAMPOLINE);
     original(world);
     render_viewer_replay_car(CURRENT_GAME);
+}
+
+/// Game::Render entry hook: the 3D pass reads g_pCamera's MFrame to build the
+/// view matrix (then glMultMatrixf -> World::Render), AFTER every update-phase
+/// hook has run. Re-pin the managed pose to the freshest drawn-car anchor and
+/// write it here, so the pose the render samples is always ours. The write
+/// happens a handful of instructions before the read, with no stock camera
+/// code in between.
+pub(crate) unsafe extern "C" fn hooked_game_render(game: *mut c_void) {
+    if replay_camera::is_managed()
+        && FREE_CAMERA_ENABLED.load(Ordering::Acquire)
+        && FREE_CAMERA_ACTIVE.load(Ordering::Acquire)
+        && game_show_replay_active()
+    {
+        let camera = current_camera();
+        if !camera.is_null() {
+            // Diagnostic: what the stock code left in the camera for this render.
+            let pos = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+            ORBIT_RENDER_ENTRY_CAM = [
+                ptr::read_volatile(pos),
+                ptr::read_volatile(pos.add(1)),
+                ptr::read_volatile(pos.add(2)),
+            ];
+            ORBIT_RENDER_ENTRY_CAM_VALID = true;
+            // Re-pin to the pose the car is drawn at this frame (same priority
+            // as hooked_camera_update: follow body first, else target MFrame).
+            let target = read_body_mframe(REPLAY_FOLLOW_OBJECT).or_else(|| {
+                if VIEW_REPLAY_SESSION && REPLAY_TARGET_MFRAME_VALID {
+                    read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
+                } else {
+                    None
+                }
+            });
+            if let Some(car) = target {
+                replay_camera::recompute_pose(&car, &mut *ptr::addr_of_mut!(FREE_CAMERA_FRAME));
+            }
+            write_free_camera_frame(camera);
+            if !CAMERA_UPDATE_THIS.is_null() && CAMERA_UPDATE_THIS != camera {
+                write_free_camera_frame(CAMERA_UPDATE_THIS);
+            }
+            ORBIT_PROBE_RENDER_ENTRY_WRITES.fetch_add(1, Ordering::AcqRel);
+            // Ground truth: read the camera back and measure its distance to
+            // the drawn-car pose AT RENDER TIME (the pose the matrix uses).
+            if REPLAY_TARGET_MFRAME_VALID {
+                if let Some(car) = read_transform_car_frame(
+                    ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32,
+                ) {
+                    let dx = ptr::read_volatile(pos) - car.pos[0];
+                    let dy = ptr::read_volatile(pos.add(1)) - car.pos[1];
+                    let dz = ptr::read_volatile(pos.add(2)) - car.pos[2];
+                    let dist_sq = dx * dx + dy * dy + dz * dz;
+                    let dist = dist_sq * fast_inverse_sqrt(dist_sq);
+                    ORBIT_RENDER_WRITE_DIST_1000.store((dist * 1000.0) as i32, Ordering::Release);
+                }
+            }
+        }
+    }
+    let original: GameRenderGhostFn = mem::transmute(GAME_RENDER_ENTRY_TRAMPOLINE);
+    original(game);
 }
 
 /// The passive replay viewer animates an invisible proxy body and never draws
@@ -1228,13 +1353,18 @@ pub(crate) unsafe fn render_viewer_replay_car(game: *mut c_void) {
         let set_light: CarSetLightColourFn = mem::transmute(CAR_SET_LIGHT_COLOUR);
         set_light(car, 0xffff_ffff, 1.0);
     }
-    // Passive viewer cars have car+0x20d set, so Car::Render(false) returns
-    // without drawing. Apply the playback MFrame and call RenderGhost, matching
-    // Game::RenderGhost when its replay guard passes.
-    let render_ghost: CarRenderGhostFn = mem::transmute(CAR_RENDER_GHOST);
-    IN_SWARM_RENDER = true;
-    render_ghost(car, ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32);
-    IN_SWARM_RENDER = false;
+    // OPAQUE Car::Render(false) draw at the body pose the replay is driving
+    // (SetVelocitiesToMoveToFrame keeps it within ~2 units of the playback
+    // pose, and the orbit anchors on the same body). A RenderGhost silhouette
+    // at the SetVel target was tried too, but it reads as a white "double
+    // exposure" leading the real car, so only the opaque draw is kept.
+    if CAR_RENDER.is_null() {
+        CAR_RENDER = resolve(b"_ZN3Car6RenderEb\0");
+    }
+    if !CAR_RENDER.is_null() {
+        let render: CarRenderFn = mem::transmute(CAR_RENDER);
+        render(car, 0);
+    }
     // #region agent log
     if draws % 300 == 0 {
         let ghost_flag =
@@ -1333,6 +1463,32 @@ pub(crate) unsafe fn orbit_probe_log(game: *mut c_void, camera: *const f32) {
         &mut len,
         ORBIT_PROBE_VIEWER_CAR_DRAWS.load(Ordering::Acquire),
     );
+    probe_push(&mut buf, &mut len, b" rw=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        ORBIT_PROBE_RENDER_ENTRY_WRITES.load(Ordering::Acquire),
+    );
+    probe_push(&mut buf, &mut len, b" md=");
+    probe_push_i32(&mut buf, &mut len, replay_camera::current_mode());
+    probe_push(&mut buf, &mut len, b" rad=");
+    probe_push_i32(&mut buf, &mut len, replay_camera::read_diag(1));
+    probe_push(&mut buf, &mut len, b" rr=");
+    probe_push_i32(&mut buf, &mut len, replay_camera::last_write_radius_1000());
+    probe_push(&mut buf, &mut len, b" as=");
+    probe_push_i32(&mut buf, &mut len, ORBIT_ANCHOR_SOURCE.load(Ordering::Acquire));
+    probe_push(&mut buf, &mut len, b" rwd=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        ORBIT_RENDER_WRITE_DIST_1000.load(Ordering::Acquire),
+    );
+    probe_push(&mut buf, &mut len, b" wld=");
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        ORBIT_WORLD_RENDER_DIST_1000.load(Ordering::Acquire),
+    );
     probe_push(&mut buf, &mut len, b" eqc=");
     probe_push_i32(
         &mut buf,
@@ -1370,6 +1526,27 @@ pub(crate) unsafe fn orbit_probe_log(game: *mut c_void, camera: *const f32) {
             ptr::read_volatile(camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS + 2)),
         ]),
     );
+    probe_push_vec(
+        &mut buf,
+        &mut len,
+        b" fw=",
+        Some([
+            FREE_CAMERA_FRAME[FREE_CAMERA_POSITION],
+            FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 1],
+            FREE_CAMERA_FRAME[FREE_CAMERA_POSITION + 2],
+        ]),
+    );
+    probe_push_vec(
+        &mut buf,
+        &mut len,
+        b" rc=",
+        if ORBIT_RENDER_ENTRY_CAM_VALID {
+            Some(ORBIT_RENDER_ENTRY_CAM)
+        } else {
+            None
+        },
+    );
+    probe_push_vec(&mut buf, &mut len, b" tg=", Some(replay_camera::last_write_target()));
     probe_push_vec(
         &mut buf,
         &mut len,
@@ -1482,17 +1659,17 @@ pub(crate) unsafe extern "C" fn hooked_camera_update(
         && FREE_CAMERA_ACTIVE.load(Ordering::Acquire)
         && game_show_replay_active()
     {
-        // Re-pin to the SAME pose the car is drawn at. In the passive viewer
-        // that is the SetVelocitiesToMoveToFrame target (captured just before
-        // this hook, and also what render_viewer_replay_car draws); the body
-        // trails it by up to ~30 units at speed, which reads as an off-center
-        // car. Post-race replays draw from the body, so fall back to it there.
-        let target = if VIEW_REPLAY_SESSION && REPLAY_TARGET_MFRAME_VALID {
-            read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
-        } else {
-            None
-        };
-        if let Some(car) = target.or_else(|| read_body_mframe(object as *mut f32)) {
+        // Re-pin to the SAME pose the car is drawn at: the body MFrame
+        // (Car::Render reads the body directly, in post-race replays and via
+        // the viewer's opaque draw). Fall back to the SetVel target pose.
+        let target = read_body_mframe(object as *mut f32).or_else(|| {
+            if VIEW_REPLAY_SESSION && REPLAY_TARGET_MFRAME_VALID {
+                read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
+            } else {
+                None
+            }
+        });
+        if let Some(car) = target {
             replay_camera::recompute_pose(&car, &mut *ptr::addr_of_mut!(FREE_CAMERA_FRAME));
         }
         write_free_camera_frame(camera as *mut f32);

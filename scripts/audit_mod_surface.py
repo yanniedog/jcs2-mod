@@ -218,6 +218,7 @@ def check_sources(skip_local_assets=False):
         "_ZN2TA13DynamicObject26SetVelocitiesToMoveToFrameERKNS_6MFrameEf",
         "_ZN6Replay17GetGhostTransformEv",
         "_ZN5World6RenderEv",
+        "_ZN4Game6RenderEv",
         "_ZN3Car6RenderEb",
         "_ZN3Car14SetLightColourEjf",
     )

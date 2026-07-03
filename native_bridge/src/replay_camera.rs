@@ -21,7 +21,8 @@
 //!                  world via the live car basis each frame (car-locked angle).
 //!
 //! Frame layout (packed, matches `FREE_CAMERA_FRAME` in lib.rs):
-//!   right @ 0..3, up @ 3..6, forward @ 6..9, position @ 9..12.
+//!   right @ 0..3, up @ 3..6, OUTWARD axis @ 6..9 (the engine's RH view looks
+//!   along minus this row -- see write_look_at), position @ 9..12.
 
 use core::sync::atomic::{AtomicI32, Ordering};
 
@@ -59,10 +60,11 @@ const ORBIT_MIN_RADIUS: f32 = 8.0;
 const ORBIT_TARGET_UP_OFFSET: f32 = 0.0;
 const ORBIT_TARGET_FWD_OFFSET: f32 = 0.0;
 // Initial elevation as an up-component mixed into the horizontal start
-// direction: 0.5 => sin ~= 0.45 (~27 deg above the car). Enough of a downward
-// tilt that the camera looks over the near track lip onto the car from every
-// azimuth, without climbing so high it enters the platforms overhead.
-const ORBIT_INITIAL_ELEVATION: f32 = 0.5;
+// direction: 0.9 => sin ~= 0.67 (~42 deg above the car). Runtime filmstrips at
+// ~27 deg showed the course's slab walls occluding the car from most azimuths
+// at the close orbit radius; the steeper down-angle looks over the near track
+// lip onto the car without climbing into the platforms overhead.
+const ORBIT_INITIAL_ELEVATION: f32 = 0.9;
 const MAX_RADIUS: f32 = 600.0;
 /// Keep elevation just short of the poles so the look-at basis never degenerates.
 /// sin(83 deg) ~= 0.993.
@@ -101,6 +103,19 @@ static DIAG_DIR_Y_1000: AtomicI32 = AtomicI32::new(0);
 static DIAG_DIR_Z_1000: AtomicI32 = AtomicI32::new(0);
 static mut DIAG_LAST_DIR: [f32; 3] = [0.0; 3];
 static mut DIAG_LAST_DIR_VALID: bool = false;
+// Ground-truth probe state: the exact target position and radius used by the
+// most recent pose write (update() or recompute_pose()), so the orbit probe
+// can compare what the math produced against what the camera object holds.
+static mut LAST_WRITE_TARGET: [f32; 3] = [0.0; 3];
+static LAST_WRITE_RADIUS_1000: AtomicI32 = AtomicI32::new(-1);
+
+pub fn last_write_target() -> [f32; 3] {
+    unsafe { LAST_WRITE_TARGET }
+}
+
+pub fn last_write_radius_1000() -> i32 {
+    LAST_WRITE_RADIUS_1000.load(Ordering::Acquire)
+}
 
 /// Car world frame, supplied by lib.rs from the ghost transform. The basis
 /// vectors are the car's local axes expressed in world space.
@@ -224,7 +239,7 @@ pub fn update(dt: f32, car: &CarFrame, frame: &mut [f32; 12]) -> bool {
             MODE_ORBIT => {
                 if dt > 0.0 {
                     let step = clamp(ORBIT_RATE_RAD_PER_S * dt, -MAX_STEP_RAD, MAX_STEP_RAD);
-                    DIR[i] = rotate_about(DIR[i], UP_REF[i], step);
+                    DIR[i] = rotate_azimuth_preserving_elevation(DIR[i], UP_REF[i], step);
                 }
                 (DIR[i], UP_REF[i])
             }
@@ -242,6 +257,8 @@ pub fn update(dt: f32, car: &CarFrame, frame: &mut [f32; 12]) -> bool {
         RADIUS[i] = clamp(RADIUS[i], min_radius_for_mode(mode), MAX_RADIUS);
         let target = camera_target(mode, car);
         let cam_pos = add(target, scale(world_dir, RADIUS[i]));
+        LAST_WRITE_TARGET = target;
+        LAST_WRITE_RADIUS_1000.store((RADIUS[i] * 1000.0) as i32, Ordering::Release);
         // Camera looks straight at the replay car centre on every frame.
         let forward = scale(world_dir, -1.0);
         write_look_at(frame, cam_pos, forward, look_up);
@@ -273,6 +290,8 @@ pub fn recompute_pose(car: &CarFrame, frame: &mut [f32; 12]) -> bool {
         };
         let target = camera_target(mode, car);
         let cam_pos = add(target, scale(world_dir, RADIUS[i]));
+        LAST_WRITE_TARGET = target;
+        LAST_WRITE_RADIUS_1000.store((RADIUS[i] * 1000.0) as i32, Ordering::Release);
         let forward = scale(world_dir, -1.0);
         write_look_at(frame, cam_pos, forward, look_up);
         true
@@ -386,7 +405,9 @@ fn update_diag(frame: &[f32; 12], world_dir: [f32; 3], target: [f32; 3]) {
     let cam_pos = [frame[9], frame[10], frame[11]];
     let to_car = sub(target, cam_pos);
     let radius = length(to_car);
-    let forward = normalize([frame[6], frame[7], frame[8]]).unwrap_or([0.0, 0.0, 1.0]);
+    // Row 2 stores the OUTWARD axis (see write_look_at); the look direction the
+    // render uses is its negation.
+    let forward = normalize([-frame[6], -frame[7], -frame[8]]).unwrap_or([0.0, 0.0, 1.0]);
     let inward = normalize(to_car).unwrap_or(forward);
     DIAG_SAMPLES.fetch_add(1, Ordering::AcqRel);
     DIAG_RADIUS_1000.store((radius * 1000.0) as i32, Ordering::Release);
@@ -404,14 +425,23 @@ fn update_diag(frame: &[f32; 12], world_dir: [f32; 3], target: [f32; 3]) {
     }
 }
 
-/// Build an orthonormal camera basis that looks along `forward`, keeping `up_ref`
-/// as the up reference. Engine handedness: right = up x forward, up = forward x right.
+/// Build an orthonormal camera basis that LOOKS ALONG `forward` (toward the
+/// car), keeping `up_ref` as the up reference.
+///
+/// Engine convention (verified in libtrueaxis disassembly): the camera MFrame
+/// rows go straight into GL modelview columns (MFrame::GetOpenGlMatrix) and
+/// the projection is a standard right-handed GL frustum (glFrustumf emulation
+/// stores m11 = -1), so the view looks along MINUS row 2. Row 2 must therefore
+/// hold the OUTWARD direction (eye minus target), exactly like gluLookAt's
+/// third row. Storing the toward-target direction here renders the view facing
+/// directly away from the car -- the original "orbit exists only in the
+/// diagnostics" bug.
 fn write_look_at(frame: &mut [f32; 12], cam_pos: [f32; 3], forward: [f32; 3], up_ref: [f32; 3]) {
-    let forward = normalize(forward).unwrap_or([0.0, 0.0, 1.0]);
-    let cam_up = sub(up_ref, scale(forward, dot(up_ref, forward)));
-    let cam_up = normalize(cam_up).unwrap_or(up_ref);
-    let right = normalize(cross(cam_up, forward)).unwrap_or([1.0, 0.0, 0.0]);
-    let up = normalize(cross(forward, right)).unwrap_or(cam_up);
+    let f = normalize(forward).unwrap_or([0.0, 0.0, 1.0]);
+    // gluLookAt: side = f x up, up' = side x f, view basis = (side, up', -f).
+    let right = normalize(cross(f, up_ref)).unwrap_or([1.0, 0.0, 0.0]);
+    let up = normalize(cross(right, f)).unwrap_or(up_ref);
+    let outward = scale(f, -1.0);
 
     frame[0] = right[0];
     frame[1] = right[1];
@@ -419,9 +449,9 @@ fn write_look_at(frame: &mut [f32; 12], cam_pos: [f32; 3], forward: [f32; 3], up
     frame[3] = up[0];
     frame[4] = up[1];
     frame[5] = up[2];
-    frame[6] = forward[0];
-    frame[7] = forward[1];
-    frame[8] = forward[2];
+    frame[6] = outward[0];
+    frame[7] = outward[1];
+    frame[8] = outward[2];
     frame[9] = cam_pos[0];
     frame[10] = cam_pos[1];
     frame[11] = cam_pos[2];
@@ -434,6 +464,29 @@ fn rotate_about(v: [f32; 3], axis: [f32; 3], angle: f32) -> [f32; 3] {
     let tangent = cross(axis, v);
     let stepped = add(v, scale(tangent, angle));
     normalize(stepped).unwrap_or(v)
+}
+
+/// Advance `v`'s azimuth about `up` by small `angle` while keeping its
+/// elevation (the `up` component) EXACTLY constant. The plain `rotate_about` +
+/// renormalise bleeds the up component a little every step (the first-order
+/// tangent grows the vector only horizontally, so normalising shrinks the
+/// vertical share); over a long auto-orbit that decayed the camera's ~27 deg
+/// down-angle to near-horizontal, dropping it behind track lips. Rebuilding
+/// from the stored elevation removes the drift entirely.
+fn rotate_azimuth_preserving_elevation(v: [f32; 3], up: [f32; 3], angle: f32) -> [f32; 3] {
+    let e = dot(v, up);
+    let horizontal = sub(v, scale(up, e));
+    let stepped = add(horizontal, scale(cross(up, horizontal), angle));
+    let h_unit = match normalize(stepped) {
+        Some(h) => h,
+        None => return v, // at the pole: nothing to rotate
+    };
+    let h_len_sq = 1.0 - e * e;
+    if h_len_sq <= 0.0 {
+        return v;
+    }
+    let h_len = h_len_sq * fast_inv_sqrt(h_len_sq);
+    normalize(add(scale(h_unit, h_len), scale(up, e))).unwrap_or(v)
 }
 
 // --- small vector helpers (kept local so this module has no lib.rs deps) ---
