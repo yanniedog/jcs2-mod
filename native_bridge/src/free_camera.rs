@@ -1306,9 +1306,9 @@ pub(crate) unsafe extern "C" fn hooked_game_render(game: *mut c_void) {
             // Ground truth: read the camera back and measure its distance to
             // the drawn-car pose AT RENDER TIME (the pose the matrix uses).
             if REPLAY_TARGET_MFRAME_VALID {
-                if let Some(car) = read_transform_car_frame(
-                    ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32,
-                ) {
+                if let Some(car) =
+                    read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
+                {
                     let dx = ptr::read_volatile(pos) - car.pos[0];
                     let dy = ptr::read_volatile(pos.add(1)) - car.pos[1];
                     let dz = ptr::read_volatile(pos.add(2)) - car.pos[2];
@@ -1476,7 +1476,11 @@ pub(crate) unsafe fn orbit_probe_log(game: *mut c_void, camera: *const f32) {
     probe_push(&mut buf, &mut len, b" rr=");
     probe_push_i32(&mut buf, &mut len, replay_camera::last_write_radius_1000());
     probe_push(&mut buf, &mut len, b" as=");
-    probe_push_i32(&mut buf, &mut len, ORBIT_ANCHOR_SOURCE.load(Ordering::Acquire));
+    probe_push_i32(
+        &mut buf,
+        &mut len,
+        ORBIT_ANCHOR_SOURCE.load(Ordering::Acquire),
+    );
     probe_push(&mut buf, &mut len, b" rwd=");
     probe_push_i32(
         &mut buf,
@@ -1546,7 +1550,12 @@ pub(crate) unsafe fn orbit_probe_log(game: *mut c_void, camera: *const f32) {
             None
         },
     );
-    probe_push_vec(&mut buf, &mut len, b" tg=", Some(replay_camera::last_write_target()));
+    probe_push_vec(
+        &mut buf,
+        &mut len,
+        b" tg=",
+        Some(replay_camera::last_write_target()),
+    );
     probe_push_vec(
         &mut buf,
         &mut len,
