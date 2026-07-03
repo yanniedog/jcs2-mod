@@ -71,6 +71,20 @@ public class ModMenu {
     private static final int DEFAULT_ORBIT_RADIUS = 8;
     private static final int DEFAULT_ORBIT_SPEED = 72;
     private static final int DEFAULT_ORBIT_HEIGHT = 42;
+    private static final String K_TRACKSIDE_SIDE_MODE = "trackside_side_mode";
+    private static final String K_TRACKSIDE_SIDE_DIST = "trackside_side_dist";
+    private static final String K_TRACKSIDE_HEIGHT = "trackside_height";
+    private static final String K_TRACKSIDE_MIN_DIST = "trackside_min_dist";
+    private static final String K_TRACKSIDE_MAX_DIST = "trackside_max_dist";
+    private static final String[] TRACKSIDE_SIDE_NAMES = {
+            "Alternate sides", "Left side only", "Right side only" };
+    private static final int DEFAULT_TRACKSIDE_SIDE_DIST = 11;
+    private static final int DEFAULT_TRACKSIDE_HEIGHT = 7;
+    private static final int DEFAULT_TRACKSIDE_MIN_DIST = 35;
+    private static final int DEFAULT_TRACKSIDE_MAX_DIST = 55;
+    private static final String K_CAMERA_CYCLE = "camera_cycle";
+    private static final String K_CAMERA_CYCLE_SECONDS = "camera_cycle_seconds";
+    private static final int DEFAULT_CAMERA_CYCLE_SECONDS = 10;
     private static final String K_REPLAY_SWARM = "replay_swarm";
     private static final String K_RACE_SWARM = "race_ghost_swarm";
     private static final String K_SWARM_CATALOG = "swarm_catalog_paths";
@@ -130,7 +144,9 @@ public class ModMenu {
         view.setAllCaps(false);
         view.setMinHeight(0);
         view.setMinimumHeight(0);
-        view.setPadding(dp(c, 10), dp(c, 7), dp(c, 10), dp(c, 7));
+        view.setTextColor(Color.WHITE);
+        view.setBackgroundDrawable(background(Color.rgb(48, 56, 68), dp(c, 10)));
+        view.setPadding(dp(c, 12), dp(c, 8), dp(c, 12), dp(c, 8));
         return view;
     }
 
@@ -291,9 +307,29 @@ public class ModMenu {
     }
 
     private static TextView sectionHeader(Context c, String text) {
-        TextView view = label(c, text, 12, Color.rgb(255, 128, 0));
-        view.setPadding(0, dp(c, 6), 0, dp(c, 2));
+        TextView view = label(c, text.toUpperCase(java.util.Locale.US), 11,
+                Color.rgb(255, 152, 64));
+        view.setTypeface(view.getTypeface(), android.graphics.Typeface.BOLD);
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            view.setLetterSpacing(0.08f);
+        }
+        view.setPadding(0, 0, 0, dp(c, 6));
         return view;
+    }
+
+    /** Rounded section container: gives the menu its card-based modern look. */
+    private static LinearLayout subCard(Context c) {
+        LinearLayout box = new LinearLayout(c);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(c, 12), dp(c, 10), dp(c, 12), dp(c, 10));
+        box.setBackgroundDrawable(background(Color.rgb(28, 33, 41), dp(c, 12)));
+        return box;
+    }
+
+    private static void addSubCard(Context c, LinearLayout parent, LinearLayout box) {
+        LinearLayout.LayoutParams lp = fill();
+        lp.topMargin = dp(c, 8);
+        parent.addView(box, lp);
     }
 
     private static LinearLayout.LayoutParams fill() {
@@ -491,6 +527,39 @@ public class ModMenu {
         return clamp(prefs(c).getInt(K_ORBIT_HEIGHT, DEFAULT_ORBIT_HEIGHT), 10, 80);
     }
 
+    /** Trackside side selection: 0 alternate, 1 left, 2 right. */
+    public static int tracksideSideMode(Context c) {
+        return clamp(prefs(c).getInt(K_TRACKSIDE_SIDE_MODE, 0), 0, 2);
+    }
+
+    public static int tracksideSideDist(Context c) {
+        return clamp(prefs(c).getInt(K_TRACKSIDE_SIDE_DIST, DEFAULT_TRACKSIDE_SIDE_DIST), 2, 40);
+    }
+
+    public static int tracksideHeight(Context c) {
+        return clamp(prefs(c).getInt(K_TRACKSIDE_HEIGHT, DEFAULT_TRACKSIDE_HEIGHT), 1, 40);
+    }
+
+    /** Distance ahead of the car a fresh trackside camera is placed (min distance). */
+    public static int tracksideMinDist(Context c) {
+        return clamp(prefs(c).getInt(K_TRACKSIDE_MIN_DIST, DEFAULT_TRACKSIDE_MIN_DIST), 10, 150);
+    }
+
+    /** Distance from the camera that triggers the cut to the next one (max distance). */
+    public static int tracksideMaxDist(Context c) {
+        int min = tracksideMinDist(c);
+        int max = clamp(prefs(c).getInt(K_TRACKSIDE_MAX_DIST, DEFAULT_TRACKSIDE_MAX_DIST), 20, 300);
+        return Math.max(max, min + 10);
+    }
+
+    public static boolean cameraCycleEnabled(Context c) {
+        return prefs(c).getBoolean(K_CAMERA_CYCLE, false);
+    }
+
+    public static int cameraCycleSeconds(Context c) {
+        return clamp(prefs(c).getInt(K_CAMERA_CYCLE_SECONDS, DEFAULT_CAMERA_CYCLE_SECONDS), 3, 60);
+    }
+
     /** Replay paths remembered for the swarm picker (newline-separated pref). */
     public static String[] swarmCatalogPaths(Context c) {
         String joined = prefs(c).getString(K_SWARM_CATALOG, "");
@@ -682,10 +751,11 @@ public class ModMenu {
             scroll.setFillViewport(true);
             LinearLayout card = new LinearLayout(a);
             card.setOrientation(LinearLayout.VERTICAL);
-            card.setPadding(dp(a, 10), dp(a, 6), dp(a, 10), dp(a, 8));
-            card.setBackgroundDrawable(background(Color.rgb(28, 32, 38), dp(a, 10)));
+            card.setPadding(dp(a, 2), 0, dp(a, 2), dp(a, 8));
 
-            card.addView(sectionHeader(a, "Mod tools"));
+            LinearLayout toolsCard = subCard(a);
+            addSubCard(a, card, toolsCard);
+            toolsCard.addView(sectionHeader(a, "Mod tools"));
 
             Button liveries = button(a, "Custom liveries");
             liveries.setOnClickListener(new View.OnClickListener() {
@@ -701,22 +771,24 @@ public class ModMenu {
                     UpdateManager.checkNow(a);
                 }
             });
-            addButtonRow(a, card, liveries, updates);
+            addButtonRow(a, toolsCard, liveries, updates);
 
             TextView coreNote = label(a,
                     "Always on: purchase compatibility, expanded checkpoints, blue flame ID.",
                     9, Color.rgb(150, 158, 165));
             coreNote.setPadding(0, dp(a, 4), 0, dp(a, 2));
-            card.addView(coreNote);
+            toolsCard.addView(coreNote);
 
-            card.addView(sectionHeader(a, "Replay free camera"));
-            addCheckBox(a, card,
+            LinearLayout cameraCard = subCard(a);
+            addSubCard(a, card, cameraCard);
+            cameraCard.addView(sectionHeader(a, "Replay camera"));
+            addCheckBox(a, cameraCard,
                     "Enable gesture free camera during replays",
                     K_REPLAY_FREE_CAMERA, true);
 
             TextView cameraModeLabel = label(a, "Camera mode", 11, Color.rgb(210, 216, 222));
             cameraModeLabel.setPadding(0, dp(a, 4), 0, 0);
-            card.addView(cameraModeLabel, fill());
+            cameraCard.addView(cameraModeLabel, fill());
             final Spinner cameraMode = new Spinner(a);
             ArrayAdapter<String> cameraModeAdapter = new ArrayAdapter<String>(a,
                     android.R.layout.simple_spinner_item, REPLAY_CAMERA_MODE_NAMES);
@@ -724,11 +796,88 @@ public class ModMenu {
                     android.R.layout.simple_spinner_dropdown_item);
             cameraMode.setAdapter(cameraModeAdapter);
             cameraMode.setSelection(replayCameraMode(a) - REPLAY_CAMERA_MODE_FIRST);
+
+            // Per-mode parameter groups; only the group for the selected mode is
+            // shown so the menu never displays irrelevant options.
+            final Runnable applyOrbitTuning = new Runnable() {
+                public void run() {
+                    try {
+                        RequiredPatches.setReplayOrbitTuning(
+                                orbitRadius(a), orbitSpeed(a), orbitHeight(a));
+                    } catch (Throwable ignored) {
+                    }
+                }
+            };
+            final LinearLayout orbitParams = new LinearLayout(a);
+            orbitParams.setOrientation(LinearLayout.VERTICAL);
+            orbitParams.setPadding(dp(a, 12), 0, 0, 0);
+            addSeek(a, orbitParams, "Orbit radius", K_ORBIT_RADIUS,
+                    DEFAULT_ORBIT_RADIUS, 4, 40, " units", applyOrbitTuning);
+            addSeek(a, orbitParams, "Rotation speed", K_ORBIT_SPEED,
+                    DEFAULT_ORBIT_SPEED, 5, 180, " deg/s", applyOrbitTuning);
+            addSeek(a, orbitParams, "Camera height", K_ORBIT_HEIGHT,
+                    DEFAULT_ORBIT_HEIGHT, 10, 80, " deg", applyOrbitTuning);
+
+            final Runnable applyTracksideTuning = new Runnable() {
+                public void run() {
+                    try {
+                        RequiredPatches.setReplayTracksideTuning(tracksideSideMode(a),
+                                tracksideSideDist(a), tracksideHeight(a),
+                                tracksideMinDist(a), tracksideMaxDist(a));
+                    } catch (Throwable ignored) {
+                    }
+                }
+            };
+            final LinearLayout tracksideParams = new LinearLayout(a);
+            tracksideParams.setOrientation(LinearLayout.VERTICAL);
+            tracksideParams.setPadding(dp(a, 12), 0, 0, 0);
+            TextView sideLabel = label(a, "Camera side", 11, Color.rgb(210, 216, 222));
+            sideLabel.setPadding(0, dp(a, 4), 0, 0);
+            tracksideParams.addView(sideLabel, fill());
+            final Spinner sideMode = new Spinner(a);
+            ArrayAdapter<String> sideAdapter = new ArrayAdapter<String>(a,
+                    android.R.layout.simple_spinner_item, TRACKSIDE_SIDE_NAMES);
+            sideAdapter.setDropDownViewResource(
+                    android.R.layout.simple_spinner_dropdown_item);
+            sideMode.setAdapter(sideAdapter);
+            sideMode.setSelection(tracksideSideMode(a));
+            sideMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                public void onItemSelected(AdapterView<?> parent, View view, int position,
+                                           long id) {
+                    prefs(a).edit().putInt(K_TRACKSIDE_SIDE_MODE, position).apply();
+                    applyTracksideTuning.run();
+                }
+
+                public void onNothingSelected(AdapterView<?> parent) {
+                }
+            });
+            tracksideParams.addView(sideMode, fill());
+            addSeek(a, tracksideParams, "Distance from track", K_TRACKSIDE_SIDE_DIST,
+                    DEFAULT_TRACKSIDE_SIDE_DIST, 2, 40, " units", applyTracksideTuning);
+            addSeek(a, tracksideParams, "Height above track", K_TRACKSIDE_HEIGHT,
+                    DEFAULT_TRACKSIDE_HEIGHT, 1, 40, " units", applyTracksideTuning);
+            addSeek(a, tracksideParams, "Camera placed ahead (min distance)",
+                    K_TRACKSIDE_MIN_DIST, DEFAULT_TRACKSIDE_MIN_DIST, 10, 150, " units",
+                    applyTracksideTuning);
+            addSeek(a, tracksideParams, "Switch to next camera at (max distance)",
+                    K_TRACKSIDE_MAX_DIST, DEFAULT_TRACKSIDE_MAX_DIST, 20, 300, " units",
+                    applyTracksideTuning);
+
+            final TextView noParamsNote = label(a,
+                    "No extra settings for this mode. Drag to change the view, pinch to zoom.",
+                    9, Color.rgb(150, 158, 165));
+            noParamsNote.setPadding(dp(a, 12), dp(a, 4), 0, 0);
+
             cameraMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 public void onItemSelected(AdapterView<?> parent, View view, int position,
                                            long id) {
                     int mode = position + REPLAY_CAMERA_MODE_FIRST;
                     prefs(a).edit().putInt(K_REPLAY_CAMERA_MODE, mode).apply();
+                    boolean orbit = mode == REPLAY_CAMERA_MODE_FIRST;
+                    boolean trackside = position == REPLAY_CAMERA_MODE_NAMES.length - 1;
+                    orbitParams.setVisibility(orbit ? View.VISIBLE : View.GONE);
+                    tracksideParams.setVisibility(trackside ? View.VISIBLE : View.GONE);
+                    noParamsNote.setVisibility(orbit || trackside ? View.GONE : View.VISIBLE);
                     // Apply live if the native lib is loaded; install-time apply covers
                     // the cold-start case.
                     try {
@@ -740,38 +889,62 @@ public class ModMenu {
                 public void onNothingSelected(AdapterView<?> parent) {
                 }
             });
-            card.addView(cameraMode, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT));
+            cameraCard.addView(cameraMode, fill());
+            cameraCard.addView(orbitParams, fill());
+            cameraCard.addView(tracksideParams, fill());
+            cameraCard.addView(noParamsNote, fill());
+            int initialMode = replayCameraMode(a);
+            boolean initOrbit = initialMode == REPLAY_CAMERA_MODE_FIRST;
+            boolean initTrackside = initialMode
+                    == REPLAY_CAMERA_MODE_FIRST + REPLAY_CAMERA_MODE_NAMES.length - 1;
+            orbitParams.setVisibility(initOrbit ? View.VISIBLE : View.GONE);
+            tracksideParams.setVisibility(initTrackside ? View.VISIBLE : View.GONE);
+            noParamsNote.setVisibility(initOrbit || initTrackside ? View.GONE : View.VISIBLE);
 
-            final Runnable applyOrbitTuning = new Runnable() {
+            final LinearLayout cycleParams = new LinearLayout(a);
+            cycleParams.setOrientation(LinearLayout.VERTICAL);
+            cycleParams.setPadding(dp(a, 12), 0, 0, 0);
+            final Runnable applyCycle = new Runnable() {
                 public void run() {
+                    cycleParams.setVisibility(
+                            cameraCycleEnabled(a) ? View.VISIBLE : View.GONE);
                     try {
-                        RequiredPatches.setReplayOrbitTuning(
-                                orbitRadius(a), orbitSpeed(a), orbitHeight(a));
+                        RequiredPatches.setReplayCameraCycle(
+                                cameraCycleEnabled(a), cameraCycleSeconds(a));
                     } catch (Throwable ignored) {
                     }
                 }
             };
-            addSeek(a, card, "Orbit radius", K_ORBIT_RADIUS,
-                    DEFAULT_ORBIT_RADIUS, 4, 40, " units", applyOrbitTuning);
-            addSeek(a, card, "Orbit rotation speed", K_ORBIT_SPEED,
-                    DEFAULT_ORBIT_SPEED, 5, 180, " deg/s", applyOrbitTuning);
-            addSeek(a, card, "Orbit camera height", K_ORBIT_HEIGHT,
-                    DEFAULT_ORBIT_HEIGHT, 10, 80, " deg", applyOrbitTuning);
+            addCheckBox(a, cameraCard,
+                    "Auto-cycle camera modes during a replay",
+                    K_CAMERA_CYCLE, false, applyCycle);
+            addSeek(a, cycleParams, "Seconds per camera mode", K_CAMERA_CYCLE_SECONDS,
+                    DEFAULT_CAMERA_CYCLE_SECONDS, 3, 60, " s", applyCycle);
+            cycleParams.setVisibility(cameraCycleEnabled(a) ? View.VISIBLE : View.GONE);
+            cameraCard.addView(cycleParams, fill());
 
-            card.addView(sectionHeader(a, "Replay swarm mode"));
+            LinearLayout swarmCard = subCard(a);
+            addSubCard(a, card, swarmCard);
+            swarmCard.addView(sectionHeader(a, "Replay swarm"));
             TextView swarmHelp = label(a,
-                    "Watch or race several replays on one track. Open View Replay, tap "
-                            + "Swarm to pick ghost replays, then watch them together or hit "
-                            + "Race to race the whole pack.",
+                    "Watch or race several replays on one track. Replays are collected "
+                            + "automatically as you open them; tap Swarm during a replay to "
+                            + "pick the pack.",
                     9, Color.rgb(170, 178, 185));
             swarmHelp.setPadding(0, 0, 0, dp(a, 2));
-            card.addView(swarmHelp);
-            addCheckBox(a, card,
+            swarmCard.addView(swarmHelp);
+            final LinearLayout swarmExtras = new LinearLayout(a);
+            swarmExtras.setOrientation(LinearLayout.VERTICAL);
+            swarmExtras.setPadding(dp(a, 12), 0, 0, 0);
+            addCheckBox(a, swarmCard,
                     "Enable replay swarm picker during passive replays",
-                    K_REPLAY_SWARM, false);
-            addCheckBox(a, card,
+                    K_REPLAY_SWARM, false, new Runnable() {
+                        public void run() {
+                            swarmExtras.setVisibility(
+                                    replaySwarmEnabled(a) ? View.VISIBLE : View.GONE);
+                        }
+                    });
+            addCheckBox(a, swarmExtras,
                     "Race against the selected swarm ghosts",
                     K_RACE_SWARM, false, new Runnable() {
                         public void run() {
@@ -781,12 +954,15 @@ public class ModMenu {
                             }
                         }
                     });
+            swarmExtras.setVisibility(replaySwarmEnabled(a) ? View.VISIBLE : View.GONE);
+            swarmCard.addView(swarmExtras, fill());
 
+            LinearLayout splitCard = subCard(a);
+            addSubCard(a, card, splitCard);
             LinearLayout splitHeaderRow = new LinearLayout(a);
             splitHeaderRow.setOrientation(LinearLayout.HORIZONTAL);
             splitHeaderRow.setGravity(Gravity.CENTER_VERTICAL);
-            TextView splitHeader = label(a, "Replay split HUD", 12, Color.rgb(255, 128, 0));
-            splitHeader.setPadding(0, dp(a, 6), 0, dp(a, 2));
+            TextView splitHeader = sectionHeader(a, "Replay split HUD");
             splitHeaderRow.addView(splitHeader, new LinearLayout.LayoutParams(
                     0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
 
@@ -815,19 +991,19 @@ public class ModMenu {
             splitHeaderRow.addView(displayToggle, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT));
-            card.addView(splitHeaderRow, fill());
+            splitCard.addView(splitHeaderRow, fill());
 
             TextView splitHelp = label(a,
                     "Compares your run with the saved replay ghost when timing is available.",
                     9, Color.rgb(170, 178, 185));
             splitHelp.setPadding(0, 0, 0, dp(a, 2));
-            card.addView(splitHelp);
+            splitCard.addView(splitHelp);
 
             final LinearLayout splitOptions = new LinearLayout(a);
             splitOptions.setOrientation(LinearLayout.VERTICAL);
             splitOptions.setPadding(dp(a, 12), 0, 0, 0);
 
-            addCheckBox(a, card,
+            addCheckBox(a, splitCard,
                     "Enable checkpoint/sector deltas vs saved replay ghost",
                     K_CHECKPOINT_SPLITS, true, new Runnable() {
                         public void run() {
@@ -844,8 +1020,8 @@ public class ModMenu {
                     K_SPLIT_SECTOR_DELTA, false);
 
             updateSplitOptionsVisibility(a, splitOptions, displaySliders, displayToggle);
-            card.addView(splitOptions, fill());
-            card.addView(displaySliders, fill());
+            splitCard.addView(splitOptions, fill());
+            splitCard.addView(displaySliders, fill());
 
             scroll.addView(card, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,

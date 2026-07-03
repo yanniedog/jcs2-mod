@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Landroid/view/View$OnClickListener;
+.implements Ljava/lang/Runnable;
 
 
 # annotations
@@ -18,20 +18,24 @@
 
 
 # instance fields
-.field final synthetic val$onPlay:Ljava/lang/Runnable;
+.field final synthetic val$a:Landroid/app/Activity;
+
+.field final synthetic val$swarmExtras:Landroid/widget/LinearLayout;
 
 
 # direct methods
-.method constructor <init>(Ljava/lang/Runnable;)V
-    .registers 2
+.method constructor <init>(Landroid/widget/LinearLayout;Landroid/app/Activity;)V
+    .registers 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 864
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$onPlay:Ljava/lang/Runnable;
+    .line 941
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$swarmExtras:Landroid/widget/LinearLayout;
+
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -40,21 +44,32 @@
 
 
 # virtual methods
-.method public onClick(Landroid/view/View;)V
+.method public run()V
     .registers 3
 
-    .line 866
-    const-string p1, "launcher"
+    .line 943
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$swarmExtras:Landroid/widget/LinearLayout;
 
-    const-string v0, "play button invoking onPlay"
+    .line 944
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
 
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->replaySwarmEnabled(Landroid/content/Context;)Z
 
-    .line 867
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$onPlay:Ljava/lang/Runnable;
+    move-result v1
 
-    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
+    if-eqz v1, :cond_c
 
-    .line 868
+    const/4 v1, 0x0
+
+    goto :goto_e
+
+    :cond_c
+    const/16 v1, 0x8
+
+    .line 943
+    :goto_e
+    invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setVisibility(I)V
+
+    .line 945
     return-void
 .end method

@@ -8,7 +8,7 @@
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+    value = Lcom/trueaxis/modmenu/ModMenu;->showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -18,24 +18,20 @@
 
 
 # instance fields
-.field final synthetic val$a:Landroid/app/Activity;
-
-.field final synthetic val$cars:Landroid/widget/Spinner;
+.field final synthetic val$onPlay:Ljava/lang/Runnable;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/Spinner;)V
-    .registers 3
+.method constructor <init>(Ljava/lang/Runnable;)V
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 1043
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$17;->val$a:Landroid/app/Activity;
-
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$17;->val$cars:Landroid/widget/Spinner;
+    .line 1040
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$17;->val$onPlay:Ljava/lang/Runnable;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -45,60 +41,20 @@
 
 # virtual methods
 .method public onClick(Landroid/view/View;)V
-    .registers 4
+    .registers 3
 
-    .line 1045
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$17;->val$a:Landroid/app/Activity;
+    .line 1042
+    const-string p1, "launcher"
 
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$17;->val$cars:Landroid/widget/Spinner;
+    const-string v0, "play button invoking onPlay"
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$300(Landroid/content/Context;Landroid/widget/Spinner;)V
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1047
-    :try_start_7
-    new-instance p1, Landroid/content/Intent;
+    .line 1043
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$17;->val$onPlay:Ljava/lang/Runnable;
 
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$17;->val$a:Landroid/app/Activity;
+    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
 
-    const-class v1, Lcom/trueaxis/modmenu/LiveryDesignerActivity;
-
-    invoke-direct {p1, v0, v1}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
-
-    .line 1048
-    const-string v0, "car"
-
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$17;->val$cars:Landroid/widget/Spinner;
-
-    invoke-virtual {v1}, Landroid/widget/Spinner;->getSelectedItemPosition()I
-
-    move-result v1
-
-    invoke-virtual {p1, v0, v1}, Landroid/content/Intent;->putExtra(Ljava/lang/String;I)Landroid/content/Intent;
-
-    .line 1049
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$17;->val$a:Landroid/app/Activity;
-
-    invoke-virtual {v0, p1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
-    :try_end_20
-    .catchall {:try_start_7 .. :try_end_20} :catchall_21
-
-    .line 1052
-    goto :goto_29
-
-    .line 1050
-    :catchall_21
-    move-exception p1
-
-    .line 1051
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$17;->val$a:Landroid/app/Activity;
-
-    const-string v0, "Could not open the designer."
-
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
-    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$400(Landroid/content/Context;Ljava/lang/String;)V
-
-    .line 1053
-    :goto_29
+    .line 1044
     return-void
 .end method

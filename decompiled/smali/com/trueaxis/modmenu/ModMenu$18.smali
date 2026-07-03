@@ -3,12 +3,12 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Ljava/lang/Runnable;
+.implements Landroid/view/View$OnClickListener;
 
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+    value = Lcom/trueaxis/modmenu/ModMenu;->showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -20,26 +20,18 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$cars:Landroid/widget/Spinner;
-
-.field final synthetic val$status:Landroid/widget/TextView;
-
 
 # direct methods
-.method constructor <init>(Landroid/widget/Spinner;Landroid/widget/TextView;Landroid/app/Activity;)V
-    .registers 4
+.method constructor <init>(Landroid/app/Activity;)V
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 1073
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$cars:Landroid/widget/Spinner;
-
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$status:Landroid/widget/TextView;
-
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$a:Landroid/app/Activity;
+    .line 1054
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -48,45 +40,21 @@
 
 
 # virtual methods
-.method public run()V
-    .registers 4
+.method public onClick(Landroid/view/View;)V
+    .registers 3
 
-    .line 1075
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$cars:Landroid/widget/Spinner;
+    .line 1056
+    const-string p1, "launcher"
 
-    invoke-virtual {v0}, Landroid/widget/Spinner;->getSelectedItemPosition()I
+    const-string v0, "upload debug logs clicked"
 
-    move-result v0
+    invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1076
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$status:Landroid/widget/TextView;
+    .line 1057
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$a:Landroid/app/Activity;
 
-    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$a:Landroid/app/Activity;
+    invoke-static {p1}, Lcom/trueaxis/modmenu/DebugLogExporter;->uploadNow(Landroid/app/Activity;)V
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
-    invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$500(Landroid/content/Context;I)Ljava/io/File;
-
-    move-result-object v0
-
-    invoke-virtual {v0}, Ljava/io/File;->isFile()Z
-
-    move-result v0
-
-    if-eqz v0, :cond_17
-
-    .line 1077
-    const-string v0, "Active livery: custom"
-
-    goto :goto_19
-
-    .line 1078
-    :cond_17
-    const-string v0, "Active livery: bundled default"
-
-    .line 1076
-    :goto_19
-    invoke-virtual {v1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
-
-    .line 1079
+    .line 1058
     return-void
 .end method

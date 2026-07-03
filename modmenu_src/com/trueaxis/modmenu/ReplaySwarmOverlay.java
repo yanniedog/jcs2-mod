@@ -135,7 +135,14 @@ final class ReplaySwarmOverlay {
 
         configure.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                showPicker(activity, status);
+                ModDebugLog.module("swarm", "swarm button tapped catalog="
+                        + RequiredPatches.readReplaySwarmCatalogCount());
+                try {
+                    showPicker(activity, status);
+                } catch (Throwable error) {
+                    ModDebugLog.module("swarm", "picker failed", error);
+                    toast(activity, "Swarm picker failed: " + error);
+                }
             }
         });
     }
@@ -143,7 +150,13 @@ final class ReplaySwarmOverlay {
     private static void showPicker(final Activity activity, final TextView status) {
         final int count = RequiredPatches.readReplaySwarmCatalogCount();
         if (count <= 0) {
-            toast(activity, "Open a replay first so the swarm catalog can populate.");
+            new AlertDialog.Builder(activity)
+                    .setTitle("No replays known yet")
+                    .setMessage("The swarm list fills up automatically as replays load. "
+                            + "Open a replay (View Replay) or race with a ghost once, then "
+                            + "tap Swarm again. Known replays are remembered across sessions.")
+                    .setPositiveButton("OK", null)
+                    .show();
             return;
         }
 

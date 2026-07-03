@@ -736,6 +736,32 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayOrbi
     replay_camera::configure_orbit(radius_units, deg_per_s, elev_deg);
 }
 
+/// Mod-menu Trackside tuning: side selection (0 alternate / 1 left / 2 right),
+/// lateral offset, height, placement-ahead (min) and switch (max) distances.
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayTracksideTuning(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    side_mode: c_int,
+    side_dist: c_int,
+    height: c_int,
+    min_dist: c_int,
+    max_dist: c_int,
+) {
+    replay_camera::configure_trackside(side_mode, side_dist, height, min_dist, max_dist);
+}
+
+/// Enable camera-mode auto-cycling with the given per-mode dwell seconds.
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayCameraCycle(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    enabled: u8,
+    seconds: c_int,
+) {
+    replay_camera::configure_cycle(enabled != 0, seconds);
+}
+
 /// Enable rendering the selected swarm ghosts during live races too.
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayRaceSwarmEnabled(

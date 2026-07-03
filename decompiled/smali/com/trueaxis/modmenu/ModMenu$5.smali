@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 668
+    .line 737
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,7 +43,7 @@
 .method public onClick(Landroid/view/View;)V
     .registers 7
 
-    .line 671
+    .line 740
     const-string p1, "https://discord.gg/stBdE2Tfs2"
 
     const-string v0, "launcher"
@@ -53,7 +53,7 @@
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 672
+    .line 741
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
     new-instance v2, Landroid/content/Intent;
@@ -70,19 +70,19 @@
     :try_end_19
     .catchall {:try_start_4 .. :try_end_19} :catchall_1a
 
-    .line 676
+    .line 745
     goto :goto_2a
 
-    .line 673
+    .line 742
     :catchall_1a
     move-exception v1
 
-    .line 674
+    .line 743
     const-string v2, "open link failed url=https://discord.gg/stBdE2Tfs2"
 
     invoke-static {v0, v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 675
+    .line 744
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$5;->val$a:Landroid/app/Activity;
 
     const/4 v1, 0x1
@@ -93,7 +93,7 @@
 
     invoke-virtual {p1}, Landroid/widget/Toast;->show()V
 
-    .line 677
+    .line 746
     :goto_2a
     return-void
 .end method

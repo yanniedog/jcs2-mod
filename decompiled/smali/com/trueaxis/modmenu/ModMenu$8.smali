@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Landroid/widget/AdapterView$OnItemSelectedListener;
+.implements Ljava/lang/Runnable;
 
 
 # annotations
@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 727
+    .line 802
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -40,68 +40,43 @@
 
 
 # virtual methods
-.method public onItemSelected(Landroid/widget/AdapterView;Landroid/view/View;IJ)V
-    .registers 6
-    .annotation system Ldalvik/annotation/Signature;
-        value = {
-            "(",
-            "Landroid/widget/AdapterView<",
-            "*>;",
-            "Landroid/view/View;",
-            "IJ)V"
-        }
-    .end annotation
+.method public run()V
+    .registers 4
 
-    .line 730
-    add-int/lit8 p3, p3, 0x1
+    .line 805
+    :try_start_0
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
 
-    .line 731
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
+    .line 806
+    invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->orbitRadius(Landroid/content/Context;)I
 
-    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+    move-result v0
 
-    move-result-object p1
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
 
-    invoke-interface {p1}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
+    invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->orbitSpeed(Landroid/content/Context;)I
 
-    move-result-object p1
+    move-result v1
 
-    const-string p2, "replay_camera_mode"
+    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
 
-    invoke-interface {p1, p2, p3}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
+    invoke-static {v2}, Lcom/trueaxis/modmenu/ModMenu;->orbitHeight(Landroid/content/Context;)I
 
-    move-result-object p1
+    move-result v2
 
-    invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
+    .line 805
+    invoke-static {v0, v1, v2}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayOrbitTuning(III)V
+    :try_end_15
+    .catchall {:try_start_0 .. :try_end_15} :catchall_16
 
-    .line 735
-    :try_start_15
-    invoke-static {p3}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayCameraMode(I)V
-    :try_end_18
-    .catchall {:try_start_15 .. :try_end_18} :catchall_19
+    .line 808
+    goto :goto_17
 
-    .line 737
-    goto :goto_1a
+    .line 807
+    :catchall_16
+    move-exception v0
 
-    .line 736
-    :catchall_19
-    move-exception p1
-
-    .line 738
-    :goto_1a
-    return-void
-.end method
-
-.method public onNothingSelected(Landroid/widget/AdapterView;)V
-    .registers 2
-    .annotation system Ldalvik/annotation/Signature;
-        value = {
-            "(",
-            "Landroid/widget/AdapterView<",
-            "*>;)V"
-        }
-    .end annotation
-
-    .line 741
+    .line 809
+    :goto_17
     return-void
 .end method

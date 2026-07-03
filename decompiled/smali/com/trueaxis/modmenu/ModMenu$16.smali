@@ -3,12 +3,12 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Landroid/widget/SeekBar$OnSeekBarChangeListener;
+.implements Ljava/lang/Runnable;
 
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->addSeek(Landroid/content/Context;Landroid/widget/LinearLayout;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/String;Ljava/lang/Runnable;)Landroid/widget/LinearLayout;
+    value = Lcom/trueaxis/modmenu/ModMenu;->showPreLaunchMenu(Landroid/app/Activity;Ljava/lang/Runnable;)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -18,44 +18,32 @@
 
 
 # instance fields
-.field final synthetic val$afterChange:Ljava/lang/Runnable;
+.field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$c:Landroid/content/Context;
+.field final synthetic val$displaySliders:Landroid/widget/LinearLayout;
 
-.field final synthetic val$key:Ljava/lang/String;
+.field final synthetic val$displayToggle:Landroid/widget/Button;
 
-.field final synthetic val$label:Ljava/lang/String;
-
-.field final synthetic val$min:I
-
-.field final synthetic val$suffix:Ljava/lang/String;
-
-.field final synthetic val$value:Landroid/widget/TextView;
+.field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
 
 
 # direct methods
-.method constructor <init>(ILandroid/content/Context;Ljava/lang/String;Landroid/widget/TextView;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Runnable;)V
-    .registers 8
+.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/LinearLayout;Landroid/widget/Button;)V
+    .registers 5
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 983
-    iput p1, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$min:I
+    .line 1008
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$a:Landroid/app/Activity;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$c:Landroid/content/Context;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$splitOptions:Landroid/widget/LinearLayout;
 
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$key:Ljava/lang/String;
+    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displaySliders:Landroid/widget/LinearLayout;
 
-    iput-object p4, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$value:Landroid/widget/TextView;
-
-    iput-object p5, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$label:Ljava/lang/String;
-
-    iput-object p6, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$suffix:Ljava/lang/String;
-
-    iput-object p7, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$afterChange:Ljava/lang/Runnable;
+    iput-object p4, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displayToggle:Landroid/widget/Button;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -64,103 +52,21 @@
 
 
 # virtual methods
-.method public onProgressChanged(Landroid/widget/SeekBar;IZ)V
+.method public run()V
     .registers 5
 
-    .line 985
-    iget p1, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$min:I
+    .line 1010
+    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$a:Landroid/app/Activity;
 
-    add-int/2addr p1, p2
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$splitOptions:Landroid/widget/LinearLayout;
 
-    .line 986
-    iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$c:Landroid/content/Context;
+    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displaySliders:Landroid/widget/LinearLayout;
 
-    invoke-static {p2}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+    iget-object v3, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displayToggle:Landroid/widget/Button;
 
-    move-result-object p2
+    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
+    invoke-static {v0, v1, v2, v3}, Lcom/trueaxis/modmenu/ModMenu;->access$200(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
 
-    invoke-interface {p2}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
-
-    move-result-object p2
-
-    iget-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$key:Ljava/lang/String;
-
-    invoke-interface {p2, p3, p1}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
-
-    move-result-object p2
-
-    invoke-interface {p2}, Landroid/content/SharedPreferences$Editor;->apply()V
-
-    .line 987
-    iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$value:Landroid/widget/TextView;
-
-    iget-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$label:Ljava/lang/String;
-
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$suffix:Ljava/lang/String;
-
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSeekLabel(Landroid/widget/TextView;Ljava/lang/String;ILjava/lang/String;)V
-    invoke-static {p2, p3, p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$200(Landroid/widget/TextView;Ljava/lang/String;ILjava/lang/String;)V
-
-    .line 988
-    iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$afterChange:Ljava/lang/Runnable;
-
-    if-eqz p2, :cond_28
-
-    .line 989
-    iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$afterChange:Ljava/lang/Runnable;
-
-    invoke-interface {p2}, Ljava/lang/Runnable;->run()V
-
-    .line 991
-    :cond_28
-    new-instance p2, Ljava/lang/StringBuilder;
-
-    invoke-direct {p2}, Ljava/lang/StringBuilder;-><init>()V
-
-    const-string p3, "option changed key="
-
-    invoke-virtual {p2, p3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p2
-
-    iget-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$key:Ljava/lang/String;
-
-    invoke-virtual {p2, p3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p2
-
-    const-string p3, " value="
-
-    invoke-virtual {p2, p3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object p2
-
-    invoke-virtual {p2, p1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    move-result-object p1
-
-    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p1
-
-    const-string p2, "launcher"
-
-    invoke-static {p2, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
-
-    .line 992
-    return-void
-.end method
-
-.method public onStartTrackingTouch(Landroid/widget/SeekBar;)V
-    .registers 2
-
-    .line 995
-    return-void
-.end method
-
-.method public onStopTrackingTouch(Landroid/widget/SeekBar;)V
-    .registers 2
-
-    .line 998
+    .line 1012
     return-void
 .end method

@@ -7,6 +7,12 @@ pub(crate) const USER_TRACK_FLAG_LAPS: u8 = 0x01;
 
 pub(crate) const USER_TRACK_FLAG_BOOST_REGEN: u8 = 0x02;
 
+/// Waypoint/checkpoint-marker gameplay (the stock Time Trial level type).
+/// Only settable in the YCS2 Create menu; stored in the same on-disk marker
+/// as laps/boost-regen, so existing user levels and stock levels can never
+/// acquire it.
+pub(crate) const USER_TRACK_FLAG_WAYPOINTS: u8 = 0x04;
+
 pub(crate) const USER_TRACK_FLAGS_MAGIC_V1: &[u8] = b"YCS2TRACKFLAGS:1:";
 
 pub(crate) const USER_TRACK_FLAGS_MAGIC_V2: &[u8] = b"YCS2TRACKFLAGS:2:";
@@ -58,6 +64,12 @@ pub(crate) const USER_TRACK_BOOST_BUTTON_X: c_int =
     UIFORM_CREATE_CAR_PANEL_X + USER_TRACK_SWITCH_LOCAL_X;
 
 pub(crate) const USER_TRACK_BOOST_BUTTON_Y: c_int = UIFORM_CREATE_CAR_PANEL_Y + 0x7f;
+
+pub(crate) const USER_TRACK_WAYPOINTS_BUTTON_X: c_int =
+    UIFORM_CREATE_CAR_PANEL_X + USER_TRACK_SWITCH_LOCAL_X;
+
+/// Same vertical spacing below the boost switch as boost sits below laps.
+pub(crate) const USER_TRACK_WAYPOINTS_BUTTON_Y: c_int = UIFORM_CREATE_CAR_PANEL_Y + 0xd4;
 
 pub(crate) const USER_TRACK_SWITCH_BUTTON_WIDTH: c_int = 0x1b8;
 
@@ -173,6 +185,8 @@ pub(crate) static mut GAME_ON_CHECKPOINT_TRAMPOLINE: *mut c_void = ptr::null_mut
 pub(crate) static mut USER_TRACK_LAPS_BUTTON: *mut c_void = ptr::null_mut();
 
 pub(crate) static mut USER_TRACK_BOOST_REGEN_BUTTON: *mut c_void = ptr::null_mut();
+
+pub(crate) static mut USER_TRACK_WAYPOINTS_BUTTON: *mut c_void = ptr::null_mut();
 
 pub(crate) static USER_TRACK_HOOKS_INSTALLED: AtomicBool = AtomicBool::new(false);
 
@@ -308,6 +322,14 @@ pub(crate) unsafe fn refresh_user_track_create_switch_labels() {
             b"BOOST REGEN: OFF\0".as_ptr() as *const c_char,
         ),
     );
+    set_switch_button_label(
+        USER_TRACK_WAYPOINTS_BUTTON,
+        label_for_switch(
+            USER_TRACK_FLAG_WAYPOINTS,
+            b"WAYPOINTS: ON\0".as_ptr() as *const c_char,
+            b"WAYPOINTS: OFF\0".as_ptr() as *const c_char,
+        ),
+    );
 }
 
 pub(crate) unsafe fn cycle_user_track_lap_count() {
@@ -343,6 +365,10 @@ pub(crate) unsafe extern "C" fn on_laps_create_switch_clicked(_button: *mut c_vo
 
 pub(crate) unsafe extern "C" fn on_boost_regen_create_switch_clicked(_button: *mut c_void) {
     toggle_user_track_create_flag(USER_TRACK_FLAG_BOOST_REGEN);
+}
+
+pub(crate) unsafe extern "C" fn on_waypoints_create_switch_clicked(_button: *mut c_void) {
+    toggle_user_track_create_flag(USER_TRACK_FLAG_WAYPOINTS);
 }
 
 pub(crate) unsafe fn add_create_switch_button(
@@ -407,6 +433,13 @@ pub(crate) unsafe fn add_user_track_switches(form: *mut c_void, reset_flags: boo
         b"BOOST REGEN: OFF\0".as_ptr() as *const c_char,
         on_boost_regen_create_switch_clicked,
     );
+    USER_TRACK_WAYPOINTS_BUTTON = add_create_switch_button(
+        form,
+        USER_TRACK_WAYPOINTS_BUTTON_X,
+        USER_TRACK_WAYPOINTS_BUTTON_Y,
+        b"WAYPOINTS: OFF\0".as_ptr() as *const c_char,
+        on_waypoints_create_switch_clicked,
+    );
     if !reset_flags {
         refresh_user_track_create_switch_labels();
     }
@@ -455,7 +488,8 @@ pub(crate) fn effective_lap_count(lap_count: u8) -> c_int {
 }
 
 pub(crate) fn marker_flags_byte(flags: u8) -> u8 {
-    b'0' + (flags & (USER_TRACK_FLAG_LAPS | USER_TRACK_FLAG_BOOST_REGEN))
+    b'0' + (flags
+        & (USER_TRACK_FLAG_LAPS | USER_TRACK_FLAG_BOOST_REGEN | USER_TRACK_FLAG_WAYPOINTS))
 }
 
 pub(crate) fn marker_lap_count_byte(flags: u8, lap_count: u8) -> u8 {
@@ -467,7 +501,10 @@ pub(crate) fn marker_lap_count_byte(flags: u8, lap_count: u8) -> u8 {
 }
 
 pub(crate) fn parse_marker_flags(value: u8) -> u8 {
-    if value >= b'0' && value <= b'3' {
+    // '0'..'7': laps 0x01 | boost-regen 0x02 | waypoints 0x04. Older mod
+    // builds parsed only '0'..'3' and treat a waypoint-flagged marker as no
+    // flags, which degrades safely (standard level behavior).
+    if value >= b'0' && value <= b'7' {
         value - b'0'
     } else {
         0
@@ -599,7 +636,10 @@ pub(crate) unsafe fn settings_for_level_id(level_id: c_uint) -> (u8, u8) {
 }
 
 pub(crate) unsafe fn apply_user_track_level_settings(level_id: c_uint, flags: u8, lap_count: u8) {
-    if (flags & USER_TRACK_FLAG_LAPS) == 0 {
+    // Laps and Waypoints both run the level as the stock Time Trial type
+    // (checkpoint waypoint markers); laps additionally sets the lap total,
+    // waypoints alone stays a single lap.
+    if (flags & (USER_TRACK_FLAG_LAPS | USER_TRACK_FLAG_WAYPOINTS)) == 0 {
         return;
     }
     let level = level_for_id(level_id);
@@ -607,7 +647,11 @@ pub(crate) unsafe fn apply_user_track_level_settings(level_id: c_uint, flags: u8
         return;
     }
     ptr::write_volatile(level.add(LEVEL_TYPE_OFFSET) as *mut c_int, LEVEL_TYPE_LAPS);
-    let lap_total = effective_lap_count(lap_count);
+    let lap_total = if (flags & USER_TRACK_FLAG_LAPS) != 0 {
+        effective_lap_count(lap_count)
+    } else {
+        1
+    };
     ptr::write_volatile(level.add(LEVEL_LAP_COUNT_OFFSET) as *mut c_int, lap_total);
 }
 

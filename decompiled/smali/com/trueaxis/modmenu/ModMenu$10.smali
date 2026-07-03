@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Ljava/lang/Runnable;
+.implements Landroid/widget/AdapterView$OnItemSelectedListener;
 
 
 # annotations
@@ -20,18 +20,22 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
+.field final synthetic val$applyTracksideTuning:Ljava/lang/Runnable;
+
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;)V
-    .registers 2
+.method constructor <init>(Landroid/app/Activity;Ljava/lang/Runnable;)V
+    .registers 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 776
+    .line 844
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
+
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$applyTracksideTuning:Ljava/lang/Runnable;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -40,29 +44,56 @@
 
 
 # virtual methods
-.method public run()V
+.method public onItemSelected(Landroid/widget/AdapterView;Landroid/view/View;IJ)V
+    .registers 6
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "(",
+            "Landroid/widget/AdapterView<",
+            "*>;",
+            "Landroid/view/View;",
+            "IJ)V"
+        }
+    .end annotation
+
+    .line 847
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
+
+    invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object p1
+
+    invoke-interface {p1}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
+
+    move-result-object p1
+
+    const-string p2, "trackside_side_mode"
+
+    invoke-interface {p1, p2, p3}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
+
+    move-result-object p1
+
+    invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
+
+    .line 848
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$applyTracksideTuning:Ljava/lang/Runnable;
+
+    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
+
+    .line 849
+    return-void
+.end method
+
+.method public onNothingSelected(Landroid/widget/AdapterView;)V
     .registers 2
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "(",
+            "Landroid/widget/AdapterView<",
+            "*>;)V"
+        }
+    .end annotation
 
-    .line 779
-    :try_start_0
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
-
-    invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->raceSwarmEnabled(Landroid/content/Context;)Z
-
-    move-result v0
-
-    invoke-static {v0}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayRaceSwarmEnabled(Z)V
-    :try_end_9
-    .catchall {:try_start_0 .. :try_end_9} :catchall_a
-
-    .line 781
-    goto :goto_b
-
-    .line 780
-    :catchall_a
-    move-exception v0
-
-    .line 782
-    :goto_b
+    .line 852
     return-void
 .end method
