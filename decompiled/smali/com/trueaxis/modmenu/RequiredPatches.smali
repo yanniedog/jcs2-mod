@@ -438,7 +438,7 @@
 
     const/4 v2, 0x0
 
-    if-eqz v1, :cond_1a3
+    if-eqz v1, :cond_1a7
 
     .line 80
     :try_start_13e
@@ -468,7 +468,7 @@
     array-length v5, v4
 
     :goto_152
-    if-ge v2, v5, :cond_168
+    if-ge v2, v5, :cond_16c
 
     aget-object v6, v4, v2
 
@@ -477,12 +477,16 @@
 
     move-result v7
 
-    if-lez v7, :cond_165
+    if-lez v7, :cond_169
 
     .line 87
-    sget-object v7, Ljava/nio/charset/StandardCharsets;->UTF_8:Ljava/nio/charset/Charset;
+    const-string v7, "UTF-8"
 
     .line 88
+    invoke-static {v7}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
+
+    move-result-object v7
+
     invoke-virtual {v6, v7}, Ljava/lang/String;->getBytes(Ljava/nio/charset/Charset;)[B
 
     move-result-object v6
@@ -491,13 +495,13 @@
     invoke-static {v6}, Lcom/trueaxis/modmenu/RequiredPatches;->addReplaySwarmCatalogPath([B)V
 
     .line 85
-    :cond_165
+    :cond_169
     add-int/lit8 v2, v2, 0x1
 
     goto :goto_152
 
     .line 91
-    :cond_168
+    :cond_16c
     new-instance v2, Ljava/lang/StringBuilder;
 
     invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
@@ -541,17 +545,17 @@
     invoke-static {v2}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
     .line 94
-    if-eqz v1, :cond_1a2
+    if-eqz v1, :cond_1a6
 
     .line 95
     invoke-static {p0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->install(Landroid/app/Activity;)V
-    :try_end_198
-    .catchall {:try_start_13e .. :try_end_198} :catchall_199
+    :try_end_19c
+    .catchall {:try_start_13e .. :try_end_19c} :catchall_19d
 
-    goto :goto_1a2
+    goto :goto_1a6
 
     .line 97
-    :catchall_199
+    :catchall_19d
     move-exception v1
 
     .line 98
@@ -563,31 +567,31 @@
     invoke-static {v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
     .line 100
-    :cond_1a2
-    :goto_1a2
-    goto :goto_1a8
+    :cond_1a6
+    :goto_1a6
+    goto :goto_1ac
 
     .line 103
-    :cond_1a3
-    :try_start_1a3
+    :cond_1a7
+    :try_start_1a7
     invoke-static {v2}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplaySwarmEnabled(Z)V
-    :try_end_1a6
-    .catchall {:try_start_1a3 .. :try_end_1a6} :catchall_1a7
+    :try_end_1aa
+    .catchall {:try_start_1a7 .. :try_end_1aa} :catchall_1ab
 
     .line 105
-    goto :goto_1a8
+    goto :goto_1ac
 
     .line 104
-    :catchall_1a7
+    :catchall_1ab
     move-exception v1
 
     .line 107
-    :goto_1a8
+    :goto_1ac
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->checkpointSplitsEnabled(Landroid/content/Context;)Z
 
     move-result v1
 
-    if-eqz v1, :cond_1c1
+    if-eqz v1, :cond_1c5
 
     .line 108
     const-string v1, "checkpoint split HUD enabled"
@@ -595,17 +599,17 @@
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
     .line 110
-    :try_start_1b3
+    :try_start_1b7
     invoke-static {p0}, Lcom/trueaxis/modmenu/SplitTimeHud;->install(Landroid/app/Activity;)V
-    :try_end_1b6
-    .catchall {:try_start_1b3 .. :try_end_1b6} :catchall_1b7
+    :try_end_1ba
+    .catchall {:try_start_1b7 .. :try_end_1ba} :catchall_1bb
 
     .line 114
-    :goto_1b6
-    goto :goto_1c6
+    :goto_1ba
+    goto :goto_1ca
 
     .line 111
-    :catchall_1b7
+    :catchall_1bb
     move-exception p0
 
     .line 112
@@ -616,16 +620,16 @@
     .line 113
     invoke-static {v1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    goto :goto_1b6
+    goto :goto_1ba
 
     .line 116
-    :cond_1c1
+    :cond_1c5
     const-string p0, "checkpoint split HUD disabled"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
     .line 118
-    :goto_1c6
+    :goto_1ca
     const-string p0, "after RequiredPatches.apply"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->logRuntime(Ljava/lang/String;)V

@@ -335,7 +335,7 @@
     const/4 v3, 0x0
 
     :goto_e
-    if-ge v3, p1, :cond_23
+    if-ge v3, p1, :cond_27
 
     .line 251
     invoke-static {v3, v1}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmCatalogPath(I[B)I
@@ -343,25 +343,29 @@
     move-result v4
 
     .line 252
-    if-lez v4, :cond_20
+    if-lez v4, :cond_24
 
     .line 253
     new-instance v5, Ljava/lang/String;
 
-    sget-object v6, Ljava/nio/charset/StandardCharsets;->UTF_8:Ljava/nio/charset/Charset;
+    const-string v6, "UTF-8"
+
+    invoke-static {v6}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
+
+    move-result-object v6
 
     invoke-direct {v5, v1, v2, v4, v6}, Ljava/lang/String;-><init>([BIILjava/nio/charset/Charset;)V
 
     invoke-virtual {v0, v5}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
 
     .line 250
-    :cond_20
+    :cond_24
     add-int/lit8 v3, v3, 0x1
 
     goto :goto_e
 
     .line 256
-    :cond_23
+    :cond_27
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ModMenu;->rememberSwarmCatalogPaths(Landroid/content/Context;Ljava/util/List;)V
 
     .line 257
@@ -406,11 +410,15 @@
     :cond_1c
     new-instance p0, Ljava/lang/String;
 
-    const/4 v1, 0x0
+    const-string v1, "UTF-8"
 
-    sget-object v2, Ljava/nio/charset/StandardCharsets;->UTF_8:Ljava/nio/charset/Charset;
+    invoke-static {v1}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
 
-    invoke-direct {p0, p1, v1, v0, v2}, Ljava/lang/String;-><init>([BIILjava/nio/charset/Charset;)V
+    move-result-object v1
+
+    const/4 v2, 0x0
+
+    invoke-direct {p0, p1, v2, v0, v1}, Ljava/lang/String;-><init>([BIILjava/nio/charset/Charset;)V
 
     .line 265
     const/16 p1, 0x2f
@@ -420,7 +428,7 @@
     move-result p1
 
     .line 266
-    if-ltz p1, :cond_39
+    if-ltz p1, :cond_3d
 
     add-int/lit8 p1, p1, 0x1
 
@@ -428,7 +436,7 @@
 
     move-result v0
 
-    if-ge p1, v0, :cond_39
+    if-ge p1, v0, :cond_3d
 
     .line 267
     invoke-virtual {p0, p1}, Ljava/lang/String;->substring(I)Ljava/lang/String;
@@ -438,7 +446,7 @@
     return-object p0
 
     .line 269
-    :cond_39
+    :cond_3d
     return-object p0
 .end method
 

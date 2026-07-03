@@ -18,7 +18,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 
 /** In-replay picker and status overlay for multi-replay swarm mode. */
 final class ReplaySwarmOverlay {
@@ -250,7 +250,7 @@ final class ReplaySwarmOverlay {
         for (int index = 0; index < count; index++) {
             int length = RequiredPatches.readReplaySwarmCatalogPath(index, buffer);
             if (length > 0) {
-                paths.add(new String(buffer, 0, length, StandardCharsets.UTF_8));
+                paths.add(new String(buffer, 0, length, Charset.forName("UTF-8")));
             }
         }
         ModMenu.rememberSwarmCatalogPaths(activity, paths);
@@ -261,7 +261,7 @@ final class ReplaySwarmOverlay {
         if (length <= 0) {
             return "Replay " + (index + 1);
         }
-        String path = new String(buffer, 0, length, StandardCharsets.UTF_8);
+        String path = new String(buffer, 0, length, Charset.forName("UTF-8"));
         int slash = path.lastIndexOf('/');
         if (slash >= 0 && slash + 1 < path.length()) {
             return path.substring(slash + 1);

@@ -85,7 +85,7 @@ public final class RequiredPatches {
                 for (String path : rememberedPaths) {
                     if (path.length() > 0) {
                         addReplaySwarmCatalogPath(
-                                path.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                                path.getBytes(java.nio.charset.Charset.forName("UTF-8")));
                     }
                 }
                 ModDebugLog.log("replay swarm hooks installed=" + installed
