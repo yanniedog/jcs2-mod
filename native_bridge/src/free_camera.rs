@@ -908,12 +908,27 @@ pub(crate) unsafe fn replay_follow_frame(
 /// replay/selection menu it sits still, so the gesture overlay can be dropped
 /// there (it otherwise covers screen-centre and blocks the menu lists).
 pub(crate) unsafe fn update_playback_motion(camera: *const f32) {
-    let pos_src = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
-    let pos = [
-        ptr::read_volatile(pos_src),
-        ptr::read_volatile(pos_src.add(1)),
-        ptr::read_volatile(pos_src.add(2)),
-    ];
+    // Prefer the drawn car's pose over the camera position: managed modes
+    // (Trackside especially) park the camera while the car keeps moving, and
+    // camera translation alone would read as "not playing" after 12 still
+    // frames, dropping the gesture layer mid-replay.
+    let car = read_body_mframe(REPLAY_FOLLOW_OBJECT).or_else(|| {
+        if REPLAY_TARGET_MFRAME_VALID {
+            read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
+        } else {
+            None
+        }
+    });
+    let pos = if let Some(car) = car {
+        car.pos
+    } else {
+        let pos_src = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+        [
+            ptr::read_volatile(pos_src),
+            ptr::read_volatile(pos_src.add(1)),
+            ptr::read_volatile(pos_src.add(2)),
+        ]
+    };
     if !(finite_camera_value(pos[0]) && finite_camera_value(pos[1]) && finite_camera_value(pos[2]))
     {
         return;
