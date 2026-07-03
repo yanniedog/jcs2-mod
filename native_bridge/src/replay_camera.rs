@@ -79,6 +79,7 @@ const ORBIT_DEFAULT_ELEV_SIN_1000: i32 = 669;
 // (the MAXIMUM distance from the camera before cutting to the next one).
 const TRACKSIDE_SIDE_ALTERNATE: i32 = 0;
 const TRACKSIDE_SIDE_LEFT: i32 = 1;
+const TRACKSIDE_SIDE_RIGHT: i32 = 2;
 const TRACKSIDE_DEFAULT_SIDE_DIST_1000: i32 = 11_000;
 const TRACKSIDE_DEFAULT_HEIGHT_1000: i32 = 7_000;
 const TRACKSIDE_DEFAULT_MIN_DIST_1000: i32 = 35_000;
@@ -238,7 +239,11 @@ pub fn configure_trackside(side_mode: i32, side_dist: i32, height: i32, min_d: i
     let side = clamp(side_dist as f32, 1.0, 60.0);
     let height = clamp(height as f32, 0.0, 60.0);
     let min_d = clamp(min_d as f32, 5.0, 250.0);
-    let max_d = clamp(max_d as f32, min_d + 10.0, 400.0);
+    // A fresh camera actually sits sqrt(min^2 + side^2 + height^2) from the
+    // car; max must exceed THAT (not just min) or the out-of-range check cuts
+    // to a new camera every frame.
+    let placement_dist = length([min_d, side, height]);
+    let max_d = clamp(max_d as f32, placement_dist + 10.0, 460.0);
     TRACKSIDE_SIDE_MODE.store(side_mode, Ordering::Release);
     TRACKSIDE_SIDE_DIST_1000.store((side * 1000.0) as i32, Ordering::Release);
     TRACKSIDE_HEIGHT_1000.store((height * 1000.0) as i32, Ordering::Release);
@@ -420,7 +425,7 @@ pub fn update(dt: f32, car: &CarFrame, frame: &mut [f32; 12]) -> bool {
                     let right_h = normalize(cross(up, fwd_h)).unwrap_or([fwd_h[2], 0.0, -fwd_h[0]]);
                     TRACKSIDE_SIDE = match TRACKSIDE_SIDE_MODE.load(Ordering::Acquire) {
                         TRACKSIDE_SIDE_LEFT => 1.0,
-                        2 => -1.0,
+                        TRACKSIDE_SIDE_RIGHT => -1.0,
                         _ => -TRACKSIDE_SIDE,
                     };
                     TRACKSIDE_CAM = add(

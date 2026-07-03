@@ -135,9 +135,9 @@ final class ReplaySwarmOverlay {
 
         configure.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                ModDebugLog.module("swarm", "swarm button tapped catalog="
-                        + RequiredPatches.readReplaySwarmCatalogCount());
                 try {
+                    ModDebugLog.module("swarm", "swarm button tapped catalog="
+                            + RequiredPatches.readReplaySwarmCatalogCount());
                     showPicker(activity, status);
                 } catch (Throwable error) {
                     ModDebugLog.module("swarm", "picker failed", error);
