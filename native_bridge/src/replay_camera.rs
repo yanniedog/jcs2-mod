@@ -48,20 +48,21 @@ const _: () = assert!((MODE_GOPRO as usize) < MODE_COUNT);
 /// fits inside the open opening section of a typical replay.
 const ORBIT_RATE_RAD_PER_S: f32 = 1.25;
 const MIN_RADIUS: f32 = 2.0;
-// Keep Orbit close to the car: the buggy is ~2 units long, so 6 units frames
-// it large, and a short camera-to-car gap leaves track furniture little room
-// to slide between them and occlude the car.
-const ORBIT_MIN_RADIUS: f32 = 5.0;
+// Orbit stand-off distance. The buggy is ~2 units long, so this frames it
+// clearly while sitting far enough out that the camera clears the immediate
+// track tube walls -- at a very short radius the camera orbits INSIDE the
+// half-pipe track and its own surface occludes the car from most angles.
+const ORBIT_MIN_RADIUS: f32 = 8.0;
 // The Orbit anchor is already projected from the stock replay camera's visual
 // centre ray; do not add a mesh-origin correction on top of that or the car
 // drifts off the middle of the captured video.
 const ORBIT_TARGET_UP_OFFSET: f32 = 0.0;
 const ORBIT_TARGET_FWD_OFFSET: f32 = 0.0;
 // Initial elevation as an up-component mixed into the horizontal start
-// direction: 0.35 => sin ~= 0.33 (~19 deg above the car). Kept low because the
-// stunt tracks hang platforms above the route; a high orbit keeps putting the
-// camera inside them, while a near-side-on view stays in open air.
-const ORBIT_INITIAL_ELEVATION: f32 = 0.35;
+// direction: 0.5 => sin ~= 0.45 (~27 deg above the car). Enough of a downward
+// tilt that the camera looks over the near track lip onto the car from every
+// azimuth, without climbing so high it enters the platforms overhead.
+const ORBIT_INITIAL_ELEVATION: f32 = 0.5;
 const MAX_RADIUS: f32 = 600.0;
 /// Keep elevation just short of the poles so the look-at basis never degenerates.
 /// sin(83 deg) ~= 0.993.
