@@ -10,6 +10,7 @@ import { setTimeout as sleepMs } from 'node:timers/promises';
 import {
   allKnownBotLogins,
   formatRequiredKeys,
+  isCursorAutoReviewBody,
   missingRequiredKeys,
   parseRequiredKeys,
   resolveRequiredKeys,
@@ -152,6 +153,7 @@ function fetchBotActivity(owner, name, prNumber) {
   const events = [];
   const pushEvent = (login, at, body) => {
     if (!login || !at) return;
+    if (login.toLowerCase() === 'github-actions[bot]' && !isCursorAutoReviewBody(body)) return;
     events.push({ login, at, noise: isBotNoise(body) });
   };
   for (const c of pr.comments?.nodes || []) {
