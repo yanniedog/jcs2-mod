@@ -675,10 +675,10 @@ pub(crate) unsafe fn swarm_restore_primary_replay(primary_index: i32) {
     }
     IN_SWARM_LOAD = false;
     if !REPLAY_POS.is_null() && saved_replay_pos >= 0 {
-        ptr::write(REPLAY_POS, saved_replay_pos);
+        ptr::write_volatile(REPLAY_POS, saved_replay_pos);
     }
     if !GHOST_POS.is_null() && saved_ghost_pos >= 0 {
-        ptr::write(GHOST_POS, saved_ghost_pos);
+        ptr::write_volatile(GHOST_POS, saved_ghost_pos);
     }
 }
 

@@ -133,6 +133,9 @@ public final class RequiredPatches {
      * GetUserPath, so absolute paths would break.
      */
     private static int seedSwarmSlotReplays(Activity activity) {
+        if (activity == null) {
+            return 0;
+        }
         int added = 0;
         java.io.File[] dirs = { activity.getFilesDir(), activity.getExternalFilesDir(null) };
         for (java.io.File dir : dirs) {

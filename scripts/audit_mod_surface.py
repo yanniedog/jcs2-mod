@@ -611,8 +611,8 @@ def check_sources(skip_local_assets=False):
         ok = fail("updater no longer clears stale download state after the downloaded version is installed") and ok
     if "shouldSuppressUpdatePrompt(activity, latest)" not in update_manager:
         ok = fail("silent updater no longer suppresses already-handled update prompts") and ok
-    if bridge.count("ptr::write_volatile(") != 5:
-        ok = fail("native bridge must only write retained values, user-level lap type/count, and boost refill") and ok
+    if bridge.count("ptr::write_volatile(") != 7:
+        ok = fail("native bridge must only write retained values, user-level lap type/count, boost refill, and the swarm playback-clock restore (g_nReplayPos/g_nGhostPos)") and ok
     if (
         "ptr::write_volatile(CHECKPOINT_LIMIT_ADDRESS, CHECKPOINT_LIMIT)" not in bridge
         or "DLC_CONNECTIONS.add(index * DLC_ITEM_SIZE + DLC_PURCHASED_OFFSET)" not in bridge

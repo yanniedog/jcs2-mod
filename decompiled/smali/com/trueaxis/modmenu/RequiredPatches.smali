@@ -853,81 +853,88 @@
     .registers 14
 
     .line 136
-    nop
+    const/4 v0, 0x0
+
+    if-nez p0, :cond_4
 
     .line 137
+    return v0
+
+    .line 139
+    :cond_4
+    nop
+
+    .line 140
     invoke-virtual {p0}, Landroid/app/Activity;->getFilesDir()Ljava/io/File;
 
-    move-result-object v0
+    move-result-object v1
 
-    const/4 v1, 0x0
+    const/4 v2, 0x0
 
-    invoke-virtual {p0, v1}, Landroid/app/Activity;->getExternalFilesDir(Ljava/lang/String;)Ljava/io/File;
+    invoke-virtual {p0, v2}, Landroid/app/Activity;->getExternalFilesDir(Ljava/lang/String;)Ljava/io/File;
 
     move-result-object p0
 
-    const/4 v1, 0x2
+    const/4 v2, 0x2
 
-    new-array v2, v1, [Ljava/io/File;
+    new-array v3, v2, [Ljava/io/File;
 
-    const/4 v3, 0x0
+    aput-object v1, v3, v0
 
-    aput-object v0, v2, v3
+    const/4 v1, 0x1
 
-    const/4 v0, 0x1
+    aput-object p0, v3, v1
 
-    aput-object p0, v2, v0
-
-    .line 138
+    .line 141
     const/4 p0, 0x0
 
-    const/4 v0, 0x0
+    const/4 v1, 0x0
 
-    :goto_15
-    if-ge p0, v1, :cond_5b
+    :goto_18
+    if-ge p0, v2, :cond_5e
 
-    aget-object v4, v2, p0
-
-    .line 139
-    if-nez v4, :cond_1c
-
-    .line 140
-    goto :goto_58
+    aget-object v4, v3, p0
 
     .line 142
-    :cond_1c
+    if-nez v4, :cond_1f
+
+    .line 143
+    goto :goto_5b
+
+    .line 145
+    :cond_1f
     invoke-virtual {v4}, Ljava/io/File;->listFiles()[Ljava/io/File;
 
     move-result-object v4
 
-    .line 143
-    if-nez v4, :cond_23
-
-    .line 144
-    goto :goto_58
-
     .line 146
-    :cond_23
+    if-nez v4, :cond_26
+
+    .line 147
+    goto :goto_5b
+
+    .line 149
+    :cond_26
     array-length v5, v4
 
     const/4 v6, 0x0
 
-    :goto_25
-    if-ge v6, v5, :cond_58
+    :goto_28
+    if-ge v6, v5, :cond_5b
 
     aget-object v7, v4, v6
 
-    .line 147
+    .line 150
     invoke-virtual {v7}, Ljava/io/File;->getName()Ljava/lang/String;
 
     move-result-object v8
 
-    .line 148
+    .line 151
     invoke-virtual {v7}, Ljava/io/File;->isFile()Z
 
     move-result v9
 
-    if-eqz v9, :cond_55
+    if-eqz v9, :cond_58
 
     invoke-virtual {v7}, Ljava/io/File;->length()J
 
@@ -937,7 +944,7 @@
 
     cmp-long v7, v9, v11
 
-    if-lez v7, :cond_55
+    if-lez v7, :cond_58
 
     const-string v7, "r\\d\\d\\.bin"
 
@@ -945,12 +952,12 @@
 
     move-result v7
 
-    if-eqz v7, :cond_55
+    if-eqz v7, :cond_58
 
-    .line 149
+    .line 152
     nop
 
-    .line 150
+    .line 153
     const-string v7, "UTF-8"
 
     invoke-static {v7}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
@@ -961,28 +968,28 @@
 
     move-result-object v7
 
-    .line 149
+    .line 152
     invoke-static {v7}, Lcom/trueaxis/modmenu/RequiredPatches;->addReplaySwarmCatalogPath([B)V
 
-    .line 151
-    add-int/lit8 v0, v0, 0x1
+    .line 154
+    add-int/lit8 v1, v1, 0x1
 
-    .line 146
-    :cond_55
+    .line 149
+    :cond_58
     add-int/lit8 v6, v6, 0x1
 
-    goto :goto_25
+    goto :goto_28
 
-    .line 138
-    :cond_58
-    :goto_58
+    .line 141
+    :cond_5b
+    :goto_5b
     add-int/lit8 p0, p0, 0x1
 
-    goto :goto_15
+    goto :goto_18
 
-    .line 155
-    :cond_5b
-    return v0
+    .line 158
+    :cond_5e
+    return v1
 .end method
 
 .method static native setReplayCameraCycle(ZI)V

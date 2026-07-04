@@ -938,6 +938,9 @@ pub(crate) unsafe fn update_playback_motion(camera: *const f32) {
     }
     // No live replay clock: fall back to stock-camera translation (covers
     // playback start and non-replay level intros).
+    if camera.is_null() {
+        return;
+    }
     let pos_src = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
     let pos = [
         ptr::read_volatile(pos_src),
