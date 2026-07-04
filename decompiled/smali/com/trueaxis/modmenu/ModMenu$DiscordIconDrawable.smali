@@ -18,10 +18,10 @@
 .method constructor <init>(II)V
     .registers 3
 
-    .line 1607
+    .line 1609
     invoke-direct {p0, p1, p2}, Lcom/trueaxis/modmenu/ModMenu$LinkIconDrawable;-><init>(II)V
 
-    .line 1608
+    .line 1610
     return-void
 .end method
 
@@ -30,7 +30,7 @@
 .method public draw(Landroid/graphics/Canvas;)V
     .registers 43
 
-    .line 1611
+    .line 1613
     move-object/from16 v0, p0
 
     move-object/from16 v1, p1
@@ -39,7 +39,7 @@
 
     move-result-object v2
 
-    .line 1612
+    .line 1614
     invoke-virtual {v2}, Landroid/graphics/Rect;->width()I
 
     move-result v3
@@ -54,7 +54,7 @@
 
     int-to-float v3, v3
 
-    .line 1613
+    .line 1615
     iget v4, v2, Landroid/graphics/Rect;->left:I
 
     int-to-float v4, v4
@@ -73,7 +73,7 @@
 
     add-float/2addr v4, v5
 
-    .line 1614
+    .line 1616
     iget v5, v2, Landroid/graphics/Rect;->top:I
 
     int-to-float v5, v5
@@ -90,17 +90,17 @@
 
     add-float/2addr v5, v2
 
-    .line 1615
+    .line 1617
     const/high16 v2, 0x41c00000
 
     div-float/2addr v3, v2
 
-    .line 1618
+    .line 1620
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v2}, Landroid/graphics/Path;->reset()V
 
-    .line 1619
+    .line 1621
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v6, 0x40800000
@@ -117,7 +117,7 @@
 
     invoke-virtual {v2, v14, v15}, Landroid/graphics/Path;->moveTo(FF)V
 
-    .line 1620
+    .line 1622
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     add-float v19, v5, v6
@@ -148,7 +148,7 @@
 
     invoke-virtual/range {v7 .. v13}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1622
+    .line 1624
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v7, 0x41200000
@@ -193,7 +193,7 @@
 
     invoke-virtual/range {v20 .. v26}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1624
+    .line 1626
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v9, 0x41480000
@@ -226,7 +226,7 @@
 
     invoke-virtual/range {v20 .. v26}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1626
+    .line 1628
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v7, 0x418c0000
@@ -251,7 +251,7 @@
 
     invoke-virtual/range {v15 .. v21}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1628
+    .line 1630
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v7, 0x41a80000
@@ -292,7 +292,7 @@
 
     invoke-virtual/range {v28 .. v34}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1630
+    .line 1632
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const/high16 v7, 0x419c0000
@@ -331,14 +331,14 @@
 
     invoke-virtual/range {v34 .. v40}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1632
+    .line 1634
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     add-float/2addr v11, v5
 
     invoke-virtual {v2, v12, v11}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1633
+    .line 1635
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     add-float/2addr v7, v4
@@ -351,7 +351,7 @@
 
     invoke-virtual {v2, v7, v9}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1634
+    .line 1636
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const v7, 0x414e6666
@@ -376,7 +376,7 @@
 
     invoke-virtual/range {v24 .. v30}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1636
+    .line 1638
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const v7, 0x4119999a
@@ -387,7 +387,7 @@
 
     invoke-virtual {v2, v7, v11}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1637
+    .line 1639
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const v7, 0x4101999a
@@ -398,7 +398,7 @@
 
     invoke-virtual {v2, v7, v8}, Landroid/graphics/Path;->lineTo(FF)V
 
-    .line 1638
+    .line 1640
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const v7, 0x40d33333
@@ -427,7 +427,7 @@
 
     invoke-virtual/range {v17 .. v23}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1640
+    .line 1642
     iget-object v7, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     const v2, 0x40466666
@@ -444,19 +444,19 @@
 
     invoke-virtual/range {v7 .. v13}, Landroid/graphics/Path;->cubicTo(FFFFFF)V
 
-    .line 1642
+    .line 1644
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     invoke-virtual {v2}, Landroid/graphics/Path;->close()V
 
-    .line 1643
+    .line 1645
     iget-object v2, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->path:Landroid/graphics/Path;
 
     iget-object v7, v0, Lcom/trueaxis/modmenu/ModMenu$DiscordIconDrawable;->paint:Landroid/graphics/Paint;
 
     invoke-virtual {v1, v2, v7}, Landroid/graphics/Canvas;->drawPath(Landroid/graphics/Path;Landroid/graphics/Paint;)V
 
-    .line 1644
+    .line 1646
     const v2, 0x410ccccd
 
     mul-float v2, v2, v3
@@ -473,7 +473,7 @@
 
     invoke-virtual {v1, v2, v5, v6, v7}, Landroid/graphics/Canvas;->drawCircle(FFFLandroid/graphics/Paint;)V
 
-    .line 1645
+    .line 1647
     const v2, 0x41733333
 
     mul-float v3, v3, v2
@@ -484,6 +484,6 @@
 
     invoke-virtual {v1, v4, v5, v6, v2}, Landroid/graphics/Canvas;->drawCircle(FFFLandroid/graphics/Paint;)V
 
-    .line 1646
+    .line 1648
     return-void
 .end method

@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 844
+    .line 846
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$applyTracksideTuning:Ljava/lang/Runnable;
@@ -56,7 +56,7 @@
         }
     .end annotation
 
-    .line 847
+    .line 849
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$a:Landroid/app/Activity;
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
@@ -75,12 +75,12 @@
 
     invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 848
+    .line 850
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$10;->val$applyTracksideTuning:Ljava/lang/Runnable;
 
     invoke-interface {p1}, Ljava/lang/Runnable;->run()V
 
-    .line 849
+    .line 851
     return-void
 .end method
 
@@ -94,6 +94,6 @@
         }
     .end annotation
 
-    .line 852
+    .line 854
     return-void
 .end method

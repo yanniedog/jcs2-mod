@@ -42,7 +42,7 @@
         }
     .end annotation
 
-    .line 1159
+    .line 1161
     iput p1, p0, Lcom/trueaxis/modmenu/ModMenu$20;->val$min:I
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$20;->val$c:Landroid/content/Context;
@@ -67,12 +67,12 @@
 .method public onProgressChanged(Landroid/widget/SeekBar;IZ)V
     .registers 5
 
-    .line 1161
+    .line 1163
     iget p1, p0, Lcom/trueaxis/modmenu/ModMenu$20;->val$min:I
 
     add-int/2addr p1, p2
 
-    .line 1162
+    .line 1164
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$20;->val$c:Landroid/content/Context;
 
     invoke-static {p2}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
@@ -91,7 +91,7 @@
 
     invoke-interface {p2}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 1163
+    .line 1165
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$20;->val$value:Landroid/widget/TextView;
 
     iget-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$20;->val$label:Ljava/lang/String;
@@ -101,17 +101,17 @@
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSeekLabel(Landroid/widget/TextView;Ljava/lang/String;ILjava/lang/String;)V
     invoke-static {p2, p3, p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$300(Landroid/widget/TextView;Ljava/lang/String;ILjava/lang/String;)V
 
-    .line 1164
+    .line 1166
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$20;->val$afterChange:Ljava/lang/Runnable;
 
     if-eqz p2, :cond_28
 
-    .line 1165
+    .line 1167
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$20;->val$afterChange:Ljava/lang/Runnable;
 
     invoke-interface {p2}, Ljava/lang/Runnable;->run()V
 
-    .line 1167
+    .line 1169
     :cond_28
     new-instance p2, Ljava/lang/StringBuilder;
 
@@ -147,20 +147,20 @@
 
     invoke-static {p2, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1168
+    .line 1170
     return-void
 .end method
 
 .method public onStartTrackingTouch(Landroid/widget/SeekBar;)V
     .registers 2
 
-    .line 1171
+    .line 1173
     return-void
 .end method
 
 .method public onStopTrackingTouch(Landroid/widget/SeekBar;)V
     .registers 2
 
-    .line 1174
+    .line 1176
     return-void
 .end method

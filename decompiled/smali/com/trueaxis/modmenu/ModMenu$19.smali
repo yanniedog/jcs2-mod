@@ -36,7 +36,7 @@
         }
     .end annotation
 
-    .line 1115
+    .line 1117
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$19;->val$c:Landroid/content/Context;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$19;->val$key:Ljava/lang/String;
@@ -55,7 +55,7 @@
 .method public onClick(Landroid/view/View;)V
     .registers 4
 
-    .line 1117
+    .line 1119
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$19;->val$c:Landroid/content/Context;
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
@@ -80,17 +80,17 @@
 
     invoke-interface {p1}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 1118
+    .line 1120
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$19;->val$afterChange:Ljava/lang/Runnable;
 
     if-eqz p1, :cond_22
 
-    .line 1119
+    .line 1121
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$19;->val$afterChange:Ljava/lang/Runnable;
 
     invoke-interface {p1}, Ljava/lang/Runnable;->run()V
 
-    .line 1121
+    .line 1123
     :cond_22
     new-instance p1, Ljava/lang/StringBuilder;
 
@@ -116,7 +116,7 @@
 
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$19;->val$checkBox:Landroid/widget/CheckBox;
 
-    .line 1122
+    .line 1124
     invoke-virtual {v0}, Landroid/widget/CheckBox;->isChecked()Z
 
     move-result v0
@@ -129,11 +129,11 @@
 
     move-result-object p1
 
-    .line 1121
+    .line 1123
     const-string v0, "launcher"
 
     invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1123
+    .line 1125
     return-void
 .end method

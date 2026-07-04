@@ -477,7 +477,7 @@
 
     const/4 v2, 0x0
 
-    if-eqz v1, :cond_1c9
+    if-eqz v1, :cond_1e5
 
     .line 85
     :try_start_160
@@ -541,37 +541,67 @@
 
     .line 96
     :cond_18e
-    new-instance v2, Ljava/lang/StringBuilder;
+    invoke-static {p0}, Lcom/trueaxis/modmenu/RequiredPatches;->seedSwarmSlotReplays(Landroid/app/Activity;)I
 
-    invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
+    move-result v2
 
-    const-string v5, "replay swarm hooks installed="
+    .line 97
+    new-instance v5, Ljava/lang/StringBuilder;
 
-    invoke-virtual {v2, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-direct {v5}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v6, "replay swarm hooks installed="
+
+    invoke-virtual {v5, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v5
+
+    invoke-virtual {v5, v1}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+
+    move-result-object v5
+
+    const-string v6, " raceSwarm="
+
+    invoke-virtual {v5, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v5
+
+    invoke-virtual {v5, v3}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+
+    move-result-object v3
+
+    const-string v5, " remembered="
+
+    invoke-virtual {v3, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v3
+
+    array-length v4, v4
+
+    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object v3
+
+    const-string v4, " slotReplays="
+
+    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v3
+
+    invoke-virtual {v3, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
     move-result-object v2
 
-    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
-
-    move-result-object v2
-
-    const-string v5, " raceSwarm="
-
-    invoke-virtual {v2, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v2
-
-    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
-
-    move-result-object v2
-
-    const-string v3, " seededCatalog="
+    const-string v3, " catalog="
 
     invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     move-result-object v2
 
-    array-length v3, v4
+    .line 101
+    invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmCatalogCount()I
+
+    move-result v3
 
     invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
@@ -581,99 +611,100 @@
 
     move-result-object v2
 
+    .line 97
     invoke-static {v2}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 99
-    if-eqz v1, :cond_1c8
-
-    .line 100
-    invoke-static {p0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->install(Landroid/app/Activity;)V
-    :try_end_1be
-    .catchall {:try_start_160 .. :try_end_1be} :catchall_1bf
-
-    goto :goto_1c8
-
     .line 102
-    :catchall_1bf
-    move-exception v1
+    if-eqz v1, :cond_1e4
 
     .line 103
+    invoke-static {p0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->install(Landroid/app/Activity;)V
+    :try_end_1da
+    .catchall {:try_start_160 .. :try_end_1da} :catchall_1db
+
+    goto :goto_1e4
+
+    .line 105
+    :catchall_1db
+    move-exception v1
+
+    .line 106
     const-string v2, "Could not install replay swarm mode"
 
     invoke-static {v0, v2, v1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 104
+    .line 107
     invoke-static {v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 105
-    :cond_1c8
-    :goto_1c8
-    goto :goto_1ce
-
     .line 108
-    :cond_1c9
-    :try_start_1c9
+    :cond_1e4
+    :goto_1e4
+    goto :goto_1ea
+
+    .line 111
+    :cond_1e5
+    :try_start_1e5
     invoke-static {v2}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplaySwarmEnabled(Z)V
-    :try_end_1cc
-    .catchall {:try_start_1c9 .. :try_end_1cc} :catchall_1cd
+    :try_end_1e8
+    .catchall {:try_start_1e5 .. :try_end_1e8} :catchall_1e9
 
-    .line 110
-    goto :goto_1ce
-
-    .line 109
-    :catchall_1cd
-    move-exception v1
+    .line 113
+    goto :goto_1ea
 
     .line 112
-    :goto_1ce
+    :catchall_1e9
+    move-exception v1
+
+    .line 115
+    :goto_1ea
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->checkpointSplitsEnabled(Landroid/content/Context;)Z
 
     move-result v1
 
-    if-eqz v1, :cond_1e7
+    if-eqz v1, :cond_203
 
-    .line 113
+    .line 116
     const-string v1, "checkpoint split HUD enabled"
 
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 115
-    :try_start_1d9
+    .line 118
+    :try_start_1f5
     invoke-static {p0}, Lcom/trueaxis/modmenu/SplitTimeHud;->install(Landroid/app/Activity;)V
-    :try_end_1dc
-    .catchall {:try_start_1d9 .. :try_end_1dc} :catchall_1dd
+    :try_end_1f8
+    .catchall {:try_start_1f5 .. :try_end_1f8} :catchall_1f9
+
+    .line 122
+    :goto_1f8
+    goto :goto_208
 
     .line 119
-    :goto_1dc
-    goto :goto_1ec
-
-    .line 116
-    :catchall_1dd
+    :catchall_1f9
     move-exception p0
 
-    .line 117
+    .line 120
     const-string v1, "Could not install checkpoint split HUD"
 
     invoke-static {v0, v1, p0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
 
-    .line 118
+    .line 121
     invoke-static {v1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    goto :goto_1dc
+    goto :goto_1f8
 
-    .line 121
-    :cond_1e7
+    .line 124
+    :cond_203
     const-string p0, "checkpoint split HUD disabled"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 123
-    :goto_1ec
+    .line 126
+    :goto_208
     const-string p0, "after RequiredPatches.apply"
 
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModDebugLog;->logRuntime(Ljava/lang/String;)V
 
-    .line 124
+    .line 127
     return-void
 .end method
 
@@ -816,6 +847,149 @@
 .end method
 
 .method static native resetReplayFreeCamera()V
+.end method
+
+.method private static seedSwarmSlotReplays(Landroid/app/Activity;)I
+    .registers 14
+
+    .line 136
+    const/4 v0, 0x0
+
+    if-nez p0, :cond_4
+
+    .line 137
+    return v0
+
+    .line 139
+    :cond_4
+    nop
+
+    .line 140
+    invoke-virtual {p0}, Landroid/app/Activity;->getFilesDir()Ljava/io/File;
+
+    move-result-object v1
+
+    const/4 v2, 0x0
+
+    invoke-virtual {p0, v2}, Landroid/app/Activity;->getExternalFilesDir(Ljava/lang/String;)Ljava/io/File;
+
+    move-result-object p0
+
+    const/4 v2, 0x2
+
+    new-array v3, v2, [Ljava/io/File;
+
+    aput-object v1, v3, v0
+
+    const/4 v1, 0x1
+
+    aput-object p0, v3, v1
+
+    .line 141
+    const/4 p0, 0x0
+
+    const/4 v1, 0x0
+
+    :goto_18
+    if-ge p0, v2, :cond_5e
+
+    aget-object v4, v3, p0
+
+    .line 142
+    if-nez v4, :cond_1f
+
+    .line 143
+    goto :goto_5b
+
+    .line 145
+    :cond_1f
+    invoke-virtual {v4}, Ljava/io/File;->listFiles()[Ljava/io/File;
+
+    move-result-object v4
+
+    .line 146
+    if-nez v4, :cond_26
+
+    .line 147
+    goto :goto_5b
+
+    .line 149
+    :cond_26
+    array-length v5, v4
+
+    const/4 v6, 0x0
+
+    :goto_28
+    if-ge v6, v5, :cond_5b
+
+    aget-object v7, v4, v6
+
+    .line 150
+    invoke-virtual {v7}, Ljava/io/File;->getName()Ljava/lang/String;
+
+    move-result-object v8
+
+    .line 151
+    invoke-virtual {v7}, Ljava/io/File;->isFile()Z
+
+    move-result v9
+
+    if-eqz v9, :cond_58
+
+    invoke-virtual {v7}, Ljava/io/File;->length()J
+
+    move-result-wide v9
+
+    const-wide/16 v11, 0x40
+
+    cmp-long v7, v9, v11
+
+    if-lez v7, :cond_58
+
+    const-string v7, "r\\d\\d\\.bin"
+
+    invoke-virtual {v8, v7}, Ljava/lang/String;->matches(Ljava/lang/String;)Z
+
+    move-result v7
+
+    if-eqz v7, :cond_58
+
+    .line 152
+    nop
+
+    .line 153
+    const-string v7, "UTF-8"
+
+    invoke-static {v7}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
+
+    move-result-object v7
+
+    invoke-virtual {v8, v7}, Ljava/lang/String;->getBytes(Ljava/nio/charset/Charset;)[B
+
+    move-result-object v7
+
+    .line 152
+    invoke-static {v7}, Lcom/trueaxis/modmenu/RequiredPatches;->addReplaySwarmCatalogPath([B)V
+
+    .line 154
+    add-int/lit8 v1, v1, 0x1
+
+    .line 149
+    :cond_58
+    add-int/lit8 v6, v6, 0x1
+
+    goto :goto_28
+
+    .line 141
+    :cond_5b
+    :goto_5b
+    add-int/lit8 p0, p0, 0x1
+
+    goto :goto_18
+
+    .line 158
+    :cond_5e
+    return v1
 .end method
 
 .method static native setReplayCameraCycle(ZI)V

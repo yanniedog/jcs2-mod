@@ -505,7 +505,9 @@ public class ModMenu {
 
     public static boolean replaySwarmEnabled(Context c) {
         applyMenuDefaults(c);
-        return prefs(c).getBoolean(K_REPLAY_SWARM, false);
+        // Default ON: the picker is inert until ghosts are actually selected,
+        // so there is no cost, and OFF made the feature undiscoverable.
+        return prefs(c).getBoolean(K_REPLAY_SWARM, true);
     }
 
     public static boolean raceSwarmEnabled(Context c) {
@@ -927,9 +929,9 @@ public class ModMenu {
             addSubCard(a, card, swarmCard);
             swarmCard.addView(sectionHeader(a, "Replay swarm"));
             TextView swarmHelp = label(a,
-                    "Watch or race several replays on one track. Replays are collected "
-                            + "automatically as you open them; tap Swarm during a replay to "
-                            + "pick the pack.",
+                    "Watch or race several replays at once. Saved replays are found "
+                            + "automatically. In game: open View Replay on a level, tap the "
+                            + "SWARM button (top right), tick ghost replays, Apply.",
                     9, Color.rgb(170, 178, 185));
             swarmHelp.setPadding(0, 0, 0, dp(a, 2));
             swarmCard.addView(swarmHelp);
@@ -938,7 +940,7 @@ public class ModMenu {
             swarmExtras.setPadding(dp(a, 12), 0, 0, 0);
             addCheckBox(a, swarmCard,
                     "Enable replay swarm picker during passive replays",
-                    K_REPLAY_SWARM, false, new Runnable() {
+                    K_REPLAY_SWARM, true, new Runnable() {
                         public void run() {
                             swarmExtras.setVisibility(
                                     replaySwarmEnabled(a) ? View.VISIBLE : View.GONE);

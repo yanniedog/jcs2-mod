@@ -12,8 +12,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -151,10 +149,10 @@ final class ReplaySwarmOverlay {
         final int count = RequiredPatches.readReplaySwarmCatalogCount();
         if (count <= 0) {
             new AlertDialog.Builder(activity)
-                    .setTitle("No replays known yet")
-                    .setMessage("The swarm list fills up automatically as replays load. "
-                            + "Open a replay (View Replay) or race with a ghost once, then "
-                            + "tap Swarm again. Known replays are remembered across sessions.")
+                    .setTitle("No replays found yet")
+                    .setMessage("Finish a race (your replay saves automatically) or watch "
+                            + "any replay once, then tap Swarm again. Found replays are "
+                            + "remembered across sessions.")
                     .setPositiveButton("OK", null)
                     .show();
             return;
@@ -166,9 +164,10 @@ final class ReplaySwarmOverlay {
 
         TextView help = new TextView(activity);
         help.setText(
-                "Pick one primary replay for the camera, then select additional replays "
-                        + "to render as synced ghost cars. Watch them together here, or hit "
-                        + "Race to race against the pack (enable race swarm in the mod menu).");
+                "The replay you are watching stays the camera car. Tick the replays to "
+                        + "add as synced ghost cars (each gets its own colour), then Apply. "
+                        + "To RACE the pack instead, enable race-vs-swarm in the mod menu, "
+                        + "apply a selection here, and press Race.");
         help.setTextSize(11.0f);
         help.setTextColor(Color.DKGRAY);
         help.setPadding(0, 0, 0, dp(activity, 8));
@@ -181,36 +180,31 @@ final class ReplaySwarmOverlay {
         root.addView(scroll, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(activity, 220)));
 
-        final RadioGroup primaryGroup = new RadioGroup(activity);
-        primaryGroup.setOrientation(LinearLayout.VERTICAL);
-        list.addView(primaryGroup);
+        final int primary = RequiredPatches.readReplaySwarmPrimaryIndex();
+        if (primary < 0) {
+            new AlertDialog.Builder(activity)
+                    .setTitle("Open a replay first")
+                    .setMessage("Pick the swarm while WATCHING a replay: open View Replay "
+                            + "on a level, then tap Swarm during playback.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
         final CheckBox[] boxes = new CheckBox[count];
         final byte[] pathBuffer = new byte[PATH_BUFFER];
-        int defaultPrimary = RequiredPatches.readReplaySwarmPrimaryIndex();
-        if (defaultPrimary < 0 || defaultPrimary >= count) {
-            defaultPrimary = 0;
-        }
-
         for (int index = 0; index < count; index++) {
-            String label = replayLabel(index, pathBuffer);
-
-            RadioButton primary = new RadioButton(activity);
-            primary.setText("Primary: " + label);
-            primary.setId(index);
-            primary.setTextSize(11.0f);
-            primaryGroup.addView(primary);
-
             CheckBox ghost = new CheckBox(activity);
-            ghost.setText("Ghost overlay for " + label);
-            ghost.setTextSize(11.0f);
-            ghost.setPadding(dp(activity, 12), 0, 0, dp(activity, 4));
+            String label = replayLabel(index, pathBuffer);
+            ghost.setText(index == primary ? label + " (watching now)" : label);
+            ghost.setEnabled(index != primary);
+            ghost.setTextSize(12.0f);
+            ghost.setPadding(dp(activity, 4), 0, 0, dp(activity, 4));
             boxes[index] = ghost;
             list.addView(ghost);
         }
-        primaryGroup.check(defaultPrimary);
 
         new AlertDialog.Builder(activity)
-                .setTitle("Replay swarm")
+                .setTitle("Replay swarm — pick ghost replays")
                 .setView(root)
                 .setNegativeButton("Cancel", null)
                 .setNeutralButton("Clear", new android.content.DialogInterface.OnClickListener() {
@@ -222,11 +216,6 @@ final class ReplaySwarmOverlay {
                 })
                 .setPositiveButton("Apply", new android.content.DialogInterface.OnClickListener() {
                     public void onClick(android.content.DialogInterface dialog, int which) {
-                        int primary = primaryGroup.getCheckedRadioButtonId();
-                        if (primary < 0) {
-                            toast(activity, "Choose a primary replay.");
-                            return;
-                        }
                         int ghostCount = 0;
                         for (int index = 0; index < count; index++) {
                             if (index != primary && boxes[index].isChecked()) {
@@ -234,7 +223,7 @@ final class ReplaySwarmOverlay {
                             }
                         }
                         if (ghostCount < 1) {
-                            toast(activity, "Select at least one ghost replay.");
+                            toast(activity, "Tick at least one replay to add as a ghost.");
                             return;
                         }
                         int[] secondary = new int[ghostCount];
@@ -245,9 +234,13 @@ final class ReplaySwarmOverlay {
                             }
                         }
                         RequiredPatches.setReplaySwarmSelection(primary, secondary);
-                        toast(activity, "Replay swarm active with "
-                                + RequiredPatches.readReplaySwarmGhostCount()
-                                + " ghost replays.");
+                        int active = RequiredPatches.readReplaySwarmGhostCount();
+                        if (active < 1) {
+                            toast(activity, "Could not load the selected replays "
+                                    + "(files may be missing) — check the debug log.");
+                        } else {
+                            toast(activity, "Swarm active: " + active + " ghost replays.");
+                        }
                     }
                 })
                 .show();
@@ -277,7 +270,10 @@ final class ReplaySwarmOverlay {
         String path = new String(buffer, 0, length, Charset.forName("UTF-8"));
         int slash = path.lastIndexOf('/');
         if (slash >= 0 && slash + 1 < path.length()) {
-            return path.substring(slash + 1);
+            path = path.substring(slash + 1);
+        }
+        if (path.matches("r\\d\\d\\.bin")) {
+            return "Saved replay " + Integer.parseInt(path.substring(1, 3));
         }
         return path;
     }
