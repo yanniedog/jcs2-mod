@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Dynamic pre-merge bot wait gate (WORKFLOW.md step 5).
+ * Optional cursor alias: github-actions[bot] comments with <!-- cursor-auto-review -->.
  * Exit 0 only when CI is settled, every required bot has completed since anchor,
  * and the quiet window has passed after the last bot activity.
  * Exit 2 = still waiting; exit 1 = error or required bots missing at safety cap.
