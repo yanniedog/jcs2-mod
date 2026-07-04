@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 983
+    .line 985
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$displaySliders:Landroid/widget/LinearLayout;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,7 +43,7 @@
 .method public onClick(Landroid/view/View;)V
     .registers 4
 
-    .line 985
+    .line 987
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$displaySliders:Landroid/widget/LinearLayout;
 
     invoke-virtual {p1}, Landroid/widget/LinearLayout;->getVisibility()I
@@ -61,7 +61,7 @@
     :cond_b
     const/4 p1, 0x0
 
-    .line 986
+    .line 988
     :goto_c
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$15;->val$displaySliders:Landroid/widget/LinearLayout;
 
@@ -75,7 +75,7 @@
     :goto_13
     invoke-virtual {v1, v0}, Landroid/widget/LinearLayout;->setVisibility(I)V
 
-    .line 987
+    .line 989
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -98,6 +98,6 @@
 
     invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 989
+    .line 991
     return-void
 .end method

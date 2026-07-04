@@ -298,6 +298,11 @@ pub(crate) unsafe fn swarm_restore_ghost_globals(
     }
 }
 
+/// True while the swarm code itself drives Replay::Load, so the load hook can
+/// tell player-initiated replay loads (which set the primary/current replay)
+/// from our own ghost loads.
+pub(crate) static mut IN_SWARM_LOAD: bool = false;
+
 pub(crate) unsafe fn swarm_load_ghost_nodes_from_path(path: *const c_char) -> (*mut u8, i32) {
     let game = CURRENT_GAME;
     let replay = swarm_replay_object(game);
@@ -312,11 +317,15 @@ pub(crate) unsafe fn swarm_load_ghost_nodes_from_path(path: *const c_char) -> (*
 
     let load: ReplayLoadPathFn = mem::transmute(REPLAY_LOAD_PATH);
     let decompress: ReplayDecompressGhostFn = mem::transmute(REPLAY_DECOMPRESS_GHOST);
-    if load(replay, path) == 0 {
+    IN_SWARM_LOAD = true;
+    let loaded = load(replay, path);
+    if loaded == 0 {
+        IN_SWARM_LOAD = false;
         swarm_restore_ghost_globals(&mut saved_ptr, saved_size, saved_pos);
         return (ptr::null_mut(), 0);
     }
     decompress(replay);
+    IN_SWARM_LOAD = false;
 
     let node_count = if GHOST_SIZE.is_null() {
         0
@@ -613,9 +622,64 @@ pub(crate) unsafe extern "C" fn hooked_replay_load_path(
     replay: *mut c_void,
     path: *const c_char,
 ) -> c_int {
-    swarm_catalog_note_path(path);
+    if !IN_SWARM_LOAD {
+        swarm_catalog_note_path(path);
+        // The last player-initiated load is the replay now being watched --
+        // record it as the primary so the picker knows the camera replay and
+        // the post-apply restore can reload it.
+        let index = swarm_catalog_find(path as *const u8, c_strlen(path as *const u8));
+        if index >= 0 {
+            SWARM_PRIMARY_CATALOG_INDEX = index;
+        }
+    }
     let original: ReplayLoadPathFn = mem::transmute(REPLAY_LOAD_TRAMPOLINE);
     original(replay, path)
+}
+
+/// After ghost loads clobbered the live Replay object, reload the replay the
+/// player is actually watching and restore the playback clocks, so the viewer
+/// keeps playing (and looping) the right file.
+pub(crate) unsafe fn swarm_restore_primary_replay(primary_index: i32) {
+    if primary_index < 0 || primary_index as usize >= SWARM_CATALOG_LEN {
+        return;
+    }
+    let replay = swarm_replay_object(CURRENT_GAME);
+    if replay.is_null() || REPLAY_LOAD_PATH.is_null() || REPLAY_DECOMPRESS_GHOST.is_null() {
+        return;
+    }
+    let mut path = [0u8; SWARM_CATALOG_PATH_BYTES + 1];
+    let len = SWARM_CATALOG_PATH_LEN[primary_index as usize];
+    if len == 0 || len > SWARM_CATALOG_PATH_BYTES {
+        return;
+    }
+    ptr::copy_nonoverlapping(
+        SWARM_CATALOG_PATHS[primary_index as usize].as_ptr(),
+        path.as_mut_ptr(),
+        len,
+    );
+    let saved_replay_pos = if REPLAY_POS.is_null() {
+        -1
+    } else {
+        ptr::read_volatile(REPLAY_POS)
+    };
+    let saved_ghost_pos = if GHOST_POS.is_null() {
+        -1
+    } else {
+        ptr::read_volatile(GHOST_POS)
+    };
+    let load: ReplayLoadPathFn = mem::transmute(REPLAY_LOAD_PATH);
+    let decompress: ReplayDecompressGhostFn = mem::transmute(REPLAY_DECOMPRESS_GHOST);
+    IN_SWARM_LOAD = true;
+    if load(replay, path.as_ptr() as *const c_char) != 0 {
+        decompress(replay);
+    }
+    IN_SWARM_LOAD = false;
+    if !REPLAY_POS.is_null() && saved_replay_pos >= 0 {
+        ptr::write(REPLAY_POS, saved_replay_pos);
+    }
+    if !GHOST_POS.is_null() && saved_ghost_pos >= 0 {
+        ptr::write(GHOST_POS, saved_ghost_pos);
+    }
 }
 
 /// Install the Replay::Load(const char*) hook once.

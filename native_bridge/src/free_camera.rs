@@ -249,6 +249,9 @@ pub(crate) static mut FREE_CAMERA_FOLLOW_CALIBRATED: bool = false;
 /// point (no pointer chain). Used to calibrate the chase-camera follow distance.
 pub(crate) static mut LAST_ON_GROUND_POS: *mut f32 = ptr::null_mut();
 
+/// Last observed g_nReplayPos for the playback-motion detector.
+pub(crate) static mut PLAYBACK_MOTION_LAST_REPLAY_POS: c_int = -1;
+
 pub(crate) static mut FREE_CAMERA_LAST_CAM_POS: [f32; 3] = [0.0; 3];
 
 pub(crate) static mut FREE_CAMERA_LAST_CAM_VALID: bool = false;
@@ -908,27 +911,39 @@ pub(crate) unsafe fn replay_follow_frame(
 /// replay/selection menu it sits still, so the gesture overlay can be dropped
 /// there (it otherwise covers screen-centre and blocks the menu lists).
 pub(crate) unsafe fn update_playback_motion(camera: *const f32) {
-    // Prefer the drawn car's pose over the camera position: managed modes
-    // (Trackside especially) park the camera while the car keeps moving, and
-    // camera translation alone would read as "not playing" after 12 still
-    // frames, dropping the gesture layer mid-replay.
-    let car = read_body_mframe(REPLAY_FOLLOW_OBJECT).or_else(|| {
-        if REPLAY_TARGET_MFRAME_VALID {
-            read_transform_car_frame(ptr::addr_of!(REPLAY_TARGET_MFRAME) as *const f32)
-        } else {
-            None
+    // The replay clock (g_nReplayPos) is the authoritative "actually playing"
+    // signal: the managed Trackside camera parks between cuts (so camera
+    // translation reads as idle mid-replay), while on the post-race/replay
+    // menu screens g_bShowReplay stays set and the proxy car body keeps
+    // free-falling (so car motion reads as playing and the gesture layer
+    // blocks the menu buttons). Only real playback advances the replay clock.
+    if REPLAY_POS.is_null() {
+        REPLAY_POS = resolve(b"g_nReplayPos\0") as *mut c_int;
+    }
+    if !REPLAY_POS.is_null() {
+        let replay_pos = ptr::read_volatile(REPLAY_POS);
+        if replay_pos > 0 {
+            if replay_pos != PLAYBACK_MOTION_LAST_REPLAY_POS {
+                PLAYBACK_MOTION_LAST_REPLAY_POS = replay_pos;
+                FREE_CAMERA_STATIONARY_FRAMES = 0;
+            } else if FREE_CAMERA_STATIONARY_FRAMES < FREE_CAMERA_STATIONARY_LIMIT {
+                FREE_CAMERA_STATIONARY_FRAMES += 1;
+            }
+            FREE_CAMERA_PLAYBACK_MOVING.store(
+                FREE_CAMERA_STATIONARY_FRAMES < FREE_CAMERA_STATIONARY_LIMIT,
+                Ordering::Release,
+            );
+            return;
         }
-    });
-    let pos = if let Some(car) = car {
-        car.pos
-    } else {
-        let pos_src = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
-        [
-            ptr::read_volatile(pos_src),
-            ptr::read_volatile(pos_src.add(1)),
-            ptr::read_volatile(pos_src.add(2)),
-        ]
-    };
+    }
+    // No live replay clock: fall back to stock-camera translation (covers
+    // playback start and non-replay level intros).
+    let pos_src = camera.add(3 * FREE_CAMERA_AXIS_STRIDE_FLOATS);
+    let pos = [
+        ptr::read_volatile(pos_src),
+        ptr::read_volatile(pos_src.add(1)),
+        ptr::read_volatile(pos_src.add(2)),
+    ];
     if !(finite_camera_value(pos[0]) && finite_camera_value(pos[1]) && finite_camera_value(pos[2]))
     {
         return;
@@ -953,6 +968,7 @@ pub(crate) unsafe fn update_playback_motion(camera: *const f32) {
 
 pub(crate) unsafe fn reset_playback_motion() {
     FREE_CAMERA_LAST_CAM_VALID = false;
+    PLAYBACK_MOTION_LAST_REPLAY_POS = -1;
     // Start at the limit so playback reads as "still" until real motion is seen;
     // otherwise the overlay would block the menu for ~12 frames after a reset.
     FREE_CAMERA_STATIONARY_FRAMES = FREE_CAMERA_STATIONARY_LIMIT;

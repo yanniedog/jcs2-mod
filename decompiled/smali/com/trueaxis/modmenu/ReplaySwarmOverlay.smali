@@ -13,17 +13,17 @@
 .method private constructor <init>()V
     .registers 1
 
-    .line 28
+    .line 26
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
-    .line 29
+    .line 27
     return-void
 .end method
 
 .method static synthetic access$000(Landroid/app/Activity;I)V
     .registers 2
 
-    .line 24
+    .line 22
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->persistCatalog(Landroid/app/Activity;I)V
 
     return-void
@@ -32,7 +32,7 @@
 .method static synthetic access$100(Landroid/app/Activity;Landroid/widget/TextView;)V
     .registers 2
 
-    .line 24
+    .line 22
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->showPicker(Landroid/app/Activity;Landroid/widget/TextView;)V
 
     return-void
@@ -41,7 +41,7 @@
 .method static synthetic access$200(Landroid/app/Activity;Ljava/lang/String;)V
     .registers 2
 
-    .line 24
+    .line 22
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     return-void
@@ -50,7 +50,7 @@
 .method private static dp(Landroid/app/Activity;I)I
     .registers 2
 
-    .line 290
+    .line 286
     int-to-float p1, p1
 
     invoke-virtual {p0}, Landroid/app/Activity;->getResources()Landroid/content/res/Resources;
@@ -77,17 +77,17 @@
 .method static install(Landroid/app/Activity;)V
     .registers 8
 
-    .line 32
+    .line 30
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->replaySwarmEnabled(Landroid/content/Context;)Z
 
     move-result v0
 
     if-nez v0, :cond_7
 
-    .line 33
+    .line 31
     return-void
 
-    .line 35
+    .line 33
     :cond_7
     const v0, 0x1020002
 
@@ -97,39 +97,39 @@
 
     check-cast v0, Landroid/view/ViewGroup;
 
-    .line 36
+    .line 34
     if-nez v0, :cond_13
 
-    .line 37
+    .line 35
     return-void
 
-    .line 40
+    .line 38
     :cond_13
     new-instance v1, Landroid/widget/Button;
 
     invoke-direct {v1, p0}, Landroid/widget/Button;-><init>(Landroid/content/Context;)V
 
-    .line 41
+    .line 39
     const-string v2, "Swarm"
 
     invoke-virtual {v1, v2}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
 
-    .line 42
+    .line 40
     const/high16 v2, 0x41300000
 
     invoke-virtual {v1, v2}, Landroid/widget/Button;->setTextSize(F)V
 
-    .line 43
+    .line 41
     const/4 v3, 0x0
 
     invoke-virtual {v1, v3}, Landroid/widget/Button;->setAllCaps(Z)V
 
-    .line 44
+    .line 42
     const/4 v3, -0x1
 
     invoke-virtual {v1, v3}, Landroid/widget/Button;->setTextColor(I)V
 
-    .line 45
+    .line 43
     const/16 v3, 0x5a
 
     const/16 v4, 0x78
@@ -142,7 +142,7 @@
 
     invoke-virtual {v1, v3}, Landroid/widget/Button;->setBackgroundColor(I)V
 
-    .line 46
+    .line 44
     const/16 v3, 0xa
 
     invoke-static {p0, v3}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
@@ -165,20 +165,20 @@
 
     invoke-virtual {v1, v4, v6, v3, v5}, Landroid/widget/Button;->setPadding(IIII)V
 
-    .line 47
+    .line 45
     const/16 v3, 0x8
 
     invoke-virtual {v1, v3}, Landroid/widget/Button;->setVisibility(I)V
 
-    .line 49
+    .line 47
     new-instance v4, Landroid/widget/TextView;
 
     invoke-direct {v4, p0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
 
-    .line 50
+    .line 48
     invoke-virtual {v4, v2}, Landroid/widget/TextView;->setTextSize(F)V
 
-    .line 51
+    .line 49
     const/16 v2, 0xdc
 
     const/16 v5, 0xff
@@ -191,7 +191,7 @@
 
     invoke-virtual {v4, v2}, Landroid/widget/TextView;->setTextColor(I)V
 
-    .line 52
+    .line 50
     const/high16 v2, 0x40000000
 
     const/high16 v5, -0x1000000
@@ -200,22 +200,22 @@
 
     invoke-virtual {v4, v2, v6, v6, v5}, Landroid/widget/TextView;->setShadowLayer(FFFI)V
 
-    .line 53
+    .line 51
     invoke-virtual {v4, v3}, Landroid/widget/TextView;->setVisibility(I)V
 
-    .line 55
+    .line 53
     new-instance v2, Landroid/widget/FrameLayout$LayoutParams;
 
     const/4 v3, -0x2
 
     invoke-direct {v2, v3, v3}, Landroid/widget/FrameLayout$LayoutParams;-><init>(II)V
 
-    .line 59
+    .line 57
     const/16 v5, 0x35
 
     iput v5, v2, Landroid/widget/FrameLayout$LayoutParams;->gravity:I
 
-    .line 60
+    .line 58
     const/16 v5, 0xc
 
     invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
@@ -224,59 +224,59 @@
 
     iput v6, v2, Landroid/widget/FrameLayout$LayoutParams;->topMargin:I
 
-    .line 61
+    .line 59
     invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
 
     move-result v6
 
     iput v6, v2, Landroid/widget/FrameLayout$LayoutParams;->rightMargin:I
 
-    .line 63
+    .line 61
     new-instance v6, Landroid/widget/FrameLayout$LayoutParams;
 
     invoke-direct {v6, v3, v3}, Landroid/widget/FrameLayout$LayoutParams;-><init>(II)V
 
-    .line 67
+    .line 65
     const/16 v3, 0x33
 
     iput v3, v6, Landroid/widget/FrameLayout$LayoutParams;->gravity:I
 
-    .line 68
+    .line 66
     invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
 
     move-result v3
 
     iput v3, v6, Landroid/widget/FrameLayout$LayoutParams;->topMargin:I
 
-    .line 69
+    .line 67
     invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
 
     move-result v3
 
     iput v3, v6, Landroid/widget/FrameLayout$LayoutParams;->leftMargin:I
 
-    .line 71
+    .line 69
     invoke-virtual {v0, v1, v2}, Landroid/view/ViewGroup;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 72
+    .line 70
     invoke-virtual {v0, v4, v6}, Landroid/view/ViewGroup;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 73
+    .line 71
     sget v0, Landroid/os/Build$VERSION;->SDK_INT:I
 
     const/16 v2, 0x15
 
     if-lt v0, v2, :cond_b4
 
-    .line 74
+    .line 72
     const/high16 v0, 0x447a0000
 
     invoke-virtual {v1, v0}, Landroid/widget/Button;->setTranslationZ(F)V
 
-    .line 75
+    .line 73
     invoke-virtual {v4, v0}, Landroid/widget/TextView;->setTranslationZ(F)V
 
-    .line 78
+    .line 76
     :cond_b4
     new-instance v0, Landroid/os/Handler;
 
@@ -286,50 +286,50 @@
 
     invoke-direct {v0, v2}, Landroid/os/Handler;-><init>(Landroid/os/Looper;)V
 
-    .line 79
+    .line 77
     const-string v2, "replay swarm overlay installed"
 
     invoke-static {v2}, Lcom/trueaxis/modmenu/ModDebugLog;->log(Ljava/lang/String;)V
 
-    .line 80
+    .line 78
     new-instance v2, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$1;
 
     invoke-direct {v2, p0, v1, v4, v0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$1;-><init>(Landroid/app/Activity;Landroid/widget/Button;Landroid/widget/TextView;Landroid/os/Handler;)V
 
     invoke-virtual {v0, v2}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
 
-    .line 136
+    .line 134
     new-instance v0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$2;
 
     invoke-direct {v0, p0, v4}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$2;-><init>(Landroid/app/Activity;Landroid/widget/TextView;)V
 
     invoke-virtual {v1, v0}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    .line 148
+    .line 146
     return-void
 .end method
 
 .method private static persistCatalog(Landroid/app/Activity;I)V
     .registers 9
 
-    .line 258
+    .line 251
     if-gtz p1, :cond_3
 
-    .line 259
+    .line 252
     return-void
 
-    .line 261
+    .line 254
     :cond_3
     new-instance v0, Ljava/util/ArrayList;
 
     invoke-direct {v0, p1}, Ljava/util/ArrayList;-><init>(I)V
 
-    .line 262
+    .line 255
     const/16 v1, 0xc0
 
     new-array v1, v1, [B
 
-    .line 263
+    .line 256
     const/4 v2, 0x0
 
     const/4 v3, 0x0
@@ -337,15 +337,15 @@
     :goto_e
     if-ge v3, p1, :cond_27
 
-    .line 264
+    .line 257
     invoke-static {v3, v1}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmCatalogPath(I[B)I
 
     move-result v4
 
-    .line 265
+    .line 258
     if-lez v4, :cond_24
 
-    .line 266
+    .line 259
     new-instance v5, Ljava/lang/String;
 
     const-string v6, "UTF-8"
@@ -358,32 +358,34 @@
 
     invoke-virtual {v0, v5}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
 
-    .line 263
+    .line 256
     :cond_24
     add-int/lit8 v3, v3, 0x1
 
     goto :goto_e
 
-    .line 269
+    .line 262
     :cond_27
     invoke-static {p0, v0}, Lcom/trueaxis/modmenu/ModMenu;->rememberSwarmCatalogPaths(Landroid/content/Context;Ljava/util/List;)V
 
-    .line 270
+    .line 263
     return-void
 .end method
 
 .method private static replayLabel(I[B)Ljava/lang/String;
-    .registers 5
+    .registers 6
 
-    .line 273
+    .line 266
     invoke-static {p0, p1}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmCatalogPath(I[B)I
 
     move-result v0
 
-    .line 274
+    .line 267
+    const/4 v1, 0x1
+
     if-gtz v0, :cond_1c
 
-    .line 275
+    .line 268
     new-instance p1, Ljava/lang/StringBuilder;
 
     invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
@@ -394,7 +396,7 @@
 
     move-result-object p1
 
-    add-int/lit8 p0, p0, 0x1
+    add-int/2addr p0, v1
 
     invoke-virtual {p1, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
@@ -406,398 +408,420 @@
 
     return-object p0
 
-    .line 277
+    .line 270
     :cond_1c
     new-instance p0, Ljava/lang/String;
 
-    const-string v1, "UTF-8"
+    const-string v2, "UTF-8"
 
-    invoke-static {v1}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
+    invoke-static {v2}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
 
-    move-result-object v1
+    move-result-object v2
 
-    const/4 v2, 0x0
+    const/4 v3, 0x0
 
-    invoke-direct {p0, p1, v2, v0, v1}, Ljava/lang/String;-><init>([BIILjava/nio/charset/Charset;)V
+    invoke-direct {p0, p1, v3, v0, v2}, Ljava/lang/String;-><init>([BIILjava/nio/charset/Charset;)V
 
-    .line 278
+    .line 271
     const/16 p1, 0x2f
 
     invoke-virtual {p0, p1}, Ljava/lang/String;->lastIndexOf(I)I
 
     move-result p1
 
-    .line 279
-    if-ltz p1, :cond_3d
+    .line 272
+    if-ltz p1, :cond_3b
 
-    add-int/lit8 p1, p1, 0x1
+    add-int/2addr p1, v1
 
     invoke-virtual {p0}, Ljava/lang/String;->length()I
 
     move-result v0
 
-    if-ge p1, v0, :cond_3d
+    if-ge p1, v0, :cond_3b
 
-    .line 280
+    .line 273
     invoke-virtual {p0, p1}, Ljava/lang/String;->substring(I)Ljava/lang/String;
+
+    move-result-object p0
+
+    .line 275
+    :cond_3b
+    const-string p1, "r\\d\\d\\.bin"
+
+    invoke-virtual {p0, p1}, Ljava/lang/String;->matches(Ljava/lang/String;)Z
+
+    move-result p1
+
+    if-eqz p1, :cond_60
+
+    .line 276
+    new-instance p1, Ljava/lang/StringBuilder;
+
+    invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v0, "Saved replay "
+
+    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p1
+
+    const/4 v0, 0x3
+
+    invoke-virtual {p0, v1, v0}, Ljava/lang/String;->substring(II)Ljava/lang/String;
+
+    move-result-object p0
+
+    invoke-static {p0}, Ljava/lang/Integer;->parseInt(Ljava/lang/String;)I
+
+    move-result p0
+
+    invoke-virtual {p1, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object p0
+
+    invoke-virtual {p0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object p0
 
     return-object p0
 
-    .line 282
-    :cond_3d
+    .line 278
+    :cond_60
     return-object p0
 .end method
 
 .method private static showPicker(Landroid/app/Activity;Landroid/widget/TextView;)V
-    .registers 18
+    .registers 16
 
-    .line 151
-    move-object/from16 v0, p0
-
+    .line 149
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmCatalogCount()I
 
-    move-result v1
+    move-result v0
 
-    .line 152
-    const/4 v2, 0x0
-
-    if-gtz v1, :cond_24
-
-    .line 153
-    new-instance v1, Landroid/app/AlertDialog$Builder;
-
-    invoke-direct {v1, v0}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
-
-    .line 154
-    const-string v0, "No replays known yet"
-
-    invoke-virtual {v1, v0}, Landroid/app/AlertDialog$Builder;->setTitle(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
-
-    move-result-object v0
-
-    .line 155
-    const-string v1, "The swarm list fills up automatically as replays load. Open a replay (View Replay) or race with a ghost once, then tap Swarm again. Known replays are remembered across sessions."
-
-    invoke-virtual {v0, v1}, Landroid/app/AlertDialog$Builder;->setMessage(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
-
-    move-result-object v0
-
-    .line 158
+    .line 150
     const-string v1, "OK"
 
-    invoke-virtual {v0, v1, v2}, Landroid/app/AlertDialog$Builder;->setPositiveButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
+    const/4 v2, 0x0
 
-    move-result-object v0
+    if-gtz v0, :cond_22
 
-    .line 159
-    invoke-virtual {v0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
+    .line 151
+    new-instance p1, Landroid/app/AlertDialog$Builder;
 
-    .line 160
+    invoke-direct {p1, p0}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
+
+    .line 152
+    const-string p0, "No replays found yet"
+
+    invoke-virtual {p1, p0}, Landroid/app/AlertDialog$Builder;->setTitle(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
+
+    move-result-object p0
+
+    .line 153
+    const-string p1, "Finish a race (your replay saves automatically) or watch any replay once, then tap Swarm again. Found replays are remembered across sessions."
+
+    invoke-virtual {p0, p1}, Landroid/app/AlertDialog$Builder;->setMessage(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
+
+    move-result-object p0
+
+    .line 156
+    invoke-virtual {p0, v1, v2}, Landroid/app/AlertDialog$Builder;->setPositiveButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
+
+    move-result-object p0
+
+    .line 157
+    invoke-virtual {p0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
+
+    .line 158
     return-void
 
-    .line 163
-    :cond_24
+    .line 161
+    :cond_22
     new-instance v3, Landroid/widget/LinearLayout;
 
-    invoke-direct {v3, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
+    invoke-direct {v3, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    .line 164
+    .line 162
     const/4 v4, 0x1
 
     invoke-virtual {v3, v4}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    .line 165
+    .line 163
     const/16 v5, 0x10
 
-    invoke-static {v0, v5}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
+    invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
 
     move-result v6
 
     const/16 v7, 0x8
 
-    invoke-static {v0, v7}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
+    invoke-static {p0, v7}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
 
     move-result v8
 
-    invoke-static {v0, v5}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
+    invoke-static {p0, v5}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
 
     move-result v5
 
     const/4 v9, 0x4
 
-    invoke-static {v0, v9}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
+    invoke-static {p0, v9}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
 
     move-result v10
 
     invoke-virtual {v3, v6, v8, v5, v10}, Landroid/widget/LinearLayout;->setPadding(IIII)V
 
-    .line 167
+    .line 165
     new-instance v5, Landroid/widget/TextView;
 
-    invoke-direct {v5, v0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
+    invoke-direct {v5, p0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
 
-    .line 168
-    const-string v6, "Pick one primary replay for the camera, then select additional replays to render as synced ghost cars. Watch them together here, or hit Race to race against the pack (enable race swarm in the mod menu)."
+    .line 166
+    const-string v6, "The replay you are watching stays the camera car. Tick the replays to add as synced ghost cars (each gets its own colour), then Apply. To RACE the pack instead, enable race-vs-swarm in the mod menu, apply a selection here, and press Race."
 
     invoke-virtual {v5, v6}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    .line 172
+    .line 171
     const/high16 v6, 0x41300000
 
     invoke-virtual {v5, v6}, Landroid/widget/TextView;->setTextSize(F)V
 
-    .line 173
-    const v8, -0xbbbbbc
+    .line 172
+    const v6, -0xbbbbbc
 
-    invoke-virtual {v5, v8}, Landroid/widget/TextView;->setTextColor(I)V
+    invoke-virtual {v5, v6}, Landroid/widget/TextView;->setTextColor(I)V
+
+    .line 173
+    invoke-static {p0, v7}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
+
+    move-result v6
+
+    const/4 v7, 0x0
+
+    invoke-virtual {v5, v7, v7, v7, v6}, Landroid/widget/TextView;->setPadding(IIII)V
 
     .line 174
-    invoke-static {v0, v7}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
-
-    move-result v7
-
-    const/4 v8, 0x0
-
-    invoke-virtual {v5, v8, v8, v8, v7}, Landroid/widget/TextView;->setPadding(IIII)V
-
-    .line 175
     invoke-virtual {v3, v5}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    .line 177
+    .line 176
     new-instance v5, Landroid/widget/ScrollView;
 
-    invoke-direct {v5, v0}, Landroid/widget/ScrollView;-><init>(Landroid/content/Context;)V
+    invoke-direct {v5, p0}, Landroid/widget/ScrollView;-><init>(Landroid/content/Context;)V
+
+    .line 177
+    new-instance v6, Landroid/widget/LinearLayout;
+
+    invoke-direct {v6, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
     .line 178
-    new-instance v7, Landroid/widget/LinearLayout;
-
-    invoke-direct {v7, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
+    invoke-virtual {v6, v4}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
     .line 179
-    invoke-virtual {v7, v4}, Landroid/widget/LinearLayout;->setOrientation(I)V
+    invoke-virtual {v5, v6}, Landroid/widget/ScrollView;->addView(Landroid/view/View;)V
 
     .line 180
-    invoke-virtual {v5, v7}, Landroid/widget/ScrollView;->addView(Landroid/view/View;)V
+    new-instance v8, Landroid/widget/LinearLayout$LayoutParams;
 
     .line 181
-    new-instance v10, Landroid/widget/LinearLayout$LayoutParams;
+    const/16 v10, 0xdc
 
-    .line 182
-    const/16 v11, 0xdc
+    invoke-static {p0, v10}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
 
-    invoke-static {v0, v11}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
+    move-result v10
 
-    move-result v11
+    const/4 v11, -0x1
 
-    const/4 v12, -0x1
+    invoke-direct {v8, v11, v10}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
 
-    invoke-direct {v10, v12, v11}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
+    .line 180
+    invoke-virtual {v3, v5, v8}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    .line 181
-    invoke-virtual {v3, v5, v10}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
-
-    .line 184
-    new-instance v5, Landroid/widget/RadioGroup;
-
-    invoke-direct {v5, v0}, Landroid/widget/RadioGroup;-><init>(Landroid/content/Context;)V
-
-    .line 185
-    invoke-virtual {v5, v4}, Landroid/widget/RadioGroup;->setOrientation(I)V
-
-    .line 186
-    invoke-virtual {v7, v5}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
-
-    .line 187
-    new-array v4, v1, [Landroid/widget/CheckBox;
-
-    .line 188
-    const/16 v10, 0xc0
-
-    new-array v10, v10, [B
-
-    .line 189
+    .line 183
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmPrimaryIndex()I
 
-    move-result v11
+    move-result v5
+
+    .line 184
+    if-gez v5, :cond_a1
+
+    .line 185
+    new-instance p1, Landroid/app/AlertDialog$Builder;
+
+    invoke-direct {p1, p0}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
+
+    .line 186
+    const-string p0, "Open a replay first"
+
+    invoke-virtual {p1, p0}, Landroid/app/AlertDialog$Builder;->setTitle(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
+
+    move-result-object p0
+
+    .line 187
+    const-string p1, "Pick the swarm while WATCHING a replay: open View Replay on a level, then tap Swarm during playback."
+
+    invoke-virtual {p0, p1}, Landroid/app/AlertDialog$Builder;->setMessage(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
+
+    move-result-object p0
+
+    .line 189
+    invoke-virtual {p0, v1, v2}, Landroid/app/AlertDialog$Builder;->setPositiveButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
+
+    move-result-object p0
 
     .line 190
-    if-ltz v11, :cond_9d
-
-    if-lt v11, v1, :cond_9e
+    invoke-virtual {p0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
 
     .line 191
-    :cond_9d
-    const/4 v11, 0x0
+    return-void
+
+    .line 193
+    :cond_a1
+    new-array v1, v0, [Landroid/widget/CheckBox;
 
     .line 194
-    :cond_9e
-    const/4 v12, 0x0
+    const/16 v8, 0xc0
 
-    :goto_9f
-    if-ge v12, v1, :cond_fd
+    new-array v8, v8, [B
 
     .line 195
-    invoke-static {v12, v10}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->replayLabel(I[B)Ljava/lang/String;
+    const/4 v10, 0x0
 
-    move-result-object v13
+    :goto_a8
+    if-ge v10, v0, :cond_eb
+
+    .line 196
+    new-instance v11, Landroid/widget/CheckBox;
+
+    invoke-direct {v11, p0}, Landroid/widget/CheckBox;-><init>(Landroid/content/Context;)V
 
     .line 197
-    new-instance v14, Landroid/widget/RadioButton;
+    invoke-static {v10, v8}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->replayLabel(I[B)Ljava/lang/String;
 
-    invoke-direct {v14, v0}, Landroid/widget/RadioButton;-><init>(Landroid/content/Context;)V
+    move-result-object v12
 
     .line 198
-    new-instance v15, Ljava/lang/StringBuilder;
+    if-ne v10, v5, :cond_c8
 
-    invoke-direct {v15}, Ljava/lang/StringBuilder;-><init>()V
+    new-instance v13, Ljava/lang/StringBuilder;
 
-    const-string v2, "Primary: "
+    invoke-direct {v13}, Ljava/lang/StringBuilder;-><init>()V
 
-    invoke-virtual {v15, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v13, v12}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    move-result-object v2
+    move-result-object v12
 
-    invoke-virtual {v2, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const-string v13, " (watching now)"
 
-    move-result-object v2
+    invoke-virtual {v12, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v12
 
-    move-result-object v2
+    invoke-virtual {v12}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    invoke-virtual {v14, v2}, Landroid/widget/RadioButton;->setText(Ljava/lang/CharSequence;)V
+    move-result-object v12
+
+    :cond_c8
+    invoke-virtual {v11, v12}, Landroid/widget/CheckBox;->setText(Ljava/lang/CharSequence;)V
 
     .line 199
-    invoke-virtual {v14, v12}, Landroid/widget/RadioButton;->setId(I)V
+    if-eq v10, v5, :cond_cf
+
+    const/4 v12, 0x1
+
+    goto :goto_d0
+
+    :cond_cf
+    const/4 v12, 0x0
+
+    :goto_d0
+    invoke-virtual {v11, v12}, Landroid/widget/CheckBox;->setEnabled(Z)V
 
     .line 200
-    invoke-virtual {v14, v6}, Landroid/widget/RadioButton;->setTextSize(F)V
+    const/high16 v12, 0x41400000
+
+    invoke-virtual {v11, v12}, Landroid/widget/CheckBox;->setTextSize(F)V
 
     .line 201
-    invoke-virtual {v5, v14}, Landroid/widget/RadioGroup;->addView(Landroid/view/View;)V
+    invoke-static {p0, v9}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
 
-    .line 203
-    new-instance v2, Landroid/widget/CheckBox;
+    move-result v12
 
-    invoke-direct {v2, v0}, Landroid/widget/CheckBox;-><init>(Landroid/content/Context;)V
-
-    .line 204
-    new-instance v14, Ljava/lang/StringBuilder;
-
-    invoke-direct {v14}, Ljava/lang/StringBuilder;-><init>()V
-
-    const-string v15, "Ghost overlay for "
-
-    invoke-virtual {v14, v15}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v14
-
-    invoke-virtual {v14, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    move-result-object v13
-
-    invoke-virtual {v13}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object v13
-
-    invoke-virtual {v2, v13}, Landroid/widget/CheckBox;->setText(Ljava/lang/CharSequence;)V
-
-    .line 205
-    invoke-virtual {v2, v6}, Landroid/widget/CheckBox;->setTextSize(F)V
-
-    .line 206
-    const/16 v13, 0xc
-
-    invoke-static {v0, v13}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
+    invoke-static {p0, v9}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
 
     move-result v13
 
-    invoke-static {v0, v9}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->dp(Landroid/app/Activity;I)I
+    invoke-virtual {v11, v12, v7, v7, v13}, Landroid/widget/CheckBox;->setPadding(IIII)V
 
-    move-result v14
+    .line 202
+    aput-object v11, v1, v10
 
-    invoke-virtual {v2, v13, v8, v8, v14}, Landroid/widget/CheckBox;->setPadding(IIII)V
+    .line 203
+    invoke-virtual {v6, v11}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+
+    .line 195
+    add-int/lit8 v10, v10, 0x1
+
+    goto :goto_a8
+
+    .line 206
+    :cond_eb
+    new-instance v4, Landroid/app/AlertDialog$Builder;
+
+    invoke-direct {v4, p0}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
 
     .line 207
-    aput-object v2, v4, v12
+    const-string v6, "Replay swarm \u2014 pick ghost replays"
+
+    invoke-virtual {v4, v6}, Landroid/app/AlertDialog$Builder;->setTitle(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
+
+    move-result-object v4
 
     .line 208
-    invoke-virtual {v7, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+    invoke-virtual {v4, v3}, Landroid/app/AlertDialog$Builder;->setView(Landroid/view/View;)Landroid/app/AlertDialog$Builder;
 
-    .line 194
-    add-int/lit8 v12, v12, 0x1
+    move-result-object v3
 
-    const/4 v2, 0x0
+    .line 209
+    const-string v4, "Cancel"
 
-    goto :goto_9f
-
-    .line 210
-    :cond_fd
-    invoke-virtual {v5, v11}, Landroid/widget/RadioGroup;->check(I)V
-
-    .line 212
-    new-instance v2, Landroid/app/AlertDialog$Builder;
-
-    invoke-direct {v2, v0}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
-
-    .line 213
-    const-string v6, "Replay swarm"
-
-    invoke-virtual {v2, v6}, Landroid/app/AlertDialog$Builder;->setTitle(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
-
-    move-result-object v2
-
-    .line 214
-    invoke-virtual {v2, v3}, Landroid/app/AlertDialog$Builder;->setView(Landroid/view/View;)Landroid/app/AlertDialog$Builder;
-
-    move-result-object v2
-
-    .line 215
-    const-string v3, "Cancel"
-
-    const/4 v6, 0x0
-
-    invoke-virtual {v2, v3, v6}, Landroid/app/AlertDialog$Builder;->setNegativeButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
+    invoke-virtual {v3, v4, v2}, Landroid/app/AlertDialog$Builder;->setNegativeButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
 
     move-result-object v2
 
     new-instance v3, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$4;
 
-    move-object/from16 v6, p1
+    invoke-direct {v3, p1, p0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$4;-><init>(Landroid/widget/TextView;Landroid/app/Activity;)V
 
-    invoke-direct {v3, v6, v0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$4;-><init>(Landroid/widget/TextView;Landroid/app/Activity;)V
+    .line 210
+    const-string p1, "Clear"
 
-    .line 216
-    const-string v6, "Clear"
+    invoke-virtual {v2, p1, v3}, Landroid/app/AlertDialog$Builder;->setNeutralButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
 
-    invoke-virtual {v2, v6, v3}, Landroid/app/AlertDialog$Builder;->setNeutralButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
+    move-result-object p1
 
-    move-result-object v2
+    new-instance v2, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;
 
-    new-instance v3, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;
+    invoke-direct {v2, v0, v5, v1, p0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;-><init>(II[Landroid/widget/CheckBox;Landroid/app/Activity;)V
 
-    invoke-direct {v3, v5, v0, v1, v4}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;-><init>(Landroid/widget/RadioGroup;Landroid/app/Activity;I[Landroid/widget/CheckBox;)V
+    .line 217
+    const-string p0, "Apply"
 
-    .line 223
-    const-string v0, "Apply"
+    invoke-virtual {p1, p0, v2}, Landroid/app/AlertDialog$Builder;->setPositiveButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
 
-    invoke-virtual {v2, v0, v3}, Landroid/app/AlertDialog$Builder;->setPositiveButton(Ljava/lang/CharSequence;Landroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
+    move-result-object p0
 
-    move-result-object v0
+    .line 246
+    invoke-virtual {p0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
 
-    .line 253
-    invoke-virtual {v0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
-
-    .line 254
+    .line 247
     return-void
 .end method
 
 .method private static toast(Landroid/app/Activity;Ljava/lang/String;)V
     .registers 3
 
-    .line 286
+    .line 282
     const/4 v0, 0x1
 
     invoke-static {p0, p1, v0}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
@@ -806,6 +830,6 @@
 
     invoke-virtual {p0}, Landroid/widget/Toast;->show()V
 
-    .line 287
+    .line 283
     return-void
 .end method

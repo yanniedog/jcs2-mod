@@ -888,10 +888,14 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplaySwar
     if !REPLAY_SWARM_ENABLED.load(Ordering::Acquire) || !ensure_swarm_symbols() {
         return;
     }
-    swarm_reset_ghosts();
-    if primary_index < 0 || primary_index as usize >= SWARM_CATALOG_LEN {
+    // Selections may only be applied inside the passive View Replay viewer
+    // with a known current replay: ghost loading goes through the live Replay
+    // object, and outside the viewer that object can hold the player's
+    // just-recorded run (clobbering it risks corrupting a saved PB).
+    if !VIEW_REPLAY_SESSION || primary_index < 0 || primary_index as usize >= SWARM_CATALOG_LEN {
         return;
     }
+    swarm_reset_ghosts();
     SWARM_PRIMARY_CATALOG_INDEX = primary_index;
 
     let mut indices = [0i32; SWARM_MAX_GHOSTS];
@@ -932,5 +936,8 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplaySwar
         ghost_slot += 1;
     }
     SWARM_GHOST_COUNT = ghost_slot;
+    // Put the watched replay back into the Replay object (the ghost loads
+    // replaced its data) so playback keeps looping the right file.
+    swarm_restore_primary_replay(primary_index);
     REPLAY_SWARM_ACTIVE.store(SWARM_GHOST_COUNT > 0, Ordering::Release);
 }

@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 1054
+    .line 1056
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,18 +43,18 @@
 .method public onClick(Landroid/view/View;)V
     .registers 3
 
-    .line 1056
+    .line 1058
     const-string p1, "launcher"
 
     const-string v0, "upload debug logs clicked"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1057
+    .line 1059
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$a:Landroid/app/Activity;
 
     invoke-static {p1}, Lcom/trueaxis/modmenu/DebugLogExporter;->uploadNow(Landroid/app/Activity;)V
 
-    .line 1058
+    .line 1060
     return-void
 .end method

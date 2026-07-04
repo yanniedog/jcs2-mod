@@ -34,7 +34,7 @@
         }
     .end annotation
 
-    .line 1249
+    .line 1251
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$cars:Landroid/widget/Spinner;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$status:Landroid/widget/TextView;
@@ -51,14 +51,14 @@
 .method public run()V
     .registers 4
 
-    .line 1251
+    .line 1253
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$cars:Landroid/widget/Spinner;
 
     invoke-virtual {v0}, Landroid/widget/Spinner;->getSelectedItemPosition()I
 
     move-result v0
 
-    .line 1252
+    .line 1254
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$status:Landroid/widget/TextView;
 
     iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$a:Landroid/app/Activity;
@@ -74,19 +74,19 @@
 
     if-eqz v0, :cond_17
 
-    .line 1253
+    .line 1255
     const-string v0, "Active livery: custom"
 
     goto :goto_19
 
-    .line 1254
+    .line 1256
     :cond_17
     const-string v0, "Active livery: bundled default"
 
-    .line 1252
+    .line 1254
     :goto_19
     invoke-virtual {v1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
-    .line 1255
+    .line 1257
     return-void
 .end method
