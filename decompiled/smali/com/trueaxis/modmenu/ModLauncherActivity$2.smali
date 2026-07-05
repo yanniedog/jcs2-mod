@@ -33,7 +33,7 @@
         }
     .end annotation
 
-    .line 40
+    .line 41
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModLauncherActivity$2;->this$0:Lcom/trueaxis/modmenu/ModLauncherActivity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -46,11 +46,11 @@
 .method public run()V
     .registers 2
 
-    .line 42
+    .line 43
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModLauncherActivity$2;->this$0:Lcom/trueaxis/modmenu/ModLauncherActivity;
 
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModDebugLog;->requestSharedLogPermission(Landroid/app/Activity;)V
 
-    .line 43
+    .line 44
     return-void
 .end method

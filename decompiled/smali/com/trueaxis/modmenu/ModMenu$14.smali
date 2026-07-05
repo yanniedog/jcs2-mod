@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 951
+    .line 992
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$14;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,7 +43,7 @@
 .method public run()V
     .registers 2
 
-    .line 954
+    .line 995
     :try_start_0
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$14;->val$a:Landroid/app/Activity;
 
@@ -55,14 +55,14 @@
     :try_end_9
     .catchall {:try_start_0 .. :try_end_9} :catchall_a
 
-    .line 956
+    .line 997
     goto :goto_b
 
-    .line 955
+    .line 996
     :catchall_a
     move-exception v0
 
-    .line 957
+    .line 998
     :goto_b
     return-void
 .end method

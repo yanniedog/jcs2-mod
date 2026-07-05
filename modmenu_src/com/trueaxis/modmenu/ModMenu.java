@@ -514,6 +514,47 @@ public class ModMenu {
         return prefs(c).getBoolean(K_RACE_SWARM, false);
     }
 
+    /** Test-harness setter (automation launch extra). */
+    public static void setReplaySwarmEnabled(Context c, boolean enabled) {
+        prefs(c).edit().putBoolean(K_REPLAY_SWARM, enabled).apply();
+    }
+
+    public static void setRaceSwarmEnabled(Context c, boolean enabled) {
+        prefs(c).edit().putBoolean(K_RACE_SWARM, enabled).apply();
+    }
+
+    /** Harness-only: auto-apply every catalog replay as a ghost in the viewer. */
+    public static boolean swarmAutoApplyEnabled(Context c) {
+        return prefs(c).getBoolean("swarm_autoapply", false);
+    }
+
+    public static void setSwarmAutoApply(Context c, boolean enabled) {
+        prefs(c).edit().putBoolean("swarm_autoapply", enabled).apply();
+    }
+
+    /** Ghost pack: relative replay paths auto-loaded at every level start. */
+    public static String[] ghostPackPaths(Context c) {
+        String joined = prefs(c).getString("ghost_pack_paths", "");
+        if (joined == null || joined.length() == 0) {
+            return new String[0];
+        }
+        return joined.split("\n");
+    }
+
+    public static void setGhostPackPaths(Context c, java.util.List<String> paths) {
+        StringBuilder joined = new StringBuilder();
+        int kept = 0;
+        for (String path : paths) {
+            if (path == null || path.length() == 0 || kept >= 7) {
+                continue;
+            }
+            if (joined.length() > 0) joined.append('\n');
+            joined.append(path);
+            kept++;
+        }
+        prefs(c).edit().putString("ghost_pack_paths", joined.toString()).apply();
+    }
+
     /** Orbit camera stand-off radius in world units. */
     public static int orbitRadius(Context c) {
         return clamp(prefs(c).getInt(K_ORBIT_RADIUS, DEFAULT_ORBIT_RADIUS), 4, 40);
@@ -959,6 +1000,22 @@ public class ModMenu {
             swarmExtras.setVisibility(replaySwarmEnabled(a) ? View.VISIBLE : View.GONE);
             swarmCard.addView(swarmExtras, fill());
 
+            TextView packHelp = label(a,
+                    "Ghost pack: every finished race is archived automatically. Pick up "
+                            + "to 7 archived replays; they ride along as coloured ghost "
+                            + "cars in every replay AND every race.",
+                    9, Color.rgb(170, 178, 185));
+            packHelp.setPadding(0, dp(a, 6), 0, dp(a, 2));
+            swarmCard.addView(packHelp);
+            final Button packButton = button(a,
+                    "Choose ghost pack (" + ghostPackPaths(a).length + " selected)");
+            packButton.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    showGhostPackPicker(a, packButton);
+                }
+            });
+            swarmCard.addView(packButton, fill());
+
             LinearLayout splitCard = subCard(a);
             addSubCard(a, card, splitCard);
             LinearLayout splitHeaderRow = new LinearLayout(a);
@@ -1126,6 +1183,80 @@ public class ModMenu {
         });
         card.addView(checkBox, fill());
         return checkBox;
+    }
+
+    /** Multi-select dialog over the archived replay library (ghost pack). */
+    private static void showGhostPackPicker(final Activity a, final Button packButton) {
+        try {
+            RequiredPatches.archiveNewSlotReplays(a);
+        } catch (Throwable ignored) {
+        }
+        final java.util.List<java.io.File> library = RequiredPatches.swarmLibraryFiles(a);
+        if (library.isEmpty()) {
+            new AlertDialog.Builder(a)
+                    .setTitle("No archived replays yet")
+                    .setMessage("Finish a race first - every finished race is archived "
+                            + "automatically and shows up here.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
+        final java.util.HashSet<String> selected =
+                new java.util.HashSet<String>(java.util.Arrays.asList(ghostPackPaths(a)));
+        final String[] labels = new String[library.size()];
+        final boolean[] checks = new boolean[library.size()];
+        java.text.SimpleDateFormat fmt =
+                new java.text.SimpleDateFormat("d MMM HH:mm", java.util.Locale.US);
+        for (int i = 0; i < library.size(); i++) {
+            java.io.File file = library.get(i);
+            String slot = file.getName().length() >= 3
+                    ? file.getName().substring(1, 3) : "??";
+            labels[i] = "Level slot " + slot + " - " + fmt.format(
+                    new java.util.Date(file.lastModified()));
+            checks[i] = selected.contains("swarm_replays/" + file.getName());
+        }
+        new AlertDialog.Builder(a)
+                .setTitle("Ghost pack (max 7)")
+                .setMultiChoiceItems(labels, checks,
+                        new android.content.DialogInterface.OnMultiChoiceClickListener() {
+                            public void onClick(android.content.DialogInterface d,
+                                                int which, boolean isChecked) {
+                                checks[which] = isChecked;
+                            }
+                        })
+                .setNegativeButton("Cancel", null)
+                .setNeutralButton("Clear", new android.content.DialogInterface.OnClickListener() {
+                    public void onClick(android.content.DialogInterface d, int which) {
+                        setGhostPackPaths(a, new java.util.ArrayList<String>());
+                        try {
+                            RequiredPatches.applyGhostPack(a);
+                        } catch (Throwable ignored) {
+                        }
+                        packButton.setText("Choose ghost pack (0 selected)");
+                    }
+                })
+                .setPositiveButton("Save", new android.content.DialogInterface.OnClickListener() {
+                    public void onClick(android.content.DialogInterface d, int which) {
+                        java.util.ArrayList<String> picked = new java.util.ArrayList<String>();
+                        for (int i = 0; i < checks.length; i++) {
+                            if (checks[i]) {
+                                picked.add("swarm_replays/" + library.get(i).getName());
+                            }
+                        }
+                        setGhostPackPaths(a, picked);
+                        try {
+                            RequiredPatches.applyGhostPack(a);
+                        } catch (Throwable ignored) {
+                        }
+                        int count = ghostPackPaths(a).length;
+                        packButton.setText("Choose ghost pack (" + count + " selected)");
+                        if (picked.size() > 7) {
+                            Toast.makeText(a, "Only the first 7 picks are used.",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    }
+                })
+                .show();
     }
 
     private static void updateSplitOptionsVisibility(Context c, View content,

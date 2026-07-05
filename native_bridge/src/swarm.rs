@@ -303,6 +303,39 @@ pub(crate) unsafe fn swarm_restore_ghost_globals(
 /// from our own ghost loads.
 pub(crate) static mut IN_SWARM_LOAD: bool = false;
 
+/// The user-chosen ghost pack (mod menu): replay paths loaded automatically at
+/// every level start, so the pack rides along in BOTH the passive viewer and
+/// live races without any in-game dialog.
+pub(crate) static mut RACE_PACK_PATHS: [[u8; SWARM_CATALOG_PATH_BYTES + 1]; SWARM_MAX_GHOSTS] =
+    [[0; SWARM_CATALOG_PATH_BYTES + 1]; SWARM_MAX_GHOSTS];
+
+pub(crate) static mut RACE_PACK_LEN: usize = 0;
+
+/// Load the configured ghost pack into the swarm slots. Called from the
+/// Game::LoadLevel hook AFTER the stock load: the game (re)initialises its own
+/// replay/ghost state afterwards for races and the viewer alike, so the
+/// transient Replay-object reuse here can never clobber anything lasting.
+pub(crate) unsafe fn swarm_load_race_pack() {
+    if RACE_PACK_LEN == 0 || !ensure_swarm_symbols() {
+        return;
+    }
+    swarm_reset_ghosts();
+    let mut slot = 0usize;
+    let mut index = 0usize;
+    while index < RACE_PACK_LEN && slot < SWARM_MAX_GHOSTS {
+        let path = RACE_PACK_PATHS[index].as_ptr() as *const c_char;
+        let (nodes, node_count) = swarm_load_ghost_nodes_from_path(path);
+        if !nodes.is_null() && node_count > 1 {
+            SWARM_GHOST_NODES[slot] = nodes;
+            SWARM_GHOST_NODE_COUNT[slot] = node_count;
+            slot += 1;
+        }
+        index += 1;
+    }
+    SWARM_GHOST_COUNT = slot;
+    REPLAY_SWARM_ACTIVE.store(slot > 0, Ordering::Release);
+}
+
 pub(crate) unsafe fn swarm_load_ghost_nodes_from_path(path: *const c_char) -> (*mut u8, i32) {
     let game = CURRENT_GAME;
     let replay = swarm_replay_object(game);

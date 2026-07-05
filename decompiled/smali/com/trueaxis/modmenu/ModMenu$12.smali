@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 909
+    .line 950
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$cycleParams:Landroid/widget/LinearLayout;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$a:Landroid/app/Activity;
@@ -47,10 +47,10 @@
 .method public run()V
     .registers 3
 
-    .line 911
+    .line 952
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$cycleParams:Landroid/widget/LinearLayout;
 
-    .line 912
+    .line 953
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$a:Landroid/app/Activity;
 
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->cameraCycleEnabled(Landroid/content/Context;)Z
@@ -66,15 +66,15 @@
     :cond_c
     const/16 v1, 0x8
 
-    .line 911
+    .line 952
     :goto_e
     invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setVisibility(I)V
 
-    .line 914
+    .line 955
     :try_start_11
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$12;->val$a:Landroid/app/Activity;
 
-    .line 915
+    .line 956
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->cameraCycleEnabled(Landroid/content/Context;)Z
 
     move-result v0
@@ -85,19 +85,19 @@
 
     move-result v1
 
-    .line 914
+    .line 955
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayCameraCycle(ZI)V
     :try_end_20
     .catchall {:try_start_11 .. :try_end_20} :catchall_21
 
-    .line 917
+    .line 958
     goto :goto_22
 
-    .line 916
+    .line 957
     :catchall_21
     move-exception v0
 
-    .line 918
+    .line 959
     :goto_22
     return-void
 .end method

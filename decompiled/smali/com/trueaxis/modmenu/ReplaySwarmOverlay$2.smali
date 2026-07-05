@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 134
+    .line 160
     iput-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$2;->val$activity:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$2;->val$status:Landroid/widget/TextView;
@@ -47,7 +47,7 @@
 .method public onClick(Landroid/view/View;)V
     .registers 5
 
-    .line 137
+    .line 163
     const-string p1, "swarm"
 
     :try_start_2
@@ -61,7 +61,7 @@
 
     move-result-object v0
 
-    .line 138
+    .line 164
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmCatalogCount()I
 
     move-result v1
@@ -74,10 +74,10 @@
 
     move-result-object v0
 
-    .line 137
+    .line 163
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 139
+    .line 165
     iget-object v0, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$2;->val$activity:Landroid/app/Activity;
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$2;->val$status:Landroid/widget/TextView;
@@ -87,19 +87,19 @@
     :try_end_23
     .catchall {:try_start_2 .. :try_end_23} :catchall_24
 
-    .line 143
+    .line 169
     goto :goto_42
 
-    .line 140
+    .line 166
     :catchall_24
     move-exception v0
 
-    .line 141
+    .line 167
     const-string v1, "picker failed"
 
     invoke-static {p1, v1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 142
+    .line 168
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$2;->val$activity:Landroid/app/Activity;
 
     new-instance v1, Ljava/lang/StringBuilder;
@@ -123,7 +123,7 @@
     # invokes: Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->toast(Landroid/app/Activity;Ljava/lang/String;)V
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->access$200(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 144
+    .line 170
     :goto_42
     return-void
 .end method

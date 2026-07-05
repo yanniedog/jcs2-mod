@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 823
+    .line 864
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,7 +43,7 @@
 .method public run()V
     .registers 6
 
-    .line 826
+    .line 867
     :try_start_0
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
 
@@ -53,7 +53,7 @@
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
 
-    .line 827
+    .line 868
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->tracksideSideDist(Landroid/content/Context;)I
 
     move-result v1
@@ -66,7 +66,7 @@
 
     iget-object v3, p0, Lcom/trueaxis/modmenu/ModMenu$9;->val$a:Landroid/app/Activity;
 
-    .line 828
+    .line 869
     invoke-static {v3}, Lcom/trueaxis/modmenu/ModMenu;->tracksideMinDist(Landroid/content/Context;)I
 
     move-result v3
@@ -77,19 +77,19 @@
 
     move-result v4
 
-    .line 826
+    .line 867
     invoke-static {v0, v1, v2, v3, v4}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayTracksideTuning(IIIII)V
     :try_end_21
     .catchall {:try_start_0 .. :try_end_21} :catchall_22
 
-    .line 830
+    .line 871
     goto :goto_23
 
-    .line 829
+    .line 870
     :catchall_22
     move-exception v0
 
-    .line 831
+    .line 872
     :goto_23
     return-void
 .end method

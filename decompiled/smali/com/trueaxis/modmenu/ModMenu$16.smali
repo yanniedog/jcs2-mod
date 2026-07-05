@@ -3,7 +3,7 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Ljava/lang/Runnable;
+.implements Landroid/view/View$OnClickListener;
 
 
 # annotations
@@ -18,32 +18,20 @@
 
 
 # instance fields
-.field final synthetic val$a:Landroid/app/Activity;
-
 .field final synthetic val$displaySliders:Landroid/widget/LinearLayout;
-
-.field final synthetic val$displayToggle:Landroid/widget/Button;
-
-.field final synthetic val$splitOptions:Landroid/widget/LinearLayout;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/widget/LinearLayout;Landroid/widget/LinearLayout;Landroid/widget/Button;)V
-    .registers 5
+.method constructor <init>(Landroid/widget/LinearLayout;)V
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 1010
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$a:Landroid/app/Activity;
-
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$splitOptions:Landroid/widget/LinearLayout;
-
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displaySliders:Landroid/widget/LinearLayout;
-
-    iput-object p4, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displayToggle:Landroid/widget/Button;
+    .line 1042
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displaySliders:Landroid/widget/LinearLayout;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -52,21 +40,64 @@
 
 
 # virtual methods
-.method public run()V
-    .registers 5
+.method public onClick(Landroid/view/View;)V
+    .registers 4
 
-    .line 1012
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$a:Landroid/app/Activity;
+    .line 1044
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displaySliders:Landroid/widget/LinearLayout;
 
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$splitOptions:Landroid/widget/LinearLayout;
+    invoke-virtual {p1}, Landroid/widget/LinearLayout;->getVisibility()I
 
-    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displaySliders:Landroid/widget/LinearLayout;
+    move-result p1
 
-    iget-object v3, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displayToggle:Landroid/widget/Button;
+    const/4 v0, 0x0
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->updateSplitOptionsVisibility(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
-    invoke-static {v0, v1, v2, v3}, Lcom/trueaxis/modmenu/ModMenu;->access$200(Landroid/content/Context;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
+    if-eqz p1, :cond_b
 
-    .line 1014
+    const/4 p1, 0x1
+
+    goto :goto_c
+
+    :cond_b
+    const/4 p1, 0x0
+
+    .line 1045
+    :goto_c
+    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$16;->val$displaySliders:Landroid/widget/LinearLayout;
+
+    if-eqz p1, :cond_11
+
+    goto :goto_13
+
+    :cond_11
+    const/16 v0, 0x8
+
+    :goto_13
+    invoke-virtual {v1, v0}, Landroid/widget/LinearLayout;->setVisibility(I)V
+
+    .line 1046
+    new-instance v0, Ljava/lang/StringBuilder;
+
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v1, "split display sliders toggled visible="
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    invoke-virtual {v0, p1}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+
+    move-result-object p1
+
+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object p1
+
+    const-string v0, "launcher"
+
+    invoke-static {v0, p1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
+
+    .line 1048
     return-void
 .end method

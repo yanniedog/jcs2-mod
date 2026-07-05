@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 719
+    .line 760
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,7 +43,7 @@
 .method public onClick(Landroid/view/View;)V
     .registers 7
 
-    .line 722
+    .line 763
     const-string p1, "https://github.com/yanniedog/jcs2-mod"
 
     const-string v0, "launcher"
@@ -53,7 +53,7 @@
 
     invoke-static {v0, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 723
+    .line 764
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
 
     new-instance v2, Landroid/content/Intent;
@@ -70,19 +70,19 @@
     :try_end_19
     .catchall {:try_start_4 .. :try_end_19} :catchall_1a
 
-    .line 727
+    .line 768
     goto :goto_2a
 
-    .line 724
+    .line 765
     :catchall_1a
     move-exception v1
 
-    .line 725
+    .line 766
     const-string v2, "open link failed url=https://github.com/yanniedog/jcs2-mod"
 
     invoke-static {v0, v2, v1}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 726
+    .line 767
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$3;->val$a:Landroid/app/Activity;
 
     const/4 v1, 0x1
@@ -93,7 +93,7 @@
 
     invoke-virtual {p1}, Landroid/widget/Toast;->show()V
 
-    .line 728
+    .line 769
     :goto_2a
     return-void
 .end method

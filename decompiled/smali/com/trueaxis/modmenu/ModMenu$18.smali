@@ -18,11 +18,11 @@
 
 
 # instance fields
-.field final synthetic val$a:Landroid/app/Activity;
+.field final synthetic val$onPlay:Ljava/lang/Runnable;
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;)V
+.method constructor <init>(Ljava/lang/Runnable;)V
     .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
@@ -30,8 +30,8 @@
         }
     .end annotation
 
-    .line 1056
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$a:Landroid/app/Activity;
+    .line 1099
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$onPlay:Ljava/lang/Runnable;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -43,18 +43,18 @@
 .method public onClick(Landroid/view/View;)V
     .registers 3
 
-    .line 1058
+    .line 1101
     const-string p1, "launcher"
 
-    const-string v0, "upload debug logs clicked"
+    const-string v0, "play button invoking onPlay"
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
 
-    .line 1059
-    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$a:Landroid/app/Activity;
+    .line 1102
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$18;->val$onPlay:Ljava/lang/Runnable;
 
-    invoke-static {p1}, Lcom/trueaxis/modmenu/DebugLogExporter;->uploadNow(Landroid/app/Activity;)V
+    invoke-interface {p1}, Ljava/lang/Runnable;->run()V
 
-    .line 1060
+    .line 1103
     return-void
 .end method

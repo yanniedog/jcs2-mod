@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 804
+    .line 845
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,11 +43,11 @@
 .method public run()V
     .registers 4
 
-    .line 807
+    .line 848
     :try_start_0
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$8;->val$a:Landroid/app/Activity;
 
-    .line 808
+    .line 849
     invoke-static {v0}, Lcom/trueaxis/modmenu/ModMenu;->orbitRadius(Landroid/content/Context;)I
 
     move-result v0
@@ -64,19 +64,19 @@
 
     move-result v2
 
-    .line 807
+    .line 848
     invoke-static {v0, v1, v2}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayOrbitTuning(III)V
     :try_end_15
     .catchall {:try_start_0 .. :try_end_15} :catchall_16
 
-    .line 810
+    .line 851
     goto :goto_17
 
-    .line 809
+    .line 850
     :catchall_16
     move-exception v0
 
-    .line 811
+    .line 852
     :goto_17
     return-void
 .end method

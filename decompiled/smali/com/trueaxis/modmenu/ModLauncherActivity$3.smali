@@ -33,7 +33,7 @@
         }
     .end annotation
 
-    .line 45
+    .line 46
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModLauncherActivity$3;->this$0:Lcom/trueaxis/modmenu/ModLauncherActivity;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -46,11 +46,11 @@
 .method public run()V
     .registers 2
 
-    .line 47
+    .line 48
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModLauncherActivity$3;->this$0:Lcom/trueaxis/modmenu/ModLauncherActivity;
 
     invoke-static {v0}, Lcom/trueaxis/modmenu/UpdateManager;->checkSilently(Landroid/app/Activity;)V
 
-    .line 48
+    .line 49
     return-void
 .end method

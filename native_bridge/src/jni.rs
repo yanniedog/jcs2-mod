@@ -762,6 +762,40 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayCame
     replay_camera::configure_cycle(enabled != 0, seconds);
 }
 
+/// Configure the ghost pack: NUL-separated relative replay paths (max 7).
+/// The pack loads automatically at every level start (viewer and races).
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplaySwarmRacePack(
+    env: *mut c_void,
+    _class: *mut c_void,
+    joined: *mut c_void,
+) {
+    let mut buf = [0u8; (SWARM_CATALOG_PATH_BYTES + 1) * SWARM_MAX_GHOSTS];
+    let len = jni_read_byte_array(env, joined, buf.as_mut_ptr(), buf.len()) as usize;
+    RACE_PACK_LEN = 0;
+    let mut start = 0usize;
+    let mut index = 0usize;
+    while index <= len && RACE_PACK_LEN < SWARM_MAX_GHOSTS {
+        let at_end = index == len;
+        if at_end || buf[index] == 0 {
+            let part = index - start;
+            if part > 0 && part <= SWARM_CATALOG_PATH_BYTES {
+                let slot = RACE_PACK_LEN;
+                RACE_PACK_PATHS[slot] = [0; SWARM_CATALOG_PATH_BYTES + 1];
+                RACE_PACK_PATHS[slot][..part].copy_from_slice(&buf[start..index]);
+                RACE_PACK_LEN += 1;
+                // Pack entries should also appear in the picker catalog.
+                swarm_catalog_note_path(RACE_PACK_PATHS[slot].as_ptr() as *const c_char);
+            }
+            start = index + 1;
+            if at_end {
+                break;
+            }
+        }
+        index += 1;
+    }
+}
+
 /// Enable rendering the selected swarm ghosts during live races too.
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplayRaceSwarmEnabled(

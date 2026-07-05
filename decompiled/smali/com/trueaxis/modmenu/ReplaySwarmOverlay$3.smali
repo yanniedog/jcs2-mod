@@ -36,7 +36,7 @@
         }
     .end annotation
 
-    .line 217
+    .line 243
     iput p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$count:I
 
     iput p2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$primary:I
@@ -55,10 +55,10 @@
 .method public onClick(Landroid/content/DialogInterface;I)V
     .registers 6
 
-    .line 219
+    .line 245
     nop
 
-    .line 220
+    .line 246
     const/4 p1, 0x0
 
     const/4 p2, 0x0
@@ -70,7 +70,7 @@
 
     if-ge p2, v1, :cond_1b
 
-    .line 221
+    .line 247
     iget v1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$primary:I
 
     if-eq p2, v1, :cond_18
@@ -85,22 +85,22 @@
 
     if-eqz v1, :cond_18
 
-    .line 222
+    .line 248
     add-int/lit8 v0, v0, 0x1
 
-    .line 220
+    .line 246
     :cond_18
     add-int/lit8 p2, p2, 0x1
 
     goto :goto_4
 
-    .line 225
+    .line 251
     :cond_1b
     const/4 p2, 0x1
 
     if-ge v0, p2, :cond_26
 
-    .line 226
+    .line 252
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$activity:Landroid/app/Activity;
 
     const-string p2, "Tick at least one replay to add as a ghost."
@@ -108,17 +108,17 @@
     # invokes: Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->toast(Landroid/app/Activity;Ljava/lang/String;)V
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->access$200(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 227
+    .line 253
     return-void
 
-    .line 229
+    .line 255
     :cond_26
     new-array v0, v0, [I
 
-    .line 230
+    .line 256
     nop
 
-    .line 231
+    .line 257
     const/4 v1, 0x0
 
     :goto_2a
@@ -126,7 +126,7 @@
 
     if-ge p1, v2, :cond_44
 
-    .line 232
+    .line 258
     iget v2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$primary:I
 
     if-eq p1, v2, :cond_41
@@ -141,34 +141,34 @@
 
     if-eqz v2, :cond_41
 
-    .line 233
+    .line 259
     add-int/lit8 v2, v1, 0x1
 
     aput p1, v0, v1
 
     move v1, v2
 
-    .line 231
+    .line 257
     :cond_41
     add-int/lit8 p1, p1, 0x1
 
     goto :goto_2a
 
-    .line 236
+    .line 262
     :cond_44
     iget p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$primary:I
 
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplaySwarmSelection(I[I)V
 
-    .line 237
+    .line 263
     invoke-static {}, Lcom/trueaxis/modmenu/RequiredPatches;->readReplaySwarmGhostCount()I
 
     move-result p1
 
-    .line 238
+    .line 264
     if-ge p1, p2, :cond_57
 
-    .line 239
+    .line 265
     iget-object p1, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$activity:Landroid/app/Activity;
 
     const-string p2, "Could not load the selected replays (files may be missing) \u2014 check the debug log."
@@ -178,7 +178,7 @@
 
     goto :goto_75
 
-    .line 242
+    .line 268
     :cond_57
     iget-object p2, p0, Lcom/trueaxis/modmenu/ReplaySwarmOverlay$3;->val$activity:Landroid/app/Activity;
 
@@ -209,7 +209,7 @@
     # invokes: Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->toast(Landroid/app/Activity;Ljava/lang/String;)V
     invoke-static {p2, p1}, Lcom/trueaxis/modmenu/ReplaySwarmOverlay;->access$200(Landroid/app/Activity;Ljava/lang/String;)V
 
-    .line 244
+    .line 270
     :goto_75
     return-void
 .end method

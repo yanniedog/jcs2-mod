@@ -79,6 +79,8 @@ final class ReplaySwarmOverlay {
             private int lastState;
             private int lastCatalog;
             private boolean disabled;
+            private boolean autoApplied;
+            private int pollCount;
 
             public void run() {
                 if (activity.isFinishing() || disabled) {
@@ -95,6 +97,11 @@ final class ReplaySwarmOverlay {
             }
 
             private void poll(Button configureButton, TextView statusView) {
+                // Keep the replay library fresh mid-session (a finished race
+                // writes a new slot replay the player may want to pack next).
+                if ((++pollCount % 20) == 0) {
+                    RequiredPatches.archiveNewSlotReplays(activity);
+                }
                 int state = RequiredPatches.readReplaySwarmActive();
                 int catalog = RequiredPatches.readReplaySwarmCatalogCount();
                 if (catalog != lastCatalog) {
@@ -114,6 +121,25 @@ final class ReplaySwarmOverlay {
                     statusView.setVisibility(View.GONE);
                     handler.postDelayed(this, POLL_MS);
                     return;
+                }
+
+                // Harness support: apply every known replay as a ghost the
+                // moment the viewer knows its current replay, without dialogs.
+                if (state == 1 && !autoApplied && ModMenu.swarmAutoApplyEnabled(activity)) {
+                    int primary = RequiredPatches.readReplaySwarmPrimaryIndex();
+                    if (primary >= 0 && catalog > 0) {
+                        autoApplied = true;
+                        int[] others = new int[Math.max(0, catalog - 1)];
+                        int slot = 0;
+                        for (int i = 0; i < catalog; i++) {
+                            if (i != primary && slot < others.length) {
+                                others[slot++] = i;
+                            }
+                        }
+                        RequiredPatches.setReplaySwarmSelection(primary, others);
+                        ModDebugLog.module("swarm", "autoapply primary=" + primary
+                                + " ghosts=" + RequiredPatches.readReplaySwarmGhostCount());
+                    }
                 }
 
                 configureButton.setVisibility(View.VISIBLE);

@@ -3,12 +3,12 @@
 .source "ModMenu.java"
 
 # interfaces
-.implements Ljava/lang/Runnable;
+.implements Landroid/content/DialogInterface$OnClickListener;
 
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lcom/trueaxis/modmenu/ModMenu;->showLiveryManager(Landroid/app/Activity;)V
+    value = Lcom/trueaxis/modmenu/ModMenu;->showGhostPackPicker(Landroid/app/Activity;Landroid/widget/Button;)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
@@ -20,26 +20,22 @@
 # instance fields
 .field final synthetic val$a:Landroid/app/Activity;
 
-.field final synthetic val$cars:Landroid/widget/Spinner;
-
-.field final synthetic val$status:Landroid/widget/TextView;
+.field final synthetic val$packButton:Landroid/widget/Button;
 
 
 # direct methods
-.method constructor <init>(Landroid/widget/Spinner;Landroid/widget/TextView;Landroid/app/Activity;)V
-    .registers 4
+.method constructor <init>(Landroid/app/Activity;Landroid/widget/Button;)V
+    .registers 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
         }
     .end annotation
 
-    .line 1251
-    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$cars:Landroid/widget/Spinner;
+    .line 1228
+    iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$a:Landroid/app/Activity;
 
-    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$status:Landroid/widget/TextView;
-
-    iput-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$a:Landroid/app/Activity;
+    iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$packButton:Landroid/widget/Button;
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
@@ -48,45 +44,41 @@
 
 
 # virtual methods
-.method public run()V
-    .registers 4
+.method public onClick(Landroid/content/DialogInterface;I)V
+    .registers 3
 
-    .line 1253
-    iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$cars:Landroid/widget/Spinner;
+    .line 1230
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$a:Landroid/app/Activity;
 
-    invoke-virtual {v0}, Landroid/widget/Spinner;->getSelectedItemPosition()I
+    new-instance p2, Ljava/util/ArrayList;
 
-    move-result v0
+    invoke-direct {p2}, Ljava/util/ArrayList;-><init>()V
 
-    .line 1254
-    iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$status:Landroid/widget/TextView;
+    invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ModMenu;->setGhostPackPaths(Landroid/content/Context;Ljava/util/List;)V
 
-    iget-object v2, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$a:Landroid/app/Activity;
+    .line 1232
+    :try_start_a
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$a:Landroid/app/Activity;
 
-    # invokes: Lcom/trueaxis/modmenu/ModMenu;->customTexture(Landroid/content/Context;I)Ljava/io/File;
-    invoke-static {v2, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$600(Landroid/content/Context;I)Ljava/io/File;
+    invoke-static {p1}, Lcom/trueaxis/modmenu/RequiredPatches;->applyGhostPack(Landroid/content/Context;)V
+    :try_end_f
+    .catchall {:try_start_a .. :try_end_f} :catchall_10
 
-    move-result-object v0
+    .line 1234
+    goto :goto_11
 
-    invoke-virtual {v0}, Ljava/io/File;->isFile()Z
+    .line 1233
+    :catchall_10
+    move-exception p1
 
-    move-result v0
+    .line 1235
+    :goto_11
+    iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$packButton:Landroid/widget/Button;
 
-    if-eqz v0, :cond_17
+    const-string p2, "Choose ghost pack (0 selected)"
 
-    .line 1255
-    const-string v0, "Active livery: custom"
+    invoke-virtual {p1, p2}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
 
-    goto :goto_19
-
-    .line 1256
-    :cond_17
-    const-string v0, "Active livery: bundled default"
-
-    .line 1254
-    :goto_19
-    invoke-virtual {v1, v0}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
-
-    .line 1257
+    .line 1236
     return-void
 .end method
