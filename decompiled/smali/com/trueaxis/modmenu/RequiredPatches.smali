@@ -717,67 +717,74 @@
 .method static applyGhostPack(Landroid/content/Context;)V
     .registers 8
 
-    .line 246
+    .line 249
     const-string v0, "swarm"
 
+    if-nez p0, :cond_5
+
+    .line 250
+    return-void
+
+    .line 252
+    :cond_5
     invoke-static {p0}, Lcom/trueaxis/modmenu/ModMenu;->ghostPackPaths(Landroid/content/Context;)[Ljava/lang/String;
 
     move-result-object p0
 
-    .line 247
+    .line 253
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
 
-    .line 248
+    .line 254
     array-length v2, p0
 
     const/4 v3, 0x0
 
     const/4 v4, 0x0
 
-    :goto_e
-    if-ge v4, v2, :cond_28
+    :goto_11
+    if-ge v4, v2, :cond_2b
 
     aget-object v5, p0, v4
 
-    .line 249
+    .line 255
     invoke-virtual {v5}, Ljava/lang/String;->length()I
 
     move-result v6
 
-    if-nez v6, :cond_19
+    if-nez v6, :cond_1c
 
-    .line 250
-    goto :goto_25
+    .line 256
+    goto :goto_28
 
-    .line 252
-    :cond_19
+    .line 258
+    :cond_1c
     invoke-virtual {v1}, Ljava/lang/StringBuilder;->length()I
 
     move-result v6
 
-    if-lez v6, :cond_22
-
-    .line 253
-    invoke-virtual {v1, v3}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
-
-    .line 255
-    :cond_22
-    invoke-virtual {v1, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    .line 248
-    :goto_25
-    add-int/lit8 v4, v4, 0x1
-
-    goto :goto_e
-
-    .line 258
-    :cond_28
-    nop
+    if-lez v6, :cond_25
 
     .line 259
-    :try_start_29
+    invoke-virtual {v1, v3}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+
+    .line 261
+    :cond_25
+    invoke-virtual {v1, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    .line 254
+    :goto_28
+    add-int/lit8 v4, v4, 0x1
+
+    goto :goto_11
+
+    .line 264
+    :cond_2b
+    nop
+
+    .line 265
+    :try_start_2c
     invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object v1
@@ -792,10 +799,10 @@
 
     move-result-object v1
 
-    .line 258
+    .line 264
     invoke-static {v1}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplaySwarmRacePack([B)V
 
-    .line 260
+    .line 266
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -817,23 +824,23 @@
     move-result-object p0
 
     invoke-static {v0, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;)V
-    :try_end_51
-    .catchall {:try_start_29 .. :try_end_51} :catchall_52
+    :try_end_54
+    .catchall {:try_start_2c .. :try_end_54} :catchall_55
 
-    .line 263
-    goto :goto_58
+    .line 269
+    goto :goto_5b
 
-    .line 261
-    :catchall_52
+    .line 267
+    :catchall_55
     move-exception p0
 
-    .line 262
+    .line 268
     const-string v1, "ghost pack apply failed"
 
     invoke-static {v0, v1, p0}, Lcom/trueaxis/modmenu/ModDebugLog;->module(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 
-    .line 264
-    :goto_58
+    .line 270
+    :goto_5b
     return-void
 .end method
 
@@ -1512,19 +1519,19 @@
 .method private static seedSwarmSlotReplays(Landroid/app/Activity;)I
     .registers 16
 
-    .line 273
+    .line 279
     const/4 v0, 0x0
 
     if-nez p0, :cond_4
 
-    .line 274
+    .line 280
     return v0
 
-    .line 276
+    .line 282
     :cond_4
     nop
 
-    .line 277
+    .line 283
     invoke-virtual {p0}, Landroid/app/Activity;->getFilesDir()Ljava/io/File;
 
     move-result-object v1
@@ -1545,7 +1552,7 @@
 
     aput-object p0, v3, v1
 
-    .line 278
+    .line 284
     const/4 p0, 0x0
 
     const/4 v1, 0x0
@@ -1555,25 +1562,25 @@
 
     aget-object v4, v3, p0
 
-    .line 279
+    .line 285
     if-nez v4, :cond_20
 
-    .line 280
+    .line 286
     goto/16 :goto_b1
 
-    .line 282
+    .line 288
     :cond_20
     invoke-virtual {v4}, Ljava/io/File;->listFiles()[Ljava/io/File;
 
     move-result-object v5
 
-    .line 283
+    .line 289
     if-nez v5, :cond_28
 
-    .line 284
+    .line 290
     goto/16 :goto_b1
 
-    .line 286
+    .line 292
     :cond_28
     array-length v6, v5
 
@@ -1588,12 +1595,12 @@
 
     aget-object v11, v5, v7
 
-    .line 287
+    .line 293
     invoke-virtual {v11}, Ljava/io/File;->getName()Ljava/lang/String;
 
     move-result-object v12
 
-    .line 288
+    .line 294
     invoke-virtual {v11}, Ljava/io/File;->isFile()Z
 
     move-result v13
@@ -1616,10 +1623,10 @@
 
     if-eqz v9, :cond_5a
 
-    .line 289
+    .line 295
     nop
 
-    .line 290
+    .line 296
     invoke-static {v8}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
 
     move-result-object v8
@@ -1628,19 +1635,19 @@
 
     move-result-object v8
 
-    .line 289
+    .line 295
     invoke-static {v8}, Lcom/trueaxis/modmenu/RequiredPatches;->addReplaySwarmCatalogPath([B)V
 
-    .line 291
+    .line 297
     add-int/lit8 v1, v1, 0x1
 
-    .line 286
+    .line 292
     :cond_5a
     add-int/lit8 v7, v7, 0x1
 
     goto :goto_2a
 
-    .line 295
+    .line 301
     :cond_5d
     new-instance v5, Ljava/io/File;
 
@@ -1652,10 +1659,10 @@
 
     move-result-object v4
 
-    .line 296
+    .line 302
     if-eqz v4, :cond_b1
 
-    .line 297
+    .line 303
     array-length v5, v4
 
     const/4 v6, 0x0
@@ -1665,7 +1672,7 @@
 
     aget-object v7, v4, v6
 
-    .line 298
+    .line 304
     invoke-virtual {v7}, Ljava/io/File;->isFile()Z
 
     move-result v11
@@ -1692,7 +1699,7 @@
 
     if-eqz v11, :cond_ae
 
-    .line 299
+    .line 305
     new-instance v11, Ljava/lang/StringBuilder;
 
     invoke-direct {v11}, Ljava/lang/StringBuilder;-><init>()V
@@ -1715,7 +1722,7 @@
 
     move-result-object v7
 
-    .line 300
+    .line 306
     invoke-static {v8}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
 
     move-result-object v11
@@ -1724,26 +1731,26 @@
 
     move-result-object v7
 
-    .line 299
+    .line 305
     invoke-static {v7}, Lcom/trueaxis/modmenu/RequiredPatches;->addReplaySwarmCatalogPath([B)V
 
-    .line 301
+    .line 307
     add-int/lit8 v1, v1, 0x1
 
-    .line 297
+    .line 303
     :cond_ae
     add-int/lit8 v6, v6, 0x1
 
     goto :goto_6c
 
-    .line 278
+    .line 284
     :cond_b1
     :goto_b1
     add-int/lit8 p0, p0, 0x1
 
     goto/16 :goto_18
 
-    .line 306
+    .line 312
     :cond_b5
     return v1
 .end method
@@ -1792,11 +1799,22 @@
     .end annotation
 
     .line 219
+    if-nez p0, :cond_8
+
+    .line 220
+    new-instance p0, Ljava/util/ArrayList;
+
+    invoke-direct {p0}, Ljava/util/ArrayList;-><init>()V
+
+    return-object p0
+
+    .line 222
+    :cond_8
     new-instance v0, Ljava/util/ArrayList;
 
     invoke-direct {v0}, Ljava/util/ArrayList;-><init>()V
 
-    .line 220
+    .line 223
     invoke-virtual {p0}, Landroid/content/Context;->getFilesDir()Ljava/io/File;
 
     move-result-object v1
@@ -1819,22 +1837,22 @@
 
     aput-object p0, v3, v1
 
-    .line 221
+    .line 224
     const/4 p0, 0x0
 
-    :goto_18
-    if-ge p0, v2, :cond_4e
+    :goto_20
+    if-ge p0, v2, :cond_56
 
     aget-object v1, v3, p0
 
-    .line 222
-    if-nez v1, :cond_1f
-
-    .line 223
-    goto :goto_4b
-
     .line 225
-    :cond_1f
+    if-nez v1, :cond_27
+
+    .line 226
+    goto :goto_53
+
+    .line 228
+    :cond_27
     new-instance v5, Ljava/io/File;
 
     const-string v6, "swarm_replays"
@@ -1845,29 +1863,29 @@
 
     move-result-object v1
 
-    .line 226
-    if-nez v1, :cond_2d
-
-    .line 227
-    goto :goto_4b
-
     .line 229
-    :cond_2d
+    if-nez v1, :cond_35
+
+    .line 230
+    goto :goto_53
+
+    .line 232
+    :cond_35
     array-length v5, v1
 
     const/4 v6, 0x0
 
-    :goto_2f
-    if-ge v6, v5, :cond_4b
+    :goto_37
+    if-ge v6, v5, :cond_53
 
     aget-object v7, v1, v6
 
-    .line 230
+    .line 233
     invoke-virtual {v7}, Ljava/io/File;->isFile()Z
 
     move-result v8
 
-    if-eqz v8, :cond_48
+    if-eqz v8, :cond_50
 
     invoke-virtual {v7}, Ljava/io/File;->getName()Ljava/lang/String;
 
@@ -1879,32 +1897,32 @@
 
     move-result v8
 
-    if-eqz v8, :cond_48
+    if-eqz v8, :cond_50
 
-    .line 231
+    .line 234
     invoke-virtual {v0, v7}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
 
-    .line 229
-    :cond_48
+    .line 232
+    :cond_50
     add-int/lit8 v6, v6, 0x1
 
-    goto :goto_2f
+    goto :goto_37
 
-    .line 221
-    :cond_4b
-    :goto_4b
+    .line 224
+    :cond_53
+    :goto_53
     add-int/lit8 p0, p0, 0x1
 
-    goto :goto_18
+    goto :goto_20
 
-    .line 235
-    :cond_4e
+    .line 238
+    :cond_56
     new-instance p0, Lcom/trueaxis/modmenu/RequiredPatches$2;
 
     invoke-direct {p0}, Lcom/trueaxis/modmenu/RequiredPatches$2;-><init>()V
 
     invoke-static {v0, p0}, Ljava/util/Collections;->sort(Ljava/util/List;Ljava/util/Comparator;)V
 
-    .line 241
+    .line 244
     return-object v0
 .end method

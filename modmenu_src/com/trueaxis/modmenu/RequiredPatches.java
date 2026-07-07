@@ -216,6 +216,9 @@ public final class RequiredPatches {
 
     /** Library entries (newest first) across both possible user dirs. */
     static java.util.List<java.io.File> swarmLibraryFiles(android.content.Context context) {
+        if (context == null) {
+            return new java.util.ArrayList<java.io.File>();
+        }
         java.util.ArrayList<java.io.File> all = new java.util.ArrayList<java.io.File>();
         java.io.File[] dirs = { context.getFilesDir(), context.getExternalFilesDir(null) };
         for (java.io.File dir : dirs) {
@@ -243,6 +246,9 @@ public final class RequiredPatches {
 
     /** Push the saved ghost-pack selection to the native pack loader. */
     static void applyGhostPack(android.content.Context context) {
+        if (context == null) {
+            return;
+        }
         String[] paths = ModMenu.ghostPackPaths(context);
         StringBuilder joined = new StringBuilder();
         for (String path : paths) {

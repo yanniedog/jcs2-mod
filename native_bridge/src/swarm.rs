@@ -519,7 +519,8 @@ pub(crate) unsafe fn swarm_render_master_index() -> i32 {
     if ptr::read_volatile(SHOW_REPLAY) != 0 {
         return swarm_master_node_index();
     }
-    if !RACE_SWARM_ENABLED.load(Ordering::Acquire)
+    let race_swarm = RACE_SWARM_ENABLED.load(Ordering::Acquire) || RACE_PACK_LEN > 0;
+    if !race_swarm
         || GHOST_POS.is_null()
         || GHOST_POINTER.is_null()
         || GHOST_SIZE.is_null()

@@ -30,7 +30,7 @@
         }
     .end annotation
 
-    .line 1221
+    .line 1234
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$23;->val$checks:[Z
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,11 +43,11 @@
 .method public onClick(Landroid/content/DialogInterface;IZ)V
     .registers 4
 
-    .line 1224
+    .line 1237
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$23;->val$checks:[Z
 
     aput-boolean p3, p1, p2
 
-    .line 1225
+    .line 1238
     return-void
 .end method

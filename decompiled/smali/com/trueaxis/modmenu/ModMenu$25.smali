@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 1352
+    .line 1365
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$25;->val$a:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$25;->val$cars:Landroid/widget/Spinner;
@@ -47,7 +47,7 @@
 .method public onClick(Landroid/view/View;)V
     .registers 4
 
-    .line 1354
+    .line 1367
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$25;->val$a:Landroid/app/Activity;
 
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$25;->val$cars:Landroid/widget/Spinner;
@@ -55,7 +55,7 @@
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->rememberCar(Landroid/content/Context;Landroid/widget/Spinner;)V
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$500(Landroid/content/Context;Landroid/widget/Spinner;)V
 
-    .line 1356
+    .line 1369
     :try_start_7
     new-instance p1, Landroid/content/Intent;
 
@@ -65,7 +65,7 @@
 
     invoke-direct {p1, v0, v1}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
 
-    .line 1357
+    .line 1370
     const-string v0, "car"
 
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$25;->val$cars:Landroid/widget/Spinner;
@@ -76,21 +76,21 @@
 
     invoke-virtual {p1, v0, v1}, Landroid/content/Intent;->putExtra(Ljava/lang/String;I)Landroid/content/Intent;
 
-    .line 1358
+    .line 1371
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$25;->val$a:Landroid/app/Activity;
 
     invoke-virtual {v0, p1}, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
     :try_end_20
     .catchall {:try_start_7 .. :try_end_20} :catchall_21
 
-    .line 1361
+    .line 1374
     goto :goto_29
 
-    .line 1359
+    .line 1372
     :catchall_21
     move-exception p1
 
-    .line 1360
+    .line 1373
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$25;->val$a:Landroid/app/Activity;
 
     const-string v0, "Could not open the designer."
@@ -98,7 +98,7 @@
     # invokes: Lcom/trueaxis/modmenu/ModMenu;->toast(Landroid/content/Context;Ljava/lang/String;)V
     invoke-static {p1, v0}, Lcom/trueaxis/modmenu/ModMenu;->access$600(Landroid/content/Context;Ljava/lang/String;)V
 
-    .line 1362
+    .line 1375
     :goto_29
     return-void
 .end method

@@ -36,7 +36,7 @@
         }
     .end annotation
 
-    .line 1238
+    .line 1251
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$21;->val$checks:[Z
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$21;->val$library:Ljava/util/List;
@@ -55,12 +55,12 @@
 .method public onClick(Landroid/content/DialogInterface;I)V
     .registers 6
 
-    .line 1240
+    .line 1253
     new-instance p1, Ljava/util/ArrayList;
 
     invoke-direct {p1}, Ljava/util/ArrayList;-><init>()V
 
-    .line 1241
+    .line 1254
     const/4 p2, 0x0
 
     :goto_6
@@ -70,14 +70,14 @@
 
     if-ge p2, v0, :cond_36
 
-    .line 1242
+    .line 1255
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$21;->val$checks:[Z
 
     aget-boolean v0, v0, p2
 
     if-eqz v0, :cond_33
 
-    .line 1243
+    .line 1256
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -110,19 +110,19 @@
 
     invoke-virtual {p1, v0}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
 
-    .line 1241
+    .line 1254
     :cond_33
     add-int/lit8 p2, p2, 0x1
 
     goto :goto_6
 
-    .line 1246
+    .line 1259
     :cond_36
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$21;->val$a:Landroid/app/Activity;
 
     invoke-static {p2, p1}, Lcom/trueaxis/modmenu/ModMenu;->setGhostPackPaths(Landroid/content/Context;Ljava/util/List;)V
 
-    .line 1248
+    .line 1261
     :try_start_3b
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$21;->val$a:Landroid/app/Activity;
 
@@ -130,14 +130,14 @@
     :try_end_40
     .catchall {:try_start_3b .. :try_end_40} :catchall_41
 
-    .line 1250
+    .line 1263
     goto :goto_42
 
-    .line 1249
+    .line 1262
     :catchall_41
     move-exception p2
 
-    .line 1251
+    .line 1264
     :goto_42
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$21;->val$a:Landroid/app/Activity;
 
@@ -147,7 +147,7 @@
 
     array-length p2, p2
 
-    .line 1252
+    .line 1265
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$21;->val$packButton:Landroid/widget/Button;
 
     new-instance v1, Ljava/lang/StringBuilder;
@@ -176,7 +176,7 @@
 
     invoke-virtual {v0, p2}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
 
-    .line 1253
+    .line 1266
     invoke-virtual {p1}, Ljava/util/ArrayList;->size()I
 
     move-result p1
@@ -185,7 +185,7 @@
 
     if-le p1, p2, :cond_7a
 
-    .line 1254
+    .line 1267
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$21;->val$a:Landroid/app/Activity;
 
     const-string p2, "Only the first 7 picks are used."
@@ -196,10 +196,10 @@
 
     move-result-object p1
 
-    .line 1255
+    .line 1268
     invoke-virtual {p1}, Landroid/widget/Toast;->show()V
 
-    .line 1257
+    .line 1270
     :cond_7a
     return-void
 .end method

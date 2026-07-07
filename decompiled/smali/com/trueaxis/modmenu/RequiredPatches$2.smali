@@ -30,7 +30,7 @@
 .method constructor <init>()V
     .registers 1
 
-    .line 235
+    .line 238
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
     return-void
@@ -41,7 +41,7 @@
 .method public compare(Ljava/io/File;Ljava/io/File;)I
     .registers 6
 
-    .line 237
+    .line 240
     invoke-virtual {p2}, Ljava/io/File;->lastModified()J
 
     move-result-wide v0
@@ -52,7 +52,7 @@
 
     sub-long/2addr v0, p1
 
-    .line 238
+    .line 241
     const-wide/16 p1, 0x0
 
     cmp-long v2, v0, p1
@@ -92,7 +92,7 @@
         }
     .end annotation
 
-    .line 235
+    .line 238
     check-cast p1, Ljava/io/File;
 
     check-cast p2, Ljava/io/File;

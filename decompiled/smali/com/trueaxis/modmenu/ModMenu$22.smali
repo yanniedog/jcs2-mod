@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 1228
+    .line 1241
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$a:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$packButton:Landroid/widget/Button;
@@ -47,7 +47,7 @@
 .method public onClick(Landroid/content/DialogInterface;I)V
     .registers 3
 
-    .line 1230
+    .line 1243
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$a:Landroid/app/Activity;
 
     new-instance p2, Ljava/util/ArrayList;
@@ -56,7 +56,7 @@
 
     invoke-static {p1, p2}, Lcom/trueaxis/modmenu/ModMenu;->setGhostPackPaths(Landroid/content/Context;Ljava/util/List;)V
 
-    .line 1232
+    .line 1245
     :try_start_a
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$a:Landroid/app/Activity;
 
@@ -64,14 +64,14 @@
     :try_end_f
     .catchall {:try_start_a .. :try_end_f} :catchall_10
 
-    .line 1234
+    .line 1247
     goto :goto_11
 
-    .line 1233
+    .line 1246
     :catchall_10
     move-exception p1
 
-    .line 1235
+    .line 1248
     :goto_11
     iget-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$22;->val$packButton:Landroid/widget/Button;
 
@@ -79,6 +79,6 @@
 
     invoke-virtual {p1, p2}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
 
-    .line 1236
+    .line 1249
     return-void
 .end method

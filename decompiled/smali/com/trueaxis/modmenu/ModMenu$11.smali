@@ -36,7 +36,7 @@
         }
     .end annotation
 
-    .line 914
+    .line 923
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$a:Landroid/app/Activity;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$orbitParams:Landroid/widget/LinearLayout;
@@ -64,10 +64,10 @@
         }
     .end annotation
 
-    .line 917
+    .line 926
     add-int/lit8 p1, p3, 0x1
 
-    .line 918
+    .line 927
     iget-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$a:Landroid/app/Activity;
 
     invoke-static {p2}, Lcom/trueaxis/modmenu/ModMenu;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
@@ -86,7 +86,7 @@
 
     invoke-interface {p2}, Landroid/content/SharedPreferences$Editor;->apply()V
 
-    .line 919
+    .line 928
     const/4 p2, 0x0
 
     const/4 p4, 0x1
@@ -100,7 +100,7 @@
     :cond_1b
     const/4 p5, 0x0
 
-    .line 920
+    .line 929
     :goto_1c
     # getter for: Lcom/trueaxis/modmenu/ModMenu;->REPLAY_CAMERA_MODE_NAMES:[Ljava/lang/String;
     invoke-static {}, Lcom/trueaxis/modmenu/ModMenu;->access$100()[Ljava/lang/String;
@@ -118,7 +118,7 @@
     :cond_25
     const/4 p4, 0x0
 
-    .line 921
+    .line 930
     :goto_26
     iget-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$orbitParams:Landroid/widget/LinearLayout;
 
@@ -136,7 +136,7 @@
     :goto_30
     invoke-virtual {p3, v1}, Landroid/widget/LinearLayout;->setVisibility(I)V
 
-    .line 922
+    .line 931
     iget-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$tracksideParams:Landroid/widget/LinearLayout;
 
     if-eqz p4, :cond_39
@@ -151,7 +151,7 @@
     :goto_3b
     invoke-virtual {p3, v1}, Landroid/widget/LinearLayout;->setVisibility(I)V
 
-    .line 923
+    .line 932
     iget-object p3, p0, Lcom/trueaxis/modmenu/ModMenu$11;->val$noParamsNote:Landroid/widget/TextView;
 
     if-nez p5, :cond_44
@@ -164,20 +164,20 @@
     :cond_46
     invoke-virtual {p3, p2}, Landroid/widget/TextView;->setVisibility(I)V
 
-    .line 927
+    .line 936
     :try_start_49
     invoke-static {p1}, Lcom/trueaxis/modmenu/RequiredPatches;->setReplayCameraMode(I)V
     :try_end_4c
     .catchall {:try_start_49 .. :try_end_4c} :catchall_4d
 
-    .line 929
+    .line 938
     goto :goto_4e
 
-    .line 928
+    .line 937
     :catchall_4d
     move-exception p1
 
-    .line 930
+    .line 939
     :goto_4e
     return-void
 .end method
@@ -192,6 +192,6 @@
         }
     .end annotation
 
-    .line 933
+    .line 942
     return-void
 .end method

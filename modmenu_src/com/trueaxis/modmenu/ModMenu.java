@@ -516,10 +516,16 @@ public class ModMenu {
 
     /** Test-harness setter (automation launch extra). */
     public static void setReplaySwarmEnabled(Context c, boolean enabled) {
+        if (c == null) {
+            return;
+        }
         prefs(c).edit().putBoolean(K_REPLAY_SWARM, enabled).apply();
     }
 
     public static void setRaceSwarmEnabled(Context c, boolean enabled) {
+        if (c == null) {
+            return;
+        }
         prefs(c).edit().putBoolean(K_RACE_SWARM, enabled).apply();
     }
 
@@ -542,6 +548,9 @@ public class ModMenu {
     }
 
     public static void setGhostPackPaths(Context c, java.util.List<String> paths) {
+        if (c == null || paths == null) {
+            return;
+        }
         StringBuilder joined = new StringBuilder();
         int kept = 0;
         for (String path : paths) {
@@ -1187,6 +1196,10 @@ public class ModMenu {
 
     /** Multi-select dialog over the archived replay library (ghost pack). */
     private static void showGhostPackPicker(final Activity a, final Button packButton) {
+        if (a == null || a.isFinishing()
+                || (android.os.Build.VERSION.SDK_INT >= 17 && a.isDestroyed())) {
+            return;
+        }
         try {
             RequiredPatches.archiveNewSlotReplays(a);
         } catch (Throwable ignored) {

@@ -771,7 +771,12 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplaySwar
     joined: *mut c_void,
 ) {
     let mut buf = [0u8; (SWARM_CATALOG_PATH_BYTES + 1) * SWARM_MAX_GHOSTS];
-    let len = jni_read_byte_array(env, joined, buf.as_mut_ptr(), buf.len()) as usize;
+    let len_raw = jni_read_byte_array(env, joined, buf.as_mut_ptr(), buf.len());
+    if len_raw <= 0 {
+        RACE_PACK_LEN = 0;
+        return;
+    }
+    let len = len_raw as usize;
     RACE_PACK_LEN = 0;
     let mut start = 0usize;
     let mut index = 0usize;

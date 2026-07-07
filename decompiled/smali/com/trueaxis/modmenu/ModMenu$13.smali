@@ -32,7 +32,7 @@
         }
     .end annotation
 
-    .line 984
+    .line 993
     iput-object p1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$swarmExtras:Landroid/widget/LinearLayout;
 
     iput-object p2, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
@@ -47,10 +47,10 @@
 .method public run()V
     .registers 3
 
-    .line 986
+    .line 995
     iget-object v0, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$swarmExtras:Landroid/widget/LinearLayout;
 
-    .line 987
+    .line 996
     iget-object v1, p0, Lcom/trueaxis/modmenu/ModMenu$13;->val$a:Landroid/app/Activity;
 
     invoke-static {v1}, Lcom/trueaxis/modmenu/ModMenu;->replaySwarmEnabled(Landroid/content/Context;)Z
@@ -66,10 +66,10 @@
     :cond_c
     const/16 v1, 0x8
 
-    .line 986
+    .line 995
     :goto_e
     invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setVisibility(I)V
 
-    .line 988
+    .line 997
     return-void
 .end method
