@@ -95,12 +95,23 @@ jobs:
             echo "No PR associated with this event; skipping bot-presence-gate."
             exit 0
           fi
-          set +e
-          npm run wait-for-bots -- --pr "$PR"
-          code=$?
-          set -e
-          if [ "$code" -eq 2 ]; then
-            echo "::warning::Bot wait not ready yet (exit 2) — run npm run wait-for-bots locally until exit 0, then re-run this workflow"
-            exit 1
-          fi
-          exit "$code"
+          attempts=0
+          max_attempts=8
+          while [ "$attempts" -lt "$max_attempts" ]; do
+            attempts=$((attempts + 1))
+            set +e
+            npm run wait-for-bots -- --pr "$PR"
+            code=$?
+            set -e
+            if [ "$code" -eq 0 ]; then
+              exit 0
+            fi
+            if [ "$code" -ne 2 ] || [ "$attempts" -ge "$max_attempts" ]; then
+              if [ "$code" -eq 2 ]; then
+                echo "::warning::Bot wait not ready after ${max_attempts} attempts — run npm run wait-for-bots locally until exit 0, then re-run this workflow"
+              fi
+              exit 1
+            fi
+            echo "Bot wait not ready (CI pending or quiet window); retry ${attempts}/${max_attempts} in 30s..."
+            sleep 30
+          done
