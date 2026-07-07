@@ -17,3 +17,20 @@ Batch these at natural checkpoints (end of a fix, before commit) rather than int
 Never edit `.projectmem/summary.md` or `events.jsonl` directly — they are derived/append-only; write via the CLI/MCP tools and the summary regenerates. `PROJECT_MAP.md` may be edited directly. Check `.projectmem/issues/` before re-attempting anything that looks familiar — failed attempts are recorded to stop you from repeating them.
 
 **Memory must never block work.** projectmem calls are best-effort bookkeeping: if a memory read/write fails, is denied, or would interrupt an active build/test/debug loop, continue the task and batch the log entries at the next natural checkpoint (end of fix, before commit) with single-line `pjm` CLI calls (non-interactive, no prompts). Do not retry a rejected memory call inline, and never make the user wait on memory I/O.
+
+## Cursor Cloud specific instructions
+
+Cloud VMs are **Linux/x86_64**, but the build scripts (`build_native.ps1`, `build_modmenu.ps1`, `build_apk.ps1`, everything under `scripts/*.ps1`) are **Windows/PowerShell** (`.exe` paths, `pwsh`) and do not run here. On Linux, invoke the underlying tools directly (all cross-platform). The startup update script only refreshes fast deps (`rustup target add aarch64-linux-android`, `npm install`); the Android/Java tooling below is fetched on demand.
+
+Toolchain present: Rust 1.91.1 (pinned by `rust-toolchain.toml`), JDK 21, Python 3.12, Node (system `node` is v22 at `/exec-daemon/node` and shadows `nvm`; `engines` wants >=24 but the pure-JS scripts run fine on 22 — `nvm use 24` if strict compliance is needed).
+
+Services / components and how to build them on Linux:
+
+- Rust native bridge (`libjcs2mod.so`, the core mod): `cargo fmt --manifest-path native_bridge/Cargo.toml -- --check` (lint) and `cargo build --release --target aarch64-linux-android` (build; stub libs in `native_bridge/stublibs/` are committed). Gotcha: the Linux-built `.so` is **not** byte-identical to the committed Windows-CI `.so`, so CI's "verify generated outputs" `.so` check will differ if you rebuild on Linux — do not recommit it. It is `#![no_std]` with its own panic handler, so `cargo test` fails (duplicate `panic_impl`); there are no host tests.
+- Java mod launcher -> smali: needs `tools/android-34.jar` (SDK platform), `tools/r8.jar`, `tools/baksmali.jar` + `tools/baksmali_lib/*.jar` (URLs/versions in `scripts/ci_install_tools.ps1`; platform via `sdkmanager "platforms;android-34" "build-tools;36.1.0"`). Replicate `build_modmenu.ps1`: javac (`-source 8 -target 8`, classpath android.jar, plus a `Jetcarstunts2Activity` stub) -> `jar` -> `java -cp r8.jar com.android.tools.r8.D8 --min-api 15` -> baksmali `d` -> strip baksmali numeric const value-comments. Result is **byte-identical** to committed `decompiled/smali/com/trueaxis/modmenu`.
+- Python anti-cheat audit: `python3 scripts/audit_mod_surface.py [--skip-local-assets | --apk jcs2-mod.apk]`.
+- Node PR-gate automation self-tests (no network): `npm run pr:gate-logic:verify`, `npm run pr:gate-exempt-policy:verify`. The other `pr:*`/`github:*` scripts hit the GitHub API.
+
+Full APK build (`build_apk.ps1` flow, replicated on Linux): `apktool b decompiled -o unsigned.apk` -> `zipalign -f 4` -> `apksigner sign --ks jcs2.keystore --ks-pass pass:android --ks-key-alias jcs2local`. Requires `decompiled/assets/` (large proprietary base-game media, **gitignored**). Restore it from a release APK (no secret needed, `gh` has read access): `gh release download <latest jcs-mod tag> --pattern '*.apk' --dir _apk_build/base` then extract its `assets/` into `decompiled/assets/` (mirrors `scripts/ci_restore_assets.ps1`; also settable via `JCS2_BASE_APK_URL`). Output `jcs2-mod.apk` = package `modded.ycs2`.
+
+Runtime: the product is an Android game APK. Cloud VMs have **no `/dev/kvm` and no CPU virtualization**, so the Android emulator harness (`docs/LLM_ANDROID_EMULATOR_RUNTIME.md`, Windows-only) cannot run the game here. "Running the app" on Linux = building the signed, installable modded APK from source and validating components/signature/audits; on-device or Windows-emulator runtime is required for actual gameplay.
