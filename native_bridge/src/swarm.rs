@@ -768,6 +768,423 @@ pub(crate) unsafe extern "C" fn hooked_game_view_replay(
     original(game, saved, path)
 }
 
+pub(crate) type TaServerGetRawFileFn = unsafe extern "C" fn(
+    *const c_char,
+    Option<unsafe extern "C" fn(*mut c_char, bool, *mut c_void)>,
+    *mut c_void,
+    *mut c_void,
+    *mut c_char,
+);
+
+pub(crate) type GetUserPathFn = unsafe extern "C" fn(*const c_char, *mut c_char);
+
+pub(crate) type GameLoadLevelFn =
+    unsafe extern "C" fn(*mut c_void, c_uint, c_int) -> u8;
+
+pub(crate) const LEADERBOARD_FETCH_IDLE: i32 = 0;
+
+pub(crate) const LEADERBOARD_FETCH_PENDING: i32 = 1;
+
+pub(crate) const LEADERBOARD_FETCH_READY: i32 = 2;
+
+pub(crate) const LEADERBOARD_FETCH_FAILED: i32 = 3;
+
+pub(crate) const LEADERBOARD_FETCH_QUEUE_MAX: usize = 8;
+
+pub(crate) const LEADERBOARD_REPLAY_PATH_BYTES: usize = 96;
+
+pub(crate) static mut TA_SERVER_GET_RAW_FILE: *mut c_void = ptr::null_mut();
+
+pub(crate) static mut GET_USER_PATH: *mut c_void = ptr::null_mut();
+
+pub(crate) static mut GAME_LOAD_LEVEL: *mut c_void = ptr::null_mut();
+
+pub(crate) static mut G_P_GAME_BASE: *mut *mut c_void = ptr::null_mut();
+
+pub(crate) static mut SWARM_VIEW_REPLAY_SAVED: [u8; 256] = [0; 256];
+
+pub(crate) static mut LEADERBOARD_FETCH_INDEX: i32 = -1;
+
+pub(crate) static mut LEADERBOARD_FETCH_STATUS: i32 = LEADERBOARD_FETCH_IDLE;
+
+pub(crate) static mut LEADERBOARD_FETCH_QUEUE: [i32; LEADERBOARD_FETCH_QUEUE_MAX] = [-1; LEADERBOARD_FETCH_QUEUE_MAX];
+
+pub(crate) static mut LEADERBOARD_FETCH_QUEUE_LEN: usize = 0;
+
+pub(crate) static mut LEADERBOARD_FETCH_PATHS: [[u8; LEADERBOARD_REPLAY_PATH_BYTES]; LEADERBOARD_FETCH_QUEUE_MAX] =
+    [[0; LEADERBOARD_REPLAY_PATH_BYTES]; LEADERBOARD_FETCH_QUEUE_MAX];
+
+pub(crate) static mut LEADERBOARD_FETCH_PATH_LEN: [usize; LEADERBOARD_FETCH_QUEUE_MAX] =
+    [0; LEADERBOARD_FETCH_QUEUE_MAX];
+
+pub(crate) unsafe fn ensure_leaderboard_fetch_symbols() -> bool {
+    if TA_SERVER_GET_RAW_FILE.is_null() {
+        TA_SERVER_GET_RAW_FILE = resolve(b"_Z19TaServer_GetRawFilePKcPFvS0_bPvES1_S0_\0");
+    }
+    if GET_USER_PATH.is_null() {
+        GET_USER_PATH = resolve(b"_Z11GetUserPathPKcPc\0");
+    }
+    if GAME_LOAD_LEVEL.is_null() {
+        GAME_LOAD_LEVEL = resolve(b"_ZN4Game9LoadLevelEjNS_10DifficultyE\0");
+    }
+  if G_P_GAME_BASE.is_null() {
+        G_P_GAME_BASE = resolve(b"g_pGameBase\0") as *mut *mut c_void;
+    }
+    !(TA_SERVER_GET_RAW_FILE.is_null() || GET_USER_PATH.is_null())
+}
+
+pub(crate) unsafe fn ensure_current_game() -> *mut c_void {
+    if CURRENT_GAME.is_null() {
+        if G_P_GAME_BASE.is_null() {
+            G_P_GAME_BASE = resolve(b"g_pGameBase\0") as *mut *mut c_void;
+        }
+        if !G_P_GAME_BASE.is_null() {
+            CURRENT_GAME = ptr::read_volatile(G_P_GAME_BASE);
+        }
+    }
+    CURRENT_GAME
+}
+
+pub(crate) unsafe fn swarm_append_decimal(buf: *mut u8, offset: usize, cap: usize, value: u32) -> usize {
+    if buf.is_null() || offset >= cap {
+        return offset;
+    }
+    let mut digits = [0u8; 10];
+    let mut count = 0usize;
+    let mut n = value;
+    if n == 0 {
+        digits[0] = b'0';
+        count = 1;
+    } else {
+        while n > 0 && count < digits.len() {
+            digits[count] = b'0' + (n % 10) as u8;
+            n /= 10;
+            count += 1;
+        }
+    }
+    let mut written = offset;
+    while count > 0 {
+        count -= 1;
+        if written + 1 >= cap {
+            break;
+        }
+        ptr::write(buf.add(written), digits[count]);
+        written += 1;
+    }
+    written
+}
+
+pub(crate) unsafe fn swarm_build_leaderboard_fetch_key(
+    level_id: i32,
+    score_id: i32,
+    out: *mut u8,
+    cap: usize,
+) -> usize {
+    if out.is_null() || cap < 12 {
+        return 0;
+    }
+    ptr::write_bytes(out, 0, cap);
+    ptr::copy_nonoverlapping(b"d=".as_ptr(), out, 2);
+    let mut len = swarm_append_decimal(out, 2, cap, level_id.max(0) as u32);
+    if len + 10 >= cap {
+        return 0;
+    }
+    ptr::copy_nonoverlapping(b"&scoreId=".as_ptr(), out.add(len), 9);
+    len += 9;
+    len = swarm_append_decimal(out, len, cap, score_id.max(0) as u32);
+    ptr::write(out.add(len), 0);
+    len
+}
+
+pub(crate) unsafe fn swarm_build_leaderboard_replay_rel_path(
+    score_id: i32,
+    out: *mut u8,
+    cap: usize,
+) -> usize {
+    if out.is_null() || cap < 8 {
+        return 0;
+    }
+    ptr::write_bytes(out, 0, cap);
+    ptr::copy_nonoverlapping(b"sw".as_ptr(), out, 2);
+    let mut len = swarm_append_decimal(out, 2, cap, score_id.max(0) as u32);
+    if len + 5 >= cap {
+        return 0;
+    }
+    ptr::copy_nonoverlapping(b".bin".as_ptr(), out.add(len), 4);
+    len += 4;
+    ptr::write(out.add(len), 0);
+    len
+}
+
+pub(crate) unsafe extern "C" fn leaderboard_raw_file_callback(
+    path: *mut c_char,
+    success: bool,
+    _ctx: *mut c_void,
+) {
+    if LEADERBOARD_FETCH_INDEX < 0 {
+        return;
+    }
+    let slot = LEADERBOARD_FETCH_INDEX as usize;
+    if slot >= LEADERBOARD_FETCH_QUEUE_MAX {
+        LEADERBOARD_FETCH_STATUS = LEADERBOARD_FETCH_FAILED;
+        return;
+    }
+    if !success || path.is_null() {
+        LEADERBOARD_FETCH_STATUS = LEADERBOARD_FETCH_FAILED;
+        return;
+    }
+    let mut len = 0usize;
+    while len + 1 < LEADERBOARD_REPLAY_PATH_BYTES {
+        let byte = ptr::read_volatile(path.add(len) as *const u8);
+        LEADERBOARD_FETCH_PATHS[slot][len] = byte;
+        len += 1;
+        if byte == 0 {
+            break;
+        }
+    }
+    if len == 0 {
+        LEADERBOARD_FETCH_STATUS = LEADERBOARD_FETCH_FAILED;
+        return;
+    }
+    LEADERBOARD_FETCH_PATH_LEN[slot] = len - 1;
+    LEADERBOARD_FETCH_STATUS = LEADERBOARD_FETCH_READY;
+}
+
+pub(crate) unsafe fn leaderboard_fetch_slot_for_index(index: i32) -> i32 {
+    let mut slot = 0usize;
+    while slot < LEADERBOARD_FETCH_QUEUE_LEN {
+        if LEADERBOARD_FETCH_QUEUE[slot] == index {
+            return slot as i32;
+        }
+        slot += 1;
+    }
+    -1
+}
+
+pub(crate) unsafe fn leaderboard_fetch_reset_queue() {
+    LEADERBOARD_FETCH_INDEX = -1;
+    LEADERBOARD_FETCH_STATUS = LEADERBOARD_FETCH_IDLE;
+    LEADERBOARD_FETCH_QUEUE_LEN = 0;
+    let mut slot = 0usize;
+    while slot < LEADERBOARD_FETCH_QUEUE_MAX {
+        LEADERBOARD_FETCH_QUEUE[slot] = -1;
+        LEADERBOARD_FETCH_PATH_LEN[slot] = 0;
+        slot += 1;
+    }
+}
+
+pub(crate) unsafe fn leaderboard_fetch_queue_contains(index: i32) -> bool {
+    leaderboard_fetch_slot_for_index(index) >= 0
+}
+
+pub(crate) unsafe fn leaderboard_fetch_begin(index: i32) -> i32 {
+    if !ensure_leaderboard_fetch_symbols() || !ensure_leaderboard_symbols() {
+        return LEADERBOARD_FETCH_FAILED;
+    }
+    if index < 0 || index >= leaderboard_entry_count() {
+        return LEADERBOARD_FETCH_FAILED;
+    }
+    let existing = leaderboard_fetch_slot_for_index(index);
+    if existing >= 0 {
+        let slot = existing as usize;
+        return if LEADERBOARD_FETCH_PATH_LEN[slot] > 0 {
+            LEADERBOARD_FETCH_READY
+        } else if LEADERBOARD_FETCH_INDEX == index
+            && LEADERBOARD_FETCH_STATUS == LEADERBOARD_FETCH_PENDING
+        {
+            LEADERBOARD_FETCH_PENDING
+        } else {
+            LEADERBOARD_FETCH_IDLE
+        };
+    }
+    if LEADERBOARD_FETCH_QUEUE_LEN >= LEADERBOARD_FETCH_QUEUE_MAX {
+        return LEADERBOARD_FETCH_FAILED;
+    }
+    if LEADERBOARD_FETCH_STATUS == LEADERBOARD_FETCH_PENDING {
+        return LEADERBOARD_FETCH_PENDING;
+    }
+
+    let mut time_ms = 0i32;
+    let mut score_id = 0i32;
+    let mut name = [0u8; 4];
+    if !leaderboard_read_entry(index, &mut time_ms, &mut score_id, name.as_mut_ptr(), name.len()) {
+        return LEADERBOARD_FETCH_FAILED;
+    }
+    let level_id = leaderboard_level_id();
+    if level_id <= 0 || score_id <= 0 {
+        return LEADERBOARD_FETCH_FAILED;
+    }
+
+    let slot = LEADERBOARD_FETCH_QUEUE_LEN;
+    LEADERBOARD_FETCH_QUEUE[slot] = index;
+    LEADERBOARD_FETCH_QUEUE_LEN += 1;
+    LEADERBOARD_FETCH_INDEX = index;
+    LEADERBOARD_FETCH_STATUS = LEADERBOARD_FETCH_PENDING;
+
+    let mut key = [0u8; 64];
+    let key_len = swarm_build_leaderboard_fetch_key(level_id, score_id, key.as_mut_ptr(), key.len());
+    if key_len == 0 {
+        LEADERBOARD_FETCH_STATUS = LEADERBOARD_FETCH_FAILED;
+        return LEADERBOARD_FETCH_FAILED;
+    }
+    let mut rel = [0u8; LEADERBOARD_REPLAY_PATH_BYTES];
+    let rel_len =
+        swarm_build_leaderboard_replay_rel_path(score_id, rel.as_mut_ptr(), rel.len());
+    if rel_len == 0 {
+        LEADERBOARD_FETCH_STATUS = LEADERBOARD_FETCH_FAILED;
+        return LEADERBOARD_FETCH_FAILED;
+    }
+    ptr::copy_nonoverlapping(rel.as_ptr(), LEADERBOARD_FETCH_PATHS[slot].as_mut_ptr(), rel_len);
+    LEADERBOARD_FETCH_PATH_LEN[slot] = rel_len;
+
+    let get_raw: TaServerGetRawFileFn = mem::transmute(TA_SERVER_GET_RAW_FILE);
+    get_raw(
+        key.as_ptr() as *const c_char,
+        Some(leaderboard_raw_file_callback),
+        ptr::null_mut(),
+        ptr::null_mut(),
+        LEADERBOARD_FETCH_PATHS[slot].as_mut_ptr() as *mut c_char,
+    );
+    LEADERBOARD_FETCH_PENDING
+}
+
+pub(crate) unsafe fn leaderboard_fetch_status_for_index(index: i32) -> i32 {
+    let slot = leaderboard_fetch_slot_for_index(index);
+    if slot < 0 {
+        return LEADERBOARD_FETCH_IDLE;
+    }
+    let slot = slot as usize;
+    if LEADERBOARD_FETCH_PATH_LEN[slot] > 0
+        && (LEADERBOARD_FETCH_STATUS == LEADERBOARD_FETCH_READY
+            || LEADERBOARD_FETCH_INDEX != index)
+    {
+        return LEADERBOARD_FETCH_READY;
+    }
+    if LEADERBOARD_FETCH_INDEX == index {
+        return LEADERBOARD_FETCH_STATUS;
+    }
+    LEADERBOARD_FETCH_IDLE
+}
+
+pub(crate) unsafe fn leaderboard_fetch_path_for_index(
+    index: i32,
+    out: *mut u8,
+    cap: usize,
+) -> i32 {
+    let slot = leaderboard_fetch_slot_for_index(index);
+    if slot < 0 || out.is_null() || cap == 0 {
+        return 0;
+    }
+    let slot = slot as usize;
+    let len = LEADERBOARD_FETCH_PATH_LEN[slot];
+    if len == 0 || len >= cap {
+        return 0;
+    }
+    ptr::copy_nonoverlapping(LEADERBOARD_FETCH_PATHS[slot].as_ptr(), out, len);
+    ptr::write(out.add(len), 0);
+    len as i32
+}
+
+pub(crate) unsafe fn swarm_load_selection_from_paths(
+    primary_path: *const c_char,
+    ghost_paths: *const *const c_char,
+    ghost_count: usize,
+) -> usize {
+    swarm_reset_ghosts();
+    if primary_path.is_null() {
+        return 0;
+    }
+    let mut ghost_slot = 0usize;
+    let mut read = 0usize;
+    while read < ghost_count && ghost_slot < SWARM_MAX_GHOSTS {
+        let path = ptr::read(ghost_paths.add(read));
+        read += 1;
+        if path.is_null() {
+            continue;
+        }
+        let (nodes, node_count) = swarm_load_ghost_nodes_from_path(path);
+        if nodes.is_null() || node_count < 2 {
+            continue;
+        }
+        SWARM_GHOST_NODES[ghost_slot] = nodes;
+        SWARM_GHOST_NODE_COUNT[ghost_slot] = node_count;
+        ghost_slot += 1;
+    }
+    SWARM_GHOST_COUNT = ghost_slot;
+    ghost_slot
+}
+
+pub(crate) unsafe fn swarm_start_watch(primary_path: *const c_char, ghost_paths: *const *const c_char, ghost_count: usize) -> bool {
+    if !REPLAY_SWARM_ENABLED.load(Ordering::Acquire) || !ensure_swarm_symbols() {
+        return false;
+    }
+    if primary_path.is_null() {
+        return false;
+    }
+    let _game = ensure_current_game();
+    if CURRENT_GAME.is_null() {
+        return false;
+    }
+    if !install_replay_swarm_hooks() || !ensure_view_replay_hook() {
+        return false;
+    }
+    let loaded = swarm_load_selection_from_paths(primary_path, ghost_paths, ghost_count);
+    if loaded == 0 && ghost_count > 0 {
+        return false;
+    }
+    let view: GameViewReplayFn = mem::transmute(GAME_VIEW_REPLAY_TRAMPOLINE);
+    if GAME_VIEW_REPLAY_TRAMPOLINE.is_null() {
+        return false;
+    }
+    let result = view(
+        CURRENT_GAME,
+        SWARM_VIEW_REPLAY_SAVED.as_mut_ptr(),
+        primary_path,
+    );
+    REPLAY_SWARM_ACTIVE.store(SWARM_GHOST_COUNT > 0, Ordering::Release);
+    result != 0 || SWARM_GHOST_COUNT > 0
+}
+
+pub(crate) unsafe fn swarm_start_race(primary_path: *const c_char, ghost_paths: *const *const c_char, ghost_count: usize) -> bool {
+    if !REPLAY_SWARM_ENABLED.load(Ordering::Acquire) || !ensure_swarm_symbols() {
+        return false;
+    }
+    if primary_path.is_null() {
+        return false;
+    }
+    let game = ensure_current_game();
+    if game.is_null() {
+        return false;
+    }
+  if !install_replay_swarm_hooks() {
+        return false;
+    }
+    let loaded = swarm_load_selection_from_paths(primary_path, ghost_paths, ghost_count);
+    if loaded == 0 && ghost_count > 0 {
+        return false;
+    }
+
+    let replay = swarm_replay_object(game);
+    if !replay.is_null() && !REPLAY_LOAD_PATH.is_null() && !REPLAY_DECOMPRESS_GHOST.is_null() {
+        let load: ReplayLoadPathFn = mem::transmute(REPLAY_LOAD_PATH);
+        let decompress: ReplayDecompressGhostFn = mem::transmute(REPLAY_DECOMPRESS_GHOST);
+        IN_SWARM_LOAD = true;
+        if load(replay, primary_path) != 0 {
+            decompress(replay);
+        }
+        IN_SWARM_LOAD = false;
+    }
+
+    let level_id = leaderboard_level_id();
+    if level_id > 0 && !GAME_LOAD_LEVEL.is_null() {
+        let load_level: GameLoadLevelFn = mem::transmute(GAME_LOAD_LEVEL);
+        load_level(game, level_id as c_uint, 0);
+    }
+
+    REPLAY_SWARM_ACTIVE.store(SWARM_GHOST_COUNT > 0, Ordering::Release);
+    SWARM_GHOST_COUNT > 0 || !primary_path.is_null()
+}
+
 pub(crate) unsafe fn install_replay_swarm_hooks() -> bool {
     if REPLAY_SWARM_HOOKS_INSTALLED.load(Ordering::Acquire) {
         return true;

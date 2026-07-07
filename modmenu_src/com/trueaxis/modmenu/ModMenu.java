@@ -87,8 +87,6 @@ public class ModMenu {
     private static final int DEFAULT_CAMERA_CYCLE_SECONDS = 10;
     private static final String K_REPLAY_SWARM = "replay_swarm";
     private static final String K_RACE_SWARM = "race_ghost_swarm";
-    private static final String K_SWARM_CATALOG = "swarm_catalog_paths";
-    private static final int SWARM_CATALOG_MAX = 32;
     private static final String K_SPLIT_ALPHA = "split_alpha";
     private static final String K_SPLIT_X = "split_x";
     private static final String K_SPLIT_Y = "split_y";
@@ -562,40 +560,6 @@ public class ModMenu {
         return clamp(prefs(c).getInt(K_CAMERA_CYCLE_SECONDS, DEFAULT_CAMERA_CYCLE_SECONDS), 3, 60);
     }
 
-    /** Replay paths remembered for the swarm picker (newline-separated pref). */
-    public static String[] swarmCatalogPaths(Context c) {
-        String joined = prefs(c).getString(K_SWARM_CATALOG, "");
-        if (joined == null || joined.length() == 0) {
-            return new String[0];
-        }
-        return joined.split("\n");
-    }
-
-    /** Merge newly seen replay paths into the persisted swarm catalog. */
-    public static void rememberSwarmCatalogPaths(Context c, java.util.List<String> paths) {
-        java.util.LinkedHashSet<String> merged = new java.util.LinkedHashSet<String>();
-        for (String existing : swarmCatalogPaths(c)) {
-            if (existing.length() > 0) merged.add(existing);
-        }
-        boolean changed = false;
-        for (String path : paths) {
-            if (path != null && path.length() > 0 && merged.size() < SWARM_CATALOG_MAX
-                    && merged.add(path)) {
-                changed = true;
-            }
-        }
-        if (!changed) {
-            return;
-        }
-        StringBuilder joined = new StringBuilder();
-        for (String path : merged) {
-            if (joined.length() > 0) joined.append('\n');
-            joined.append(path);
-        }
-        prefs(c).edit().putString(K_SWARM_CATALOG, joined.toString()).apply();
-        ModDebugLog.module("swarm", "catalog persisted count=" + merged.size());
-    }
-
     public static int splitAlphaPercent(Context c) {
         applyMenuDefaults(c);
         return clamp(prefs(c).getInt(K_SPLIT_ALPHA, DEFAULT_SPLIT_ALPHA), 10, 100);
@@ -929,9 +893,8 @@ public class ModMenu {
             addSubCard(a, card, swarmCard);
             swarmCard.addView(sectionHeader(a, "Replay swarm"));
             TextView swarmHelp = label(a,
-                    "Watch or race several replays at once. Saved replays are found "
-                            + "automatically. In game: open View Replay on a level, tap the "
-                            + "SWARM button (top right), tick ghost replays, Apply.",
+                    "Watch or race leaderboard ghosts together. On a level's "
+                            + "leaderboard, tap Swarm, tick entries, Watch/Race.",
                     9, Color.rgb(170, 178, 185));
             swarmHelp.setPadding(0, 0, 0, dp(a, 2));
             swarmCard.addView(swarmHelp);
@@ -939,7 +902,7 @@ public class ModMenu {
             swarmExtras.setOrientation(LinearLayout.VERTICAL);
             swarmExtras.setPadding(dp(a, 12), 0, 0, 0);
             addCheckBox(a, swarmCard,
-                    "Enable replay swarm picker during passive replays",
+                    "Enable replay swarm on level leaderboards",
                     K_REPLAY_SWARM, true, new Runnable() {
                         public void run() {
                             swarmExtras.setVisibility(

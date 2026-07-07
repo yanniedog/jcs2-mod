@@ -829,10 +829,10 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readReplaySwa
     if REPLAY_SWARM_ACTIVE.load(Ordering::Acquire) {
         return 2;
     }
-    if !ensure_swarm_symbols() || SHOW_REPLAY.is_null() || ptr::read_volatile(SHOW_REPLAY) == 0 {
-        return 0;
+    if leaderboard_ready() {
+        return 1;
     }
-    1
+    0
 }
 
 #[no_mangle]
@@ -888,11 +888,7 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplaySwar
     if !REPLAY_SWARM_ENABLED.load(Ordering::Acquire) || !ensure_swarm_symbols() {
         return;
     }
-    // Selections may only be applied inside the passive View Replay viewer
-    // with a known current replay: ghost loading goes through the live Replay
-    // object, and outside the viewer that object can hold the player's
-    // just-recorded run (clobbering it risks corrupting a saved PB).
-    if !VIEW_REPLAY_SESSION || primary_index < 0 || primary_index as usize >= SWARM_CATALOG_LEN {
+    if primary_index < 0 || primary_index as usize >= SWARM_CATALOG_LEN {
         return;
     }
     swarm_reset_ghosts();
@@ -940,4 +936,222 @@ pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_setReplaySwar
     // replaced its data) so playback keeps looping the right file.
     swarm_restore_primary_replay(primary_index);
     REPLAY_SWARM_ACTIVE.store(SWARM_GHOST_COUNT > 0, Ordering::Release);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLeaderboardEntryCount(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> i32 {
+    leaderboard_entry_count()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLeaderboardReady(
+    _env: *mut c_void,
+    _class: *mut c_void,
+) -> i32 {
+    leaderboard_ready() as i32
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLeaderboardEntryTimeMs(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    index: i32,
+) -> i32 {
+    let mut time_ms = 0i32;
+    let mut score_id = 0i32;
+    let mut scratch = [0u8; 4];
+    if leaderboard_read_entry(
+        index,
+        &mut time_ms,
+        &mut score_id,
+        scratch.as_mut_ptr(),
+        scratch.len(),
+    ) {
+        time_ms
+    } else {
+        -1
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLeaderboardEntryScoreId(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    index: i32,
+) -> i32 {
+    let mut time_ms = 0i32;
+    let mut score_id = 0i32;
+    let mut scratch = [0u8; 4];
+    if leaderboard_read_entry(
+        index,
+        &mut time_ms,
+        &mut score_id,
+        scratch.as_mut_ptr(),
+        scratch.len(),
+    ) {
+        score_id
+    } else {
+        -1
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLeaderboardEntryName(
+    env: *mut c_void,
+    _class: *mut c_void,
+    index: i32,
+    out: *mut c_void,
+) -> i32 {
+    let mut time_ms = 0i32;
+    let mut score_id = 0i32;
+    let mut name = [0u8; LEADERBOARD_NAME_BYTES];
+    if !leaderboard_read_entry(
+        index,
+        &mut time_ms,
+        &mut score_id,
+        name.as_mut_ptr(),
+        name.len(),
+    ) {
+        return 0;
+    }
+    let len = c_strlen(name.as_ptr());
+    jni_copy_bytes_to_array(env, out, name.as_ptr(), len)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_fetchLeaderboardReplay(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    index: i32,
+) -> i32 {
+    leaderboard_fetch_begin(index)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLeaderboardReplayFetchStatus(
+    _env: *mut c_void,
+    _class: *mut c_void,
+    index: i32,
+) -> i32 {
+    leaderboard_fetch_status_for_index(index)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_readLeaderboardReplayPath(
+    env: *mut c_void,
+    _class: *mut c_void,
+    index: i32,
+    out: *mut c_void,
+) -> i32 {
+    let mut path = [0u8; LEADERBOARD_REPLAY_PATH_BYTES];
+    let len = leaderboard_fetch_path_for_index(index, path.as_mut_ptr(), path.len());
+    if len <= 0 {
+        return 0;
+    }
+    jni_copy_bytes_to_array(env, out, path.as_ptr(), len as usize)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_startSwarmWatch(
+    env: *mut c_void,
+    _class: *mut c_void,
+    primary: *mut c_void,
+    ghost_paths: *mut c_void,
+) -> i32 {
+    let mut primary_buf = [0u8; SWARM_CATALOG_PATH_BYTES + 1];
+    let primary_len =
+        jni_read_byte_array(env, primary, primary_buf.as_mut_ptr(), SWARM_CATALOG_PATH_BYTES);
+    if primary_len <= 0 {
+        return 0;
+    }
+    let mut ghost_ptrs = [ptr::null(); SWARM_MAX_GHOSTS];
+    let mut ghost_bufs = [[0u8; SWARM_CATALOG_PATH_BYTES + 1]; SWARM_MAX_GHOSTS];
+    let ghost_count = jni_read_swarm_path_array(
+        env,
+        ghost_paths,
+        ghost_bufs.as_mut_ptr(),
+        ghost_ptrs.as_mut_ptr(),
+        SWARM_MAX_GHOSTS,
+    );
+    swarm_start_watch(
+        primary_buf.as_ptr() as *const c_char,
+        ghost_ptrs.as_ptr(),
+        ghost_count,
+    ) as i32
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_trueaxis_modmenu_RequiredPatches_startSwarmRace(
+    env: *mut c_void,
+    _class: *mut c_void,
+    primary: *mut c_void,
+    ghost_paths: *mut c_void,
+) -> i32 {
+    let mut primary_buf = [0u8; SWARM_CATALOG_PATH_BYTES + 1];
+    let primary_len =
+        jni_read_byte_array(env, primary, primary_buf.as_mut_ptr(), SWARM_CATALOG_PATH_BYTES);
+    if primary_len <= 0 {
+        return 0;
+    }
+    let mut ghost_ptrs = [ptr::null(); SWARM_MAX_GHOSTS];
+    let mut ghost_bufs = [[0u8; SWARM_CATALOG_PATH_BYTES + 1]; SWARM_MAX_GHOSTS];
+    let ghost_count = jni_read_swarm_path_array(
+        env,
+        ghost_paths,
+        ghost_bufs.as_mut_ptr(),
+        ghost_ptrs.as_mut_ptr(),
+        SWARM_MAX_GHOSTS,
+    );
+    swarm_start_race(
+        primary_buf.as_ptr() as *const c_char,
+        ghost_ptrs.as_ptr(),
+        ghost_count,
+    ) as i32
+}
+
+pub(crate) unsafe fn jni_read_swarm_path_array(
+    env: *mut c_void,
+    array: *mut c_void,
+    storage: *mut [u8; SWARM_CATALOG_PATH_BYTES + 1],
+    out_ptrs: *mut *const c_char,
+    max: usize,
+) -> usize {
+    if env.is_null() || array.is_null() || storage.is_null() || out_ptrs.is_null() || max == 0 {
+        return 0;
+    }
+    let env_table = env as *mut *const *const c_void;
+    let functions = *env_table;
+    if functions.is_null() {
+        return 0;
+    }
+    let get_length: unsafe extern "C" fn(*mut c_void, *mut c_void) -> i32 =
+        mem::transmute(*functions.add(171));
+    let get_object: unsafe extern "C" fn(*mut c_void, *mut c_void, i32) -> *mut c_void =
+        mem::transmute(*functions.add(173));
+    let length = get_length(env, array).max(0) as usize;
+    if length == 0 {
+        return 0;
+    }
+    let read_len = if length > max { max } else { length };
+    let mut count = 0usize;
+    let mut index = 0usize;
+    while index < read_len {
+        let element = get_object(env, array, index as i32);
+        if !element.is_null() {
+            let slot = storage.add(count);
+            let len = jni_read_byte_array(env, element, (*slot).as_mut_ptr(), SWARM_CATALOG_PATH_BYTES);
+            if len > 0 {
+                ptr::write(
+                    out_ptrs.add(count),
+                    (*slot).as_ptr() as *const c_char,
+                );
+                count += 1;
+            }
+        }
+        index += 1;
+    }
+    count
 }

@@ -9,7 +9,7 @@ param(
     [string]$LevelSearch = "Straight level for testing",
     [int]$GameStartupWaitSeconds = 60,
     [int]$PassiveReplayWaitSeconds = 15,
-    [int]$MinCatalogEntries = 2,
+    [int]$MinLeaderboardEntries = 2,
     [int]$MinGhostCount = 1,
     [bool]$ClearAppDataBeforeRun = $true,
     [bool]$ForceLoginDismissTap = $true,
@@ -651,16 +651,17 @@ function Open-UserLevelPassiveReplay {
     }
 }
 
-function Open-RegularLevelPassiveReplay {
+function Open-RegularLevelDetail {
     param(
         [string]$Name,
         [int]$RegularPlayTapX = 190,
         [int]$RegularPlayTapY = 96,
         [int]$LevelTapX = 115,
         [int]$LevelTapY = 84,
-        [string]$ScreenshotPrefix
+        [string]$ScreenshotPrefix,
+        [int]$LeaderboardWaitSeconds = 20
     )
-    Write-Host "Opening regular level passive replay: $Name"
+    Write-Host "Opening regular level detail (leaderboard): $Name"
     Ensure-GameActivityResumed
     Set-LandscapeNeutralSensors
     Start-Sleep -Seconds 3
@@ -670,65 +671,68 @@ function Open-RegularLevelPassiveReplay {
     Close-ExternalBrowserIfPresent | Out-Null
     Save-Screenshot "$ScreenshotPrefix-regular-play-open.png"
     Tap $LevelTapX $LevelTapY
-    Start-Sleep -Seconds 8
+    Start-Sleep -Seconds $LeaderboardWaitSeconds
     Dismiss-LoginOverlayIfPresent | Out-Null
     Close-ExternalBrowserIfPresent | Out-Null
     Save-Screenshot "$ScreenshotPrefix-level-detail.png"
+    try {
+        Wait-ForDebugPattern '\[swarm\] swarm button tapped leaderboard=[1-9]\d*' 60 | Out-Null
+    } catch {
+        Write-Host "Leaderboard entry count not logged yet; continuing"
+    }
+}
+
+function Open-RegularLevelPassiveReplay {
+    param(
+        [string]$Name,
+        [int]$RegularPlayTapX = 190,
+        [int]$RegularPlayTapY = 96,
+        [int]$LevelTapX = 115,
+        [int]$LevelTapY = 84,
+        [string]$ScreenshotPrefix
+    )
+    Open-RegularLevelDetail @PSBoundParameters -LeaderboardWaitSeconds 8
     Write-Host "Starting passive replay fly-through for $Name"
     Tap 217 298
     Start-Sleep -Seconds $PassiveReplayWaitSeconds
     Save-Screenshot "$ScreenshotPrefix-passive-replay.png"
-    try {
-        Wait-ForDebugPattern '\[swarm\] (overlay state=1|catalog updated)' 45 | Out-Null
-    } catch {
-        Write-Host "Passive replay swarm evidence not logged yet; continuing"
-    }
 }
 
 function Get-SwarmOverlayState {
     $debug = Read-AdbText shell cat /sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log
-    $matches = [regex]::Matches($debug, "\[swarm\] overlay state=(?<state>\d+) catalog=(?<catalog>\d+) ghosts=(?<ghosts>\d+)")
-    $catalogFromUpdate = 0
-    $catalogUpdates = [regex]::Matches($debug, "\[swarm\] catalog updated count=(?<catalog>\d+)")
-    if ($catalogUpdates.Count -gt 0) {
-        $catalogFromUpdate = [int]$catalogUpdates[$catalogUpdates.Count - 1].Groups["catalog"].Value
+    $matches = [regex]::Matches($debug, "\[swarm\] overlay state=(?<state>\d+) leaderboard=(?<leaderboard>\d+) ghosts=(?<ghosts>\d+)")
+    if ($matches.Count -lt 1) {
+        $matches = [regex]::Matches($debug, "\[swarm\] overlay state=(?<state>\d+) catalog=(?<leaderboard>\d+) ghosts=(?<ghosts>\d+)")
     }
     if ($matches.Count -lt 1) {
-        if ($catalogFromUpdate -gt 0) {
-            return [pscustomobject]@{
-                State = 0
-                Catalog = $catalogFromUpdate
-                Ghosts = 0
-                Debug = $debug
-            }
-        }
         return $null
     }
     $match = $matches[$matches.Count - 1]
-    $catalog = [Math]::Max([int]$match.Groups["catalog"].Value, $catalogFromUpdate)
     return [pscustomobject]@{
         State = [int]$match.Groups["state"].Value
-        Catalog = $catalog
+        Leaderboard = [int]$match.Groups["leaderboard"].Value
         Ghosts = [int]$match.Groups["ghosts"].Value
         Debug = $debug
     }
 }
 
-function Wait-ForSwarmOverlayReady {
-    param([int]$MinCatalog = 2, [int]$Seconds = 60)
+function Wait-ForLeaderboardReady {
+    param([int]$MinEntries = 2, [int]$Seconds = 90)
     $deadline = (Get-Date).AddSeconds($Seconds)
     do {
-        $info = Get-SwarmOverlayState
-        if ($null -ne $info -and $info.State -ge 1 -and $info.Catalog -ge $MinCatalog) {
-            return $info
-        }
         $xml = Dump-WindowXml
-        if ($xml -like '*text="Swarm"*' -and $null -ne $info -and $info.Catalog -ge $MinCatalog) {
-            return $info
+        if ($xml -like '*text="Swarm"*') {
+            return $true
+        }
+        $debug = Read-AdbText shell cat /sdcard/YCS2CommunityMod/logs/ycs2_mod_debug.log
+        if ($debug -match '\[swarm\] swarm button tapped leaderboard=([1-9]\d*)') {
+            if ([int]$Matches[1] -ge $MinEntries) {
+                return $true
+            }
         }
         Start-Sleep -Milliseconds 500
     } while ((Get-Date) -lt $deadline)
-    throw "Timed out waiting for swarm overlay ready (state>=1 catalog>=$MinCatalog). See $RunDir"
+    throw "Timed out waiting for leaderboard entries (need >= $MinEntries). See $RunDir"
 }
 
 function Open-SwarmPicker {
@@ -748,8 +752,8 @@ function Open-SwarmPicker {
         Tap-Launcher 450 20
     }
     Start-Sleep -Seconds 1
-    $dialogXml = Wait-ForWindowText "Replay swarm" 15
-    $dialogXml | Set-Content -LiteralPath (Join-Path $RunDir "swarm-dialog.xml") -Encoding UTF8
+    $dialogXml = Wait-ForWindowText "Watch swarm" 20
+    $dialogXml | Set-Content -LiteralPath (Join-Path $RunDir "swarm-panel.xml") -Encoding UTF8
     return $dialogXml
 }
 
@@ -765,31 +769,22 @@ function Tap-MatchBounds {
     Tap ([int](($x1 + $x2) / 2)) ([int](($y1 + $y2) / 2))
 }
 
-function Select-SwarmPrimaryAndGhost {
-    param([string]$DialogXml)
-    $primaryMatches = [regex]::Matches(
+function Select-LeaderboardSwarmRows {
+    param([string]$DialogXml, [int]$GhostCount = 1)
+    $checks = [regex]::Matches(
         $DialogXml,
-        "text=`"Primary:[^`"]*`"[^>]*class=`"android\.widget\.RadioButton`"[^>]*bounds=`"\[(\d+),(\d+)\]\[(\d+),(\d+)\]`"",
+        'class="android\.widget\.CheckBox"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"',
         [System.Text.RegularExpressions.RegexOptions]::Singleline
     )
-    if ($primaryMatches.Count -lt 1) {
-        throw "Swarm dialog has no primary radio buttons. See $RunDir\swarm-dialog.xml"
+    if ($checks.Count -lt ($GhostCount + 1)) {
+        throw "Swarm panel has too few checkboxes ($($checks.Count)). See $RunDir\swarm-panel.xml"
     }
-    Tap-MatchBounds $primaryMatches[0] "primary radio 0"
-
-    $ghostMatches = [regex]::Matches(
-        $DialogXml,
-        "text=`"Ghost overlay for[^`"]*`"[^>]*class=`"android\.widget\.CheckBox`"[^>]*bounds=`"\[(\d+),(\d+)\]\[(\d+),(\d+)\]`"",
-        [System.Text.RegularExpressions.RegexOptions]::Singleline
-    )
-    if ($ghostMatches.Count -lt 1) {
-        throw "Swarm dialog has no ghost checkboxes. See $RunDir\swarm-dialog.xml"
+    for ($i = 0; $i -le $GhostCount; $i++) {
+        Tap-MatchBounds $checks[$i] "leaderboard checkbox $i"
+        Start-Sleep -Milliseconds 300
     }
-    $ghostIndex = if ($ghostMatches.Count -gt 1) { 1 } else { 0 }
-    Tap-MatchBounds $ghostMatches[$ghostIndex] "ghost checkbox $ghostIndex"
-    Start-Sleep -Milliseconds 400
-    Tap-WindowText "Apply" 10 -RequireButton
-    Start-Sleep -Seconds 2
+    Tap-WindowText "Watch swarm" 10 -RequireButton
+    Start-Sleep -Seconds 5
 }
 
 function Collect-Evidence {
@@ -801,7 +796,6 @@ function Collect-Evidence {
 
 function Assert-SwarmEvidence {
     param(
-        [int]$ExpectedCatalog,
         [int]$ExpectedGhosts
     )
     $debug = Get-Content -LiteralPath (Join-Path $RunDir "public_ycs2_mod_debug.log") -Raw -ErrorAction SilentlyContinue
@@ -811,14 +805,15 @@ function Assert-SwarmEvidence {
 
     foreach ($required in @(
         "replay swarm overlay installed",
-        "replay swarm hooks installed=true"
+        "replay swarm hooks installed=true",
+        "[swarm] panel confirm"
     )) {
         if ($debug -notmatch [regex]::Escape($required)) {
             throw "Missing swarm runtime evidence '$required'. See $RunDir\public_ycs2_mod_debug.log"
         }
     }
-    if ($debug -notmatch "\[swarm\] overlay state=2 catalog=$ExpectedCatalog ghosts=$ExpectedGhosts") {
-        if ($debug -notmatch "\[swarm\] overlay state=2 catalog=\d+ ghosts=$ExpectedGhosts") {
+    if ($debug -notmatch "\[swarm\] overlay state=2 leaderboard=\d+ ghosts=$ExpectedGhosts") {
+        if ($debug -notmatch "\[swarm\] overlay state=2 .* ghosts=$ExpectedGhosts") {
             throw "Swarm did not reach active state with $ExpectedGhosts ghosts. See $RunDir\public_ycs2_mod_debug.log"
         }
     }

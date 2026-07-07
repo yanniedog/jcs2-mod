@@ -86,19 +86,8 @@ public final class RequiredPatches {
                 setReplaySwarmEnabled(true);
                 boolean raceSwarm = ModMenu.raceSwarmEnabled(activity);
                 setReplayRaceSwarmEnabled(raceSwarm);
-                String[] rememberedPaths = ModMenu.swarmCatalogPaths(activity);
-                for (String path : rememberedPaths) {
-                    if (path.length() > 0) {
-                        addReplaySwarmCatalogPath(
-                                path.getBytes(java.nio.charset.Charset.forName("UTF-8")));
-                    }
-                }
-                int slotReplays = seedSwarmSlotReplays(activity);
                 ModDebugLog.log("replay swarm hooks installed=" + installed
-                        + " raceSwarm=" + raceSwarm
-                        + " remembered=" + rememberedPaths.length
-                        + " slotReplays=" + slotReplays
-                        + " catalog=" + readReplaySwarmCatalogCount());
+                        + " raceSwarm=" + raceSwarm);
                 if (installed) {
                     ReplaySwarmOverlay.install(activity);
                 }
@@ -124,38 +113,6 @@ public final class RequiredPatches {
             ModDebugLog.log("checkpoint split HUD disabled");
         }
         ModDebugLog.logRuntime("after RequiredPatches.apply");
-    }
-
-    /**
-     * The game saves finished-race replays as rNN.bin in its user directory
-     * (internal or external files dir). Seed every one into the swarm catalog
-     * as a RELATIVE name: Replay::Load(const char*) resolves paths through
-     * GetUserPath, so absolute paths would break.
-     */
-    private static int seedSwarmSlotReplays(Activity activity) {
-        if (activity == null) {
-            return 0;
-        }
-        int added = 0;
-        java.io.File[] dirs = { activity.getFilesDir(), activity.getExternalFilesDir(null) };
-        for (java.io.File dir : dirs) {
-            if (dir == null) {
-                continue;
-            }
-            java.io.File[] files = dir.listFiles();
-            if (files == null) {
-                continue;
-            }
-            for (java.io.File file : files) {
-                String name = file.getName();
-                if (file.isFile() && file.length() > 64 && name.matches("r\\d\\d\\.bin")) {
-                    addReplaySwarmCatalogPath(
-                            name.getBytes(java.nio.charset.Charset.forName("UTF-8")));
-                    added++;
-                }
-            }
-        }
-        return added;
     }
 
     private static native boolean installNativeCrashLogger();
@@ -218,5 +175,14 @@ public final class RequiredPatches {
     static native int readReplaySwarmCatalogPath(int index, byte[] buffer);
     static native void setReplaySwarmSelection(int primaryIndex, int[] secondaryIndices);
     static native void setReplayRaceSwarmEnabled(boolean enabled);
-    static native void addReplaySwarmCatalogPath(byte[] pathUtf8);
+    static native int readLeaderboardEntryCount();
+    static native int readLeaderboardReady();
+    static native int readLeaderboardEntryTimeMs(int index);
+    static native int readLeaderboardEntryScoreId(int index);
+    static native int readLeaderboardEntryName(int index, byte[] buffer);
+    static native int fetchLeaderboardReplay(int index);
+    static native int readLeaderboardReplayFetchStatus(int index);
+    static native int readLeaderboardReplayPath(int index, byte[] buffer);
+    static native int startSwarmWatch(byte[] primaryPath, byte[][] ghostPaths);
+    static native int startSwarmRace(byte[] primaryPath, byte[][] ghostPaths);
 }
