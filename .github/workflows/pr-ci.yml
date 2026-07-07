@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  actions: write
 
 concurrency:
   group: pr-ci-${{ github.event.pull_request.number || github.ref }}
@@ -56,6 +57,13 @@ jobs:
       - name: Build mod launcher smali
         shell: pwsh
         run: .\build_modmenu.ps1
+
+      - name: Upload CI-built native bridge (sync aid)
+        uses: actions/upload-artifact@v4
+        with:
+          name: libjcs2mod-so
+          path: decompiled/lib/arm64-v8a/libjcs2mod.so
+          if-no-files-found: error
 
       - name: Verify generated outputs are committed
         shell: pwsh

@@ -53,6 +53,10 @@ jadx-out/
 __pycache__/
 *.pyc
 
+# Local agent tool dirs (Cursor/Codex session state)
+.agents/
+.codex/
+
 # OS/editor files
 .DS_Store
 Thumbs.db

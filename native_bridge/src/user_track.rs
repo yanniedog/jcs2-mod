@@ -734,6 +734,9 @@ pub(crate) unsafe extern "C" fn hooked_game_load_level(
     level_id: c_uint,
     difficulty: c_int,
 ) -> c_int {
+    if !game.is_null() {
+        CURRENT_GAME = game;
+    }
     let (flags, lap_count) = settings_for_level_id(level_id);
     store_user_track_settings(flags, lap_count);
     apply_user_track_level_settings(level_id, flags, lap_count);
@@ -744,6 +747,8 @@ pub(crate) unsafe extern "C" fn hooked_game_load_level(
         CURRENT_USER_TRACK_FLAGS.load(Ordering::Acquire),
         CURRENT_USER_TRACK_LAP_COUNT.load(Ordering::Acquire),
     );
+    // Auto-load the configured swarm ghost pack for this level (viewer + race).
+    swarm_load_race_pack();
     result
 }
 

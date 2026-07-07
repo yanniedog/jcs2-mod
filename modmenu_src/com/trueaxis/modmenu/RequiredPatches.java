@@ -93,7 +93,9 @@ public final class RequiredPatches {
                                 path.getBytes(java.nio.charset.Charset.forName("UTF-8")));
                     }
                 }
+                archiveNewSlotReplays(activity);
                 int slotReplays = seedSwarmSlotReplays(activity);
+                applyGhostPack(activity);
                 ModDebugLog.log("replay swarm hooks installed=" + installed
                         + " raceSwarm=" + raceSwarm
                         + " remembered=" + rememberedPaths.length
@@ -127,6 +129,147 @@ public final class RequiredPatches {
     }
 
     /**
+     * Archive every new/updated rNN.bin into swarm_replays/ next to it, so
+     * multiple runs per level accumulate as ghost-pack candidates instead of
+     * the game overwriting its single slot. Files are named
+     * rNN-&lt;mtimeSeconds&gt;.bin (same content = same name = no duplicates);
+     * the library is pruned to the newest 24.
+     */
+    static int archiveNewSlotReplays(android.content.Context context) {
+        if (context == null) {
+            return 0;
+        }
+        int archived = 0;
+        java.io.File[] dirs = { context.getFilesDir(), context.getExternalFilesDir(null) };
+        for (java.io.File dir : dirs) {
+            if (dir == null) {
+                continue;
+            }
+            java.io.File[] files = dir.listFiles();
+            if (files == null) {
+                continue;
+            }
+            java.io.File library = new java.io.File(dir, "swarm_replays");
+            for (java.io.File file : files) {
+                String name = file.getName();
+                if (!file.isFile() || file.length() <= 64 || !name.matches("r\\d\\d\\.bin")) {
+                    continue;
+                }
+                if (!library.isDirectory() && !library.mkdirs()) {
+                    continue;
+                }
+                String archiveName = name.substring(0, 3) + "-"
+                        + (file.lastModified() / 1000L) + ".bin";
+                java.io.File target = new java.io.File(library, archiveName);
+                if (target.isFile()) {
+                    continue;
+                }
+                if (copyFile(file, target)) {
+                    archived++;
+                }
+            }
+            pruneLibrary(library, 24);
+        }
+        if (archived > 0) {
+            ModDebugLog.module("swarm", "archived " + archived + " new slot replays");
+        }
+        return archived;
+    }
+
+    private static boolean copyFile(java.io.File from, java.io.File to) {
+        java.io.FileInputStream in = null;
+        java.io.FileOutputStream out = null;
+        try {
+            in = new java.io.FileInputStream(from);
+            out = new java.io.FileOutputStream(to);
+            byte[] buffer = new byte[65536];
+            int read;
+            while ((read = in.read(buffer)) > 0) {
+                out.write(buffer, 0, read);
+            }
+            return true;
+        } catch (Throwable error) {
+            ModDebugLog.module("swarm", "archive copy failed " + from, error);
+            to.delete();
+            return false;
+        } finally {
+            try { if (in != null) in.close(); } catch (Throwable ignored) {}
+            try { if (out != null) out.close(); } catch (Throwable ignored) {}
+        }
+    }
+
+    private static void pruneLibrary(java.io.File library, int keep) {
+        java.io.File[] entries = library.listFiles();
+        if (entries == null || entries.length <= keep) {
+            return;
+        }
+        java.util.Arrays.sort(entries, new java.util.Comparator<java.io.File>() {
+            public int compare(java.io.File a, java.io.File b) {
+                long diff = b.lastModified() - a.lastModified();
+                return diff == 0 ? 0 : (diff > 0 ? 1 : -1);
+            }
+        });
+        for (int i = keep; i < entries.length; i++) {
+            entries[i].delete();
+        }
+    }
+
+    /** Library entries (newest first) across both possible user dirs. */
+    static java.util.List<java.io.File> swarmLibraryFiles(android.content.Context context) {
+        if (context == null) {
+            return new java.util.ArrayList<java.io.File>();
+        }
+        java.util.ArrayList<java.io.File> all = new java.util.ArrayList<java.io.File>();
+        java.io.File[] dirs = { context.getFilesDir(), context.getExternalFilesDir(null) };
+        for (java.io.File dir : dirs) {
+            if (dir == null) {
+                continue;
+            }
+            java.io.File[] entries = new java.io.File(dir, "swarm_replays").listFiles();
+            if (entries == null) {
+                continue;
+            }
+            for (java.io.File entry : entries) {
+                if (entry.isFile() && entry.getName().endsWith(".bin")) {
+                    all.add(entry);
+                }
+            }
+        }
+        java.util.Collections.sort(all, new java.util.Comparator<java.io.File>() {
+            public int compare(java.io.File a, java.io.File b) {
+                long diff = b.lastModified() - a.lastModified();
+                return diff == 0 ? 0 : (diff > 0 ? 1 : -1);
+            }
+        });
+        return all;
+    }
+
+    /** Push the saved ghost-pack selection to the native pack loader. */
+    static void applyGhostPack(android.content.Context context) {
+        if (context == null) {
+            return;
+        }
+        String[] paths = ModMenu.ghostPackPaths(context);
+        StringBuilder joined = new StringBuilder();
+        for (String path : paths) {
+            if (path.length() == 0) {
+                continue;
+            }
+            if (joined.length() > 0) {
+                joined.append('\0');
+            }
+            joined.append(path);
+        }
+        try {
+            setReplaySwarmRacePack(
+                    joined.toString().getBytes(java.nio.charset.Charset.forName("UTF-8")));
+            ModDebugLog.module("swarm", "ghost pack applied entries=" + paths.length);
+        } catch (Throwable error) {
+            ModDebugLog.module("swarm", "ghost pack apply failed", error);
+        }
+    }
+
+    /**
      * The game saves finished-race replays as rNN.bin in its user directory
      * (internal or external files dir). Seed every one into the swarm catalog
      * as a RELATIVE name: Replay::Load(const char*) resolves paths through
@@ -152,6 +295,17 @@ public final class RequiredPatches {
                     addReplaySwarmCatalogPath(
                             name.getBytes(java.nio.charset.Charset.forName("UTF-8")));
                     added++;
+                }
+            }
+            // Archived library entries are pickable too (relative sub-path).
+            java.io.File[] archived = new java.io.File(dir, "swarm_replays").listFiles();
+            if (archived != null) {
+                for (java.io.File file : archived) {
+                    if (file.isFile() && file.length() > 64 && file.getName().endsWith(".bin")) {
+                        addReplaySwarmCatalogPath(("swarm_replays/" + file.getName())
+                                .getBytes(java.nio.charset.Charset.forName("UTF-8")));
+                        added++;
+                    }
                 }
             }
         }
@@ -218,5 +372,6 @@ public final class RequiredPatches {
     static native int readReplaySwarmCatalogPath(int index, byte[] buffer);
     static native void setReplaySwarmSelection(int primaryIndex, int[] secondaryIndices);
     static native void setReplayRaceSwarmEnabled(boolean enabled);
+    static native void setReplaySwarmRacePack(byte[] nulSeparatedPaths);
     static native void addReplaySwarmCatalogPath(byte[] pathUtf8);
 }

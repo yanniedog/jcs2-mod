@@ -22,6 +22,7 @@ public class ModLauncherActivity extends Activity {
             finish();
             return;
         }
+        handleAutomationExtras();
         ModMenu.showPreLaunchMenu(this, new Runnable() {
             public void run() {
                 try {
@@ -47,6 +48,43 @@ public class ModLauncherActivity extends Activity {
                 UpdateManager.checkSilently(ModLauncherActivity.this);
             }
         }, 1500);
+    }
+
+    /** Test-harness support: launch extras toggle prefs before the menu builds. */
+    private void handleAutomationExtras() {
+        try {
+            Intent intent = getIntent();
+            if (intent == null) {
+                return;
+            }
+            if (intent.hasExtra("automation_enable_replay_swarm")) {
+                boolean on = intent.getBooleanExtra("automation_enable_replay_swarm", false);
+                ModMenu.setReplaySwarmEnabled(this, on);
+                ModDebugLog.module("automation", "automation replay_swarm=" + on);
+            }
+            if (intent.hasExtra("automation_enable_race_swarm")) {
+                boolean on = intent.getBooleanExtra("automation_enable_race_swarm", false);
+                ModMenu.setRaceSwarmEnabled(this, on);
+                ModDebugLog.module("automation", "automation race_swarm=" + on);
+            }
+            if (intent.hasExtra("automation_swarm_autoapply")) {
+                boolean on = intent.getBooleanExtra("automation_swarm_autoapply", false);
+                ModMenu.setSwarmAutoApply(this, on);
+                ModDebugLog.module("automation", "automation swarm_autoapply=" + on);
+            }
+            if (intent.getBooleanExtra("automation_ghost_pack_all", false)) {
+                RequiredPatches.archiveNewSlotReplays(this);
+                java.util.ArrayList<String> all = new java.util.ArrayList<String>();
+                for (java.io.File file : RequiredPatches.swarmLibraryFiles(this)) {
+                    all.add("swarm_replays/" + file.getName());
+                }
+                ModMenu.setGhostPackPaths(this, all);
+                ModDebugLog.module("automation", "automation ghost_pack entries="
+                        + ModMenu.ghostPackPaths(this).length);
+            }
+        } catch (Throwable error) {
+            ModDebugLog.module("automation", "automation extras failed", error);
+        }
     }
 
     @Override
