@@ -106,7 +106,9 @@ pub(crate) unsafe fn leaderboard_read_entry(
         ptr::read_volatile(row.add(LEADERBOARD_ROW_SCORE_ID_OFFSET) as *const i32),
     );
 
-    let mut name_ptr = ptr::read_volatile(row.add(LEADERBOARD_ROW_NAME_PTR_OFFSET) as *const u8);
+    let mut name_ptr = ptr::read_volatile(
+        row.add(LEADERBOARD_ROW_NAME_PTR_OFFSET) as *const *const u8,
+    );
     if name_ptr.is_null() {
         let base = leaderboard_base();
         if !base.is_null() {
@@ -155,7 +157,7 @@ pub(crate) unsafe fn leaderboard_format_time_ms(time_ms: i32, out: *mut u8, out_
 
     let mut buf = [0u8; 16];
     let mut len = 0usize;
-    let mut append_digit =
+    let append_digit =
         |buf: &mut [u8; 16], len: &mut usize, tens: i32, ones: i32| {
             if *len < buf.len() {
                 buf[*len] = b'0' + tens as u8;

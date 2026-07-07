@@ -221,6 +221,10 @@ def check_sources(skip_local_assets=False):
         "_ZN4Game6RenderEv",
         "_ZN3Car6RenderEb",
         "_ZN3Car14SetLightColourEjf",
+        "g_leaderboard",
+        "g_pGameBase",
+        "_Z19TaServer_GetRawFilePKcPFvS0_bPvES1_S0_",
+        "_Z11GetUserPathPKcPc",
     )
     for line in bridge.splitlines():
         if 'resolve(b"' in line and not any(symbol in line for symbol in allowed_native_symbols):
@@ -569,16 +573,21 @@ def check_sources(skip_local_assets=False):
         ok = fail("continuous split refresh feature must stay removed") and ok
     if "K_GHOST_ROUTE" in mod_menu or "Draw ghost track line" in mod_menu:
         ok = fail("ghost route line controls must stay removed from the mod menu") and ok
-    if "Enable replay swarm picker during passive replays" not in mod_menu:
+    if "Enable replay swarm on level leaderboards" not in mod_menu:
         ok = fail("mod menu no longer exposes replay swarm mode") and ok
     replay_swarm = ROOT / "modmenu_src/com/trueaxis/modmenu/ReplaySwarmOverlay.java"
+    swarm_panel = ROOT / "modmenu_src/com/trueaxis/modmenu/SwarmLeaderboardPanel.java"
     if not replay_swarm.exists():
         ok = fail("replay swarm overlay source is missing") and ok
+    if not swarm_panel.exists():
+        ok = fail("leaderboard swarm panel source is missing") and ok
     if (
         "RequiredPatches_installReplaySwarmHooks" not in bridge
         or "hooked_game_view_replay" not in bridge
         or "hooked_replay_update" not in bridge
-        or "RequiredPatches_setReplaySwarmSelection" not in bridge
+        or "RequiredPatches_fetchLeaderboardReplay" not in bridge
+        or "RequiredPatches_startSwarmWatch" not in bridge
+        or "RequiredPatches_readLeaderboardEntryCount" not in bridge
     ):
         ok = fail("native replay swarm hooks or JNI entry points are missing") and ok
     if (

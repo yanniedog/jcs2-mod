@@ -311,7 +311,7 @@ pub(crate) unsafe fn refresh_user_track_create_switch_labels() {
             LAPS_LABEL[5] = b' ';
             LAPS_LABEL[6] = b'0' + count;
             LAPS_LABEL[7] = 0;
-            ptr::addr_of!(LAPS_LABEL).cast::<c_char>()
+            LAPS_LABEL.as_ptr()
         };
     set_switch_button_label(USER_TRACK_LAPS_BUTTON, laps_text as *const c_char);
     set_switch_button_label(
