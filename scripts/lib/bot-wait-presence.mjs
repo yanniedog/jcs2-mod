@@ -27,7 +27,7 @@ export function resolveAnchorIso(anchorIso, fallbackIso) {
 }
 
 const COMMENTS_QUERY =
-  'query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){createdAt comments(last:100){nodes{author{login}createdAt body}}reviews(last:30){nodes{author{login}submittedAt body}}reviewThreads(last:100){nodes{comments(last:10){nodes{author{login}createdAt body}}}}}}}';
+  'query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){createdAt comments(last:100){nodes{author{login}createdAt updatedAt body}}reviews(last:30){nodes{author{login}submittedAt body}}reviewThreads(last:100){nodes{comments(last:10){nodes{author{login}createdAt updatedAt body}}}}}}}';
 
 function ghGraphql(owner, name, prNumber) {
   const r = spawnSync(
@@ -65,6 +65,16 @@ function ghGraphql(owner, name, prNumber) {
   return data;
 }
 
+function eventAt(node) {
+  // Prefer updatedAt so patched Cursor Auto comments still count after --bot-tag.
+  const updated = node?.updatedAt;
+  const created = node?.createdAt || node?.submittedAt;
+  if (updated && created) {
+    return new Date(updated).getTime() >= new Date(created).getTime() ? updated : created;
+  }
+  return updated || created || null;
+}
+
 export function collectBotEvents(prPayload, knownBots, anchorIso, fallbackIso) {
   const anchorMs = new Date(resolveAnchorIso(anchorIso, fallbackIso)).getTime();
   const events = [];
@@ -74,14 +84,14 @@ export function collectBotEvents(prPayload, knownBots, anchorIso, fallbackIso) {
     events.push({ login, at });
   };
   for (const c of prPayload.comments?.nodes || []) {
-    pushEvent(c.author?.login, c.createdAt, c.body);
+    pushEvent(c.author?.login, eventAt(c), c.body);
   }
   for (const rev of prPayload.reviews?.nodes || []) {
     pushEvent(rev.author?.login, rev.submittedAt, rev.body);
   }
   for (const t of prPayload.reviewThreads?.nodes || []) {
     for (const c of t.comments?.nodes || []) {
-      pushEvent(c.author?.login, c.createdAt, c.body);
+      pushEvent(c.author?.login, eventAt(c), c.body);
     }
   }
   events.sort((a, b) => new Date(a.at) - new Date(b.at));

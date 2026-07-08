@@ -128,19 +128,18 @@ jobs:
         id: review
         if: steps.gate_exempt.outputs.exempt != 'true' && steps.already.outputs.skip != 'true'
         env:
-          CURSOR_SECRETS_JSON: ${{ toJSON(secrets) }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
           BASE_REF: ${{ steps.pr.outputs.base_ref }}
           HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
         run: |
           set -euo pipefail
-          CURSOR_TOKEN="$(node -e "const secrets = JSON.parse(process.env.CURSOR_SECRETS_JSON || '{}'); process.stdout.write(secrets.CURSOR_API_KEY || '');")"
-          if [ -z "$CURSOR_TOKEN" ]; then
+          if [ -z "${CURSOR_API_KEY:-}" ]; then
             echo "Cursor API key is missing. Add CURSOR_API_KEY as an Actions secret." > /tmp/cursor-review-error.txt
-            echo "status=1" >> "$GITHUB_OUTPUT"
+            # Advisory-only: missing secret must not fail the check (not a required status).
+            echo "status=skip" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          export CURSOR_API_KEY="$CURSOR_TOKEN"
 
           git fetch origin "$BASE_REF" --depth=1
           {
@@ -168,7 +167,7 @@ jobs:
           fi
           echo "status=0" >> "$GITHUB_OUTPUT"
 
-      - name: Post or update PR review comment
+      - name: Post fresh PR review comment
         if: always() && steps.gate_exempt.outputs.exempt != 'true' && steps.already.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -182,6 +181,10 @@ jobs:
             echo
             if [ "${REVIEW_STATUS:-1}" = "0" ]; then
               cat /tmp/cursor-review.txt
+            elif [ "${REVIEW_STATUS:-}" = "skip" ]; then
+              echo "Cursor Auto review skipped: \`CURSOR_API_KEY\` is not configured on this repository."
+              echo
+              echo "Set the secret with: \`gh secret set CURSOR_API_KEY --repo ${GITHUB_REPOSITORY}\`"
             else
               echo "Cursor Auto review did not complete successfully."
               echo
@@ -191,12 +194,14 @@ jobs:
             fi
           } > /tmp/cursor-review-comment.md
 
-          comment_id="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate --jq '.[] | select(.body | contains("<!-- cursor-auto-review -->")) | .id' | tail -n 1 || true)"
-          if [ -n "$comment_id" ]; then
-            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" --field body=@/tmp/cursor-review-comment.md > /dev/null
-          else
-            gh pr comment "$PR_NUMBER" --body-file /tmp/cursor-review-comment.md
-          fi
+          # Always create a fresh comment so bot-wait presence (createdAt) sees this run.
+          # Delete prior marker comments to avoid spam.
+          old_ids="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate \
+            --jq '.[] | select(.body | contains("<!-- cursor-auto-review -->")) | .id' || true)"
+          for id in $old_ids; do
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/issues/comments/${id}" >/dev/null || true
+          done
+          gh pr comment "$PR_NUMBER" --body-file /tmp/cursor-review-comment.md
 
       - name: Publish cursor-auto-review check
         if: always() && steps.gate_exempt.outputs.exempt != 'true' && steps.already.outputs.skip != 'true'
@@ -208,7 +213,10 @@ jobs:
           set -euo pipefail
           conclusion="success"
           summary="Cursor Auto review completed and posted a PR comment."
-          if [ "${REVIEW_STATUS:-1}" != "0" ]; then
+          if [ "${REVIEW_STATUS:-}" = "skip" ]; then
+            conclusion="success"
+            summary="Skipped: CURSOR_API_KEY secret is not configured."
+          elif [ "${REVIEW_STATUS:-1}" != "0" ]; then
             conclusion="failure"
             summary="Cursor Auto review failed. See the PR comment and workflow logs."
           fi

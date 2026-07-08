@@ -14,9 +14,9 @@
     "github:bot-gates:operator": "node scripts/github-bot-gates-operator.mjs",
     "branch-protection:apply": "node scripts/apply-branch-protection.mjs",
     "repo-merge-settings:apply": "node scripts/apply-repo-merge-settings.mjs",
-    "chief:scan": "node \"%CURSOR_WORKFLOW_SCRIPTS%\\chief-scan.mjs\"",
-    "pr:bot-feedback-audit": "node \"%CURSOR_WORKFLOW_SCRIPTS%\\pr-bot-feedback-check.mjs\" --audit-merged --limit 20",
-    "ship:closeout:strict": "node \"%CURSOR_WORKFLOW_SCRIPTS%\\ship-closeout-strict.mjs\"",
+    "chief:scan": "node scripts/run-workflow.mjs chief-scan.mjs",
+    "pr:bot-feedback-audit": "node scripts/run-workflow.mjs pr-bot-feedback-check.mjs --audit-merged --limit 20",
+    "ship:closeout:strict": "node scripts/run-workflow.mjs ship-closeout-strict.mjs",
     "git:graph-hygiene": "git fetch origin --prune"
   }
 }
