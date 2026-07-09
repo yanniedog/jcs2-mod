@@ -13,6 +13,10 @@
     "pr:gate-logic:verify": "node scripts/verify-pr-gate-logic.mjs",
     "github:bot-gates:operator": "node scripts/github-bot-gates-operator.mjs",
     "branch-protection:apply": "node scripts/apply-branch-protection.mjs",
-    "repo-merge-settings:apply": "node scripts/apply-repo-merge-settings.mjs"
+    "repo-merge-settings:apply": "node scripts/apply-repo-merge-settings.mjs",
+    "chief:scan": "node scripts/run-workflow.mjs chief-scan.mjs",
+    "pr:bot-feedback-audit": "node scripts/run-workflow.mjs pr-bot-feedback-check.mjs --audit-merged --limit 20",
+    "ship:closeout:strict": "node scripts/run-workflow.mjs ship-closeout-strict.mjs",
+    "git:graph-hygiene": "git fetch origin --prune"
   }
 }

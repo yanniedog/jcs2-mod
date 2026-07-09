@@ -2,7 +2,7 @@
  * Fetch and classify PR review threads via GitHub GraphQL (gh api).
  */
 import { spawnSync } from 'node:child_process';
-import { isKnownBotLogin } from './bot-wait-config.mjs';
+import { isCursorAutoReviewBody, isKnownBotLogin } from './bot-wait-config.mjs';
 import { isBotNoise } from './bot-noise.mjs';
 
 const DISPOSITION_BODY_RE =
@@ -182,8 +182,8 @@ function threadHasBotSelfAddressed(comments) {
 
 function threadHasOwnerClosure(comments, botAt) {
   for (const c of comments.slice(1)) {
-    const login = c.author.login;
-    if (isBotLogin(login) && c.author.__typename === 'Bot') continue;
+    const { login, __typename } = c.author;
+    if (isBotLogin(login) && __typename === 'Bot') continue;
     if (new Date(c.createdAt).getTime() < botAt) continue;
     if (isClosureReply(c.body)) return true;
   }
@@ -203,6 +203,9 @@ export function classifyThreads(threads, opts = {}) {
 
     const first = comments[0];
     const starterLogin = first.author.login;
+    if (starterLogin.toLowerCase() === 'github-actions[bot]' && !isCursorAutoReviewBody(first.body)) {
+      continue;
+    }
     const starterIsBot = isBotLogin(starterLogin) || first.author.__typename === 'Bot';
     const excerpt = (first.body || '').replace(/\s+/g, ' ').slice(0, 120);
     const botAt = new Date(first.createdAt).getTime();
