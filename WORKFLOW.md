@@ -14,7 +14,7 @@ The `pr-ci` workflow builds the native bridge, mod launcher smali, and runs the 
 
 ## 3. Bot presence gate (`bot-presence-gate`)
 
-Waits until **gemini**, **codex**, and **sourcery** have posted on the PR since the wait anchor.
+Waits until **gemini**, **codex**, and **sourcery** have posted on the PR since the wait anchor. Cursor Auto Review posts as `github-actions[bot]` with marker `<!-- cursor-auto-review -->` and is available as optional key **cursor**.
 
 Required bot logins (aliases in `scripts/lib/bot-wait-config.mjs`):
 
@@ -23,6 +23,7 @@ Required bot logins (aliases in `scripts/lib/bot-wait-config.mjs`):
 | gemini | `gemini-code-assist[bot]`, `google-github-actions-bot[bot]`, … |
 | codex | `chatgpt-codex-connector[bot]` |
 | sourcery | `sourcery-ai[bot]` |
+| cursor | `github-actions[bot]` with `<!-- cursor-auto-review -->` |
 
 Local pre-merge check:
 
@@ -32,7 +33,7 @@ npm run wait-for-bots -- --watch --pr <n>
 
 Exit **0** = ready. Exit **2** = still waiting. Exit **1** = error or missing bots at cap.
 
-Env: `JCS2_BOT_WAIT_REQUIRED=gemini,codex,sourcery` (fallback: `AR_BOT_WAIT_REQUIRED`, `BOT_WAIT_REQUIRED`).
+Env: `JCS2_BOT_WAIT_REQUIRED=gemini,codex,sourcery` (fallback: `AR_BOT_WAIT_REQUIRED`, `BOT_WAIT_REQUIRED`). Add `cursor` only after the `cursor-auto-review` workflow is stable.
 
 ## 4. Bot feedback gate (`bot-feedback-gate`)
 

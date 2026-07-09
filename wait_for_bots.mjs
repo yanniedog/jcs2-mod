@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Dynamic pre-merge bot wait gate (WORKFLOW.md step 5).
+ * Optional cursor alias: github-actions[bot] comments with <!-- cursor-auto-review -->.
  * Exit 0 only when CI is settled, every required bot has completed since anchor,
  * and the quiet window has passed after the last bot activity.
  * Exit 2 = still waiting; exit 1 = error or required bots missing at safety cap.
@@ -10,6 +10,7 @@ import { setTimeout as sleepMs } from 'node:timers/promises';
 import {
   allKnownBotLogins,
   formatRequiredKeys,
+  isCursorAutoReviewBody,
   missingRequiredKeys,
   parseRequiredKeys,
   resolveRequiredKeys,
@@ -29,7 +30,7 @@ const MAX_WAIT_MIN = Number(process.env.BOT_WAIT_MAX_MIN || 28);
 // otherwise a chatty bot looping on "out of credits" notices holds the cap
 // timeout open until merge gets blocked.
 const COMMENTS_QUERY =
-  'query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){reactions(last:100){nodes{user{login}content createdAt}}comments(last:100){nodes{author{login}createdAt body reactions(last:100){nodes{user{login}content createdAt}}}}reviews(last:30){nodes{author{login}submittedAt body}}reviewThreads(last:100){nodes{comments(last:10){nodes{author{login}createdAt body}}}}}}}';
+  'query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){reactions(last:100){nodes{user{login}content createdAt}}comments(last:100){nodes{author{login}createdAt updatedAt body reactions(last:100){nodes{user{login}content createdAt}}}}reviews(last:30){nodes{author{login}submittedAt body}}reviewThreads(last:100){nodes{comments(last:10){nodes{author{login}createdAt updatedAt body}}}}}}}';
 
 function sh(cmd) {
   try {
@@ -150,12 +151,21 @@ function fetchBotActivity(owner, name, prNumber) {
   if (!pr) return { error: 'GraphQL: pull request not found', events: [] };
 
   const events = [];
+  const eventAt = (node) => {
+    const updated = node?.updatedAt;
+    const created = node?.createdAt || node?.submittedAt;
+    if (updated && created) {
+      return new Date(updated).getTime() >= new Date(created).getTime() ? updated : created;
+    }
+    return updated || created || null;
+  };
   const pushEvent = (login, at, body) => {
     if (!login || !at) return;
+    if (login.toLowerCase() === 'github-actions[bot]' && !isCursorAutoReviewBody(body)) return;
     events.push({ login, at, noise: isBotNoise(body) });
   };
   for (const c of pr.comments?.nodes || []) {
-    pushEvent(c.author?.login, c.createdAt, c.body);
+    pushEvent(c.author?.login, eventAt(c), c.body);
     for (const reaction of c.reactions?.nodes || []) {
       if (reaction.content === 'THUMBS_UP') {
         pushEvent(reaction.user?.login, reaction.createdAt, 'thumbs-up no-findings reaction');
@@ -167,7 +177,7 @@ function fetchBotActivity(owner, name, prNumber) {
   }
   for (const t of pr.reviewThreads?.nodes || []) {
     for (const c of t.comments?.nodes || []) {
-      pushEvent(c.author?.login, c.createdAt, c.body);
+      pushEvent(c.author?.login, eventAt(c), c.body);
     }
   }
   for (const reaction of pr.reactions?.nodes || []) {
