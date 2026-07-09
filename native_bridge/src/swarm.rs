@@ -30,6 +30,10 @@ pub(crate) const SWARM_CATALOG_PATH_BYTES: usize = 192;
 
 pub(crate) const GAME_REPLAY_OBJECT_OFFSET: usize = 0xc0;
 
+/// `Game` field written by `StartLevelIntro` / level load: campaign level index
+/// used by `Replay::Load(int)` to build `r%02d.bin`.
+pub(crate) const GAME_LEVEL_ID_OFFSET: usize = 0x11c;
+
 pub(crate) type GameRenderGhostFn = unsafe extern "C" fn(*mut c_void);
 
 pub(crate) type GameViewReplayFn = unsafe extern "C" fn(*mut c_void, *mut u8, *const c_char) -> u8;
@@ -311,14 +315,50 @@ pub(crate) static mut RACE_PACK_PATHS: [[u8; SWARM_CATALOG_PATH_BYTES + 1]; SWAR
 
 pub(crate) static mut RACE_PACK_LEN: usize = 0;
 
+/// Bind the swarm "camera car" primary to this level's slot replay `r%02d.bin`.
+///
+/// Stock View Replay never calls `Replay::Load(const char*)` — it feeds an
+/// in-memory compressed header — so the load hook never learns the watched
+/// file. Without a primary the in-replay picker always refuses to open.
+/// Campaign levels store their index at `game+0x11c` before `LoadLevel` runs
+/// (see `Game::StartLevelIntro`), matching `Replay::Load(int)`'s `r%02d.bin`.
+pub(crate) unsafe fn swarm_bind_primary_slot_replay(game: *mut c_void) -> i32 {
+    if game.is_null() || !REPLAY_SWARM_ENABLED.load(Ordering::Acquire) {
+        SWARM_PRIMARY_CATALOG_INDEX = -1;
+        return -1;
+    }
+    let level_id = ptr::read_volatile((game as *mut u8).add(GAME_LEVEL_ID_OFFSET) as *const c_int);
+    if level_id < 0 || level_id > 99 {
+        SWARM_PRIMARY_CATALOG_INDEX = -1;
+        return -1;
+    }
+    let mut path = [0u8; 16];
+    path[0] = b'r';
+    path[1] = b'0' + ((level_id / 10) as u8);
+    path[2] = b'0' + ((level_id % 10) as u8);
+    path[3] = b'.';
+    path[4] = b'b';
+    path[5] = b'i';
+    path[6] = b'n';
+    // path[7] already 0
+    swarm_catalog_note_path(path.as_ptr() as *const c_char);
+    let index = swarm_catalog_find(path.as_ptr(), 7);
+    SWARM_PRIMARY_CATALOG_INDEX = index;
+    index
+}
+
 /// Load the configured ghost pack into the swarm slots. Called from the
-/// Game::LoadLevel hook AFTER the stock load: the game (re)initialises its own
-/// replay/ghost state afterwards for races and the viewer alike, so the
-/// transient Replay-object reuse here can never clobber anything lasting.
+/// Game::LoadLevel hook AFTER the stock load.
+///
+/// During passive View Replay, `StartLevelIntro` -> `LoadLevel` runs *after*
+/// the watched replay has already been decompressed into the live Replay
+/// object. Pack loads reuse that object, so we must re-bind and restore the
+/// level slot replay afterwards or the viewer keeps the last pack file.
 pub(crate) unsafe fn swarm_load_race_pack() {
     if RACE_PACK_LEN == 0 || !ensure_swarm_symbols() {
         return;
     }
+    let in_view_replay = VIEW_REPLAY_SESSION || VIEW_REPLAY_PENDING;
     swarm_reset_ghosts();
     let mut slot = 0usize;
     let mut index = 0usize;
@@ -334,6 +374,14 @@ pub(crate) unsafe fn swarm_load_race_pack() {
     }
     SWARM_GHOST_COUNT = slot;
     REPLAY_SWARM_ACTIVE.store(slot > 0, Ordering::Release);
+    // Re-bind after reset_ghosts (it clears SWARM_PRIMARY_CATALOG_INDEX) and
+    // put the watched slot replay back into the live Replay object.
+    if in_view_replay {
+        let primary = swarm_bind_primary_slot_replay(CURRENT_GAME);
+        if primary >= 0 {
+            swarm_restore_primary_replay(primary);
+        }
+    }
 }
 
 pub(crate) unsafe fn swarm_load_ghost_nodes_from_path(path: *const c_char) -> (*mut u8, i32) {
@@ -791,15 +839,27 @@ pub(crate) unsafe extern "C" fn hooked_game_view_replay(
     CURRENT_GAME = game;
     VIEW_REPLAY_SESSION = true;
     VIEW_REPLAY_PENDING = true;
-    swarm_catalog_note_path(path);
-    if REPLAY_SWARM_ENABLED.load(Ordering::Acquire) && !path.is_null() {
-        let index = swarm_catalog_find(path as *const u8, c_strlen(path as *const u8));
-        if index >= 0 {
-            SWARM_PRIMARY_CATALOG_INDEX = index;
+    // The ViewReplay path argument is a player-name / status string from the
+    // level-properties UI (or empty), not a replay file. Cataloguing it only
+    // pollutes the picker; primary binding uses the level slot file instead.
+    let original: GameViewReplayFn = mem::transmute(GAME_VIEW_REPLAY_TRAMPOLINE);
+    let ok = original(game, saved, path);
+    if ok == 0 {
+        // Stock ViewReplay failed (missing/corrupt local data, etc.): do not
+        // leave the session flags armed for camera/swarm hooks.
+        VIEW_REPLAY_SESSION = false;
+        VIEW_REPLAY_PENDING = false;
+        return 0;
+    }
+    if REPLAY_SWARM_ENABLED.load(Ordering::Acquire) {
+        let primary = swarm_bind_primary_slot_replay(game);
+        // If a ghost pack loaded during StartLevelIntro->LoadLevel and
+        // clobbered the Replay object, put the watched slot replay back.
+        if primary >= 0 && REPLAY_SWARM_ACTIVE.load(Ordering::Acquire) {
+            swarm_restore_primary_replay(primary);
         }
     }
-    let original: GameViewReplayFn = mem::transmute(GAME_VIEW_REPLAY_TRAMPOLINE);
-    original(game, saved, path)
+    ok
 }
 
 pub(crate) unsafe fn install_replay_swarm_hooks() -> bool {
