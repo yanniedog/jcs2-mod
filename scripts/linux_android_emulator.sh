@@ -52,16 +52,25 @@ install() {
 }
 
 boot() {
+  local emulator_bin="$ANDROID_HOME/emulator/emulator"
+  if [ ! -x "$emulator_bin" ]; then
+    emulator_bin="$(command -v emulator || true)"
+  fi
+  if [ -z "$emulator_bin" ] || [ ! -x "$emulator_bin" ]; then
+    echo "emulator binary not found under \$ANDROID_HOME/emulator or PATH" >&2
+    exit 1
+  fi
   local args=(-avd "$AVD_NAME" -no-window -no-audio -no-boot-anim -no-snapshot \
     -gpu swiftshader_indirect -accel off -no-metrics)
   if command -v tmux >/dev/null 2>&1 && [ -f /exec-daemon/tmux.portal.conf ]; then
     tmux -f /exec-daemon/tmux.portal.conf has-session -t "=android-emulator" 2>/dev/null || \
       tmux -f /exec-daemon/tmux.portal.conf new-session -d -s android-emulator -c "$HOME" -- bash -l
+    # Absolute path: tmux panes inherit the session env, not this script's PATH.
     tmux -f /exec-daemon/tmux.portal.conf send-keys -t "android-emulator:0.0" \
-      "emulator ${args[*]} 2>&1 | tee $BOOT_LOG" C-m
+      "$emulator_bin ${args[*]} 2>&1 | tee $BOOT_LOG" C-m
     echo "Emulator booting in tmux session 'android-emulator' (log: $BOOT_LOG)."
   else
-    nohup emulator "${args[@]}" >"$BOOT_LOG" 2>&1 &
+    nohup "$emulator_bin" "${args[@]}" >"$BOOT_LOG" 2>&1 &
     echo "Emulator booting (pid $!, log: $BOOT_LOG)."
   fi
   echo "Poll readiness with: $0 status  (TCG cold boot takes several minutes)"
